@@ -115,7 +115,111 @@ st.sidebar.divider()
 if st.session_state.last_update:
     st.sidebar.caption(f"Last refreshed: {st.session_state.last_update}")
 
-st_autorefresh(interval=auto_refresh_sec * 1000, key="auto_refresh_timer")
+# --- Market Status ---
+st.sidebar.markdown("### Market Status")
+import zoneinfo
+
+def get_market_status():
+    ny = zoneinfo.ZoneInfo("America/New_York")
+    now = datetime.now(ny)
+    weekday = now.weekday()  # 0=Monday, 6=Sunday
+    market_open = now.replace(hour=9, minute=30, second=0, microsecond=0)
+    market_close = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    
+    if weekday >= 5:
+        return "closed", "Markets closed (Weekend)"
+    if now < market_open:
+        delta = market_open - now
+        mins = int(delta.total_seconds() // 60)
+        return "pre", f"Pre-market — opens in {mins//60}h {mins%60}m"
+    if now > market_close:
+        delta = now - market_close
+        mins = int(delta.total_seconds() // 60)
+        return "closed", f"Markets closed — {mins//60}h {mins%60}m ago"
+    delta = market_close - now
+    mins = int(delta.total_seconds() // 60)
+    return "open", f"Markets open — closes in {mins//60}h {mins%60}m"
+
+status, status_msg = get_market_status()
+status_color = "#4ade80" if status == "open" else "#f59e0b" if status == "pre" else "#f87171"
+st.sidebar.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130; border-left: 3px solid {status_color};
+border-radius:8px; padding:10px 14px; margin-bottom:8px;">
+<span style="color:{status_color}; font-weight:700; font-size:13px;">● {status_msg}</span>
+</div>
+""", unsafe_allow_html=True)
+
+# --- Watchlist ---
+st.sidebar.markdown("### Watchlist")
+
+@st.cache_data(ttl=60)
+def get_watchlist():
+    symbols = ["AAPL", "MSFT", "NVDA", "TSLA", "SPY", "QQQ", "BND", "VTI"]
+    try:
+        data = yf.download(symbols, period="2d", progress=False, group_by="ticker")
+        results = []
+        for sym in symbols:
+            try:
+                closes = data[sym]["Close"].dropna()
+                if len(closes) >= 2:
+                    prev, curr = float(closes.iloc[-2]), float(closes.iloc[-1])
+                    pct = ((curr - prev) / prev) * 100
+                    results.append((sym, curr, pct))
+            except Exception:
+                continue
+        return results
+    except Exception:
+        return []
+
+watchlist = get_watchlist()
+if watchlist:
+    rows = ""
+    for sym, price, pct in watchlist:
+        color = "#4ade80" if pct >= 0 else "#f87171"
+        arrow = "▲" if pct >= 0 else "▼"
+        rows += f"""
+        <div style="display:flex; justify-content:space-between; align-items:center;
+        padding:7px 0; border-bottom:1px solid #1a2130;">
+            <span style="color:#e2e8f0; font-weight:600; font-size:13px; font-family:JetBrains Mono,monospace;">{sym}</span>
+            <span style="text-align:right;">
+                <span style="color:#94a3b8; font-size:12px; font-family:JetBrains Mono,monospace;">${price:.2f}</span>
+                <span style="color:{color}; font-size:12px; font-weight:700; margin-left:6px;">{arrow}{pct:+.2f}%</span>
+            </span>
+        </div>"""
+    st.sidebar.markdown(f'<div style="background:#0d1219; border:1px solid #1a2130; border-radius:8px; padding:4px 14px;">{rows}</div>', unsafe_allow_html=True)
+
+# --- Bot Status ---
+st.sidebar.divider()
+st.sidebar.markdown("### Bot Status")
+
+def get_bot_status():
+    try:
+        sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+        status_file = os.path.expanduser("~/tradingbot/engine/bot_status.json")
+        if os.path.exists(status_file):
+            import json
+            with open(status_file) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+bot = get_bot_status()
+if bot:
+    st.sidebar.markdown(f"""
+    <div style="background:#0d1219; border:1px solid #1a2130; border-radius:8px; padding:10px 14px;">
+        <div style="color:#4ade80; font-size:12px; font-weight:700;">● RUNNING</div>
+        <div style="color:#94a3b8; font-size:11px; margin-top:4px;">Last rebalance: {bot.get('last_rebalance', 'N/A')}</div>
+        <div style="color:#94a3b8; font-size:11px;">Next rebalance: {bot.get('next_rebalance', 'N/A')}</div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.sidebar.markdown("""
+    <div style="background:#0d1219; border:1px solid #1a2130; border-radius:8px; padding:10px 14px;">
+        <div style="color:#f87171; font-size:12px; font-weight:700;">● NOT RUNNING</div>
+        <div style="color:#64748b; font-size:11px; margin-top:4px;">Engine offline</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 @st.cache_data(ttl=60)
