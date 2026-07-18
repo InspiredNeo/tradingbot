@@ -1,0 +1,20 @@
+# Never upload API keys
+config/.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.cache/
+
+# Conda/pip
+*.egg-info/
+dist/
+build/
+
+# Spyder
+.spyproject/
+
+# OS
+.DS_Store
+Thumbs.db
