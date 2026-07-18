@@ -253,7 +253,245 @@ def render_top_news(feed):
         unsafe_allow_html=True,
     )
 
+@st.cache_data(ttl=3600)
+def get_earnings():
+    try:
+        key = os.getenv("FINNHUB_API_KEY")
+        from datetime import date, timedelta
+        today = date.today()
+        to = today + timedelta(days=7)
+        resp = requests.get(
+            "https://finnhub.io/api/v1/calendar/earnings",
+            params={
+                "from": today.strftime("%Y-%m-%d"),
+                "to": to.strftime("%Y-%m-%d"),
+                "token": key
+            },
+            timeout=15
+        )
+        data = resp.json()
+        return data.get("earningsCalendar", [])
+    except Exception:
+        return []
 
+
+@st.cache_data(ttl=3600)
+def get_economic_calendar():
+    try:
+        key = os.getenv("FINNHUB_API_KEY")
+        from datetime import date, timedelta
+        today = date.today()
+        to = today + timedelta(days=14)
+        resp = requests.get(
+            "https://finnhub.io/api/v1/calendar/economic",
+            params={
+                "from": today.strftime("%Y-%m-%d"),
+                "to": to.strftime("%Y-%m-%d"),
+                "token": key
+            },
+            timeout=15
+        )
+        data = resp.json()
+        return data.get("economicCalendar", [])
+    except Exception:
+        return []
+
+
+@st.cache_data(ttl=3600)
+def get_sec_filings():
+    try:
+        key = os.getenv("FINNHUB_API_KEY")
+        # Get filings for your watched tickers
+        symbols = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA",
+                   "SPY", "QQQ", "VOO", "VTI", "BND"]
+        all_filings = []
+        for sym in symbols[:6]:  # limit to 6 to avoid rate limiting
+            try:
+                resp = requests.get(
+                    "https://finnhub.io/api/v1/stock/filings",
+                    params={"symbol": sym, "token": key},
+                    timeout=10
+                )
+                filings = resp.json()
+                if isinstance(filings, list):
+                    for f in filings[:3]:
+                        f["symbol"] = sym
+                        all_filings.append(f)
+            except Exception:
+                continue
+        # Sort by date descending
+        all_filings.sort(key=lambda x: x.get("filedDate", ""), reverse=True)
+        return all_filings[:30]
+    except Exception:
+        return []
+
+
+def render_earnings():
+    earnings = get_earnings()
+    if not earnings:
+        st.info("No earnings data available right now.")
+        return
+
+    # Filter to only show entries with estimates
+    earnings = [e for e in earnings if e.get("epsEstimate") is not None]
+
+    # Priority tickers first
+    priority = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA",
+                "SPY", "QQQ", "GME", "SCHW", "GM", "NOC"]
+    earnings.sort(key=lambda x: (
+        x.get("date", ""),
+        0 if x.get("symbol") in priority else 1
+    ))
+
+    st.markdown("""
+<div style="color:#64748b; font-size:12px; margin-bottom:16px;">
+Upcoming earnings for the next 7 days. BMO = Before Market Open · AMC = After Market Close
+</div>""", unsafe_allow_html=True)
+
+    current_date = None
+    for e in earnings[:50]:
+        date_str = e.get("date", "")
+        if date_str != current_date:
+            current_date = date_str
+            st.markdown(f"""
+<div style="color:#4b8bf5; font-size:13px; font-weight:700;
+margin:16px 0 8px 0; padding-bottom:6px; border-bottom:1px solid #1a2130;">
+📅 {date_str}
+</div>""", unsafe_allow_html=True)
+
+        sym = e.get("symbol", "")
+        hour = e.get("hour", "")
+        timing = "🌅 BMO" if hour == "bmo" else "🌆 AMC" if hour == "amc" else "⏰ TBD"
+        eps_est = e.get("epsEstimate")
+        eps_act = e.get("epsActual")
+        rev_est = e.get("revenueEstimate")
+
+        eps_str = f"${eps_est:.2f}" if eps_est is not None else "N/A"
+        rev_str = f"${rev_est/1e9:.2f}B" if rev_est and rev_est > 1e9 else \
+                  f"${rev_est/1e6:.0f}M" if rev_est and rev_est > 1e6 else "N/A"
+
+        if eps_act is not None:
+            beat = eps_act >= eps_est if eps_est else None
+            result_color = "#4ade80" if beat else "#f87171"
+            result_str = f'<span style="color:{result_color}; font-weight:700;">{"BEAT" if beat else "MISS"} ${eps_act:.2f}</span>'
+        else:
+            result_str = '<span style="color:#64748b;">Pending</span>'
+
+        is_priority = sym in priority
+        border_color = "#4b8bf5" if is_priority else "#1a2130"
+
+        st.markdown(f"""
+<div style="background:#0d1219; border:1px solid {border_color}; border-radius:8px;
+padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:16px;">
+    <div style="min-width:70px;">
+        <span style="color:#e2e8f0; font-weight:700; font-size:15px;
+        font-family:JetBrains Mono,monospace;">{sym}</span>
+    </div>
+    <div style="color:#64748b; font-size:12px; min-width:70px;">{timing}</div>
+    <div style="flex:1;">
+        <span style="color:#94a3b8; font-size:12px;">EPS Est: </span>
+        <span style="color:#e2e8f0; font-size:12px; font-weight:600;">{eps_str}</span>
+        <span style="color:#64748b; font-size:12px; margin:0 8px;">|</span>
+        <span style="color:#94a3b8; font-size:12px;">Rev Est: </span>
+        <span style="color:#e2e8f0; font-size:12px; font-weight:600;">{rev_str}</span>
+    </div>
+    <div>{result_str}</div>
+</div>""", unsafe_allow_html=True)
+
+
+def render_economic_calendar():
+    events = get_economic_calendar()
+    if not events:
+        st.info("No economic calendar data available right now.")
+        return
+
+    # Filter to high impact only first, fallback to all
+    high = [e for e in events if str(e.get("impact", "")).lower() == "high"]
+    display = high if high else events
+
+    st.markdown("""
+<div style="color:#64748b; font-size:12px; margin-bottom:16px;">
+Key economic events for the next 14 days. High impact events highlighted in red.
+</div>""", unsafe_allow_html=True)
+
+    current_date = None
+    for e in display[:40]:
+        date_str = e.get("time", "")[:10] if e.get("time") else e.get("date", "")
+        if date_str != current_date:
+            current_date = date_str
+            st.markdown(f"""
+<div style="color:#4b8bf5; font-size:13px; font-weight:700;
+margin:16px 0 8px 0; padding-bottom:6px; border-bottom:1px solid #1a2130;">
+🗓 {date_str}
+</div>""", unsafe_allow_html=True)
+
+        impact = str(e.get("impact", "")).lower()
+        impact_color = "#f87171" if impact == "high" else \
+                       "#f59e0b" if impact == "medium" else "#64748b"
+        impact_label = impact.upper() if impact else "LOW"
+
+        event_name = e.get("event", e.get("name", "Unknown Event"))
+        country = e.get("country", "")
+        actual = e.get("actual", "")
+        estimate = e.get("estimate", "")
+        prev = e.get("prev", "")
+
+        st.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130;
+border-left:3px solid {impact_color}; border-radius:8px;
+padding:12px 16px; margin-bottom:8px;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <span style="color:#e2e8f0; font-weight:600; font-size:14px;">{event_name}</span>
+            <span style="color:#64748b; font-size:12px; margin-left:8px;">{country}</span>
+        </div>
+        <span style="color:{impact_color}; font-size:11px; font-weight:700;
+        background:{impact_color}22; padding:2px 8px; border-radius:4px;">{impact_label}</span>
+    </div>
+    <div style="margin-top:6px; display:flex; gap:16px; font-size:12px;">
+        <span style="color:#94a3b8;">Actual: <span style="color:#e2e8f0;">{actual or "—"}</span></span>
+        <span style="color:#94a3b8;">Estimate: <span style="color:#e2e8f0;">{estimate or "—"}</span></span>
+        <span style="color:#94a3b8;">Previous: <span style="color:#e2e8f0;">{prev or "—"}</span></span>
+    </div>
+</div>""", unsafe_allow_html=True)
+
+
+def render_sec_filings():
+    filings = get_sec_filings()
+    if not filings:
+        st.info("No SEC filings available right now.")
+        return
+
+    st.markdown("""
+<div style="color:#64748b; font-size:12px; margin-bottom:16px;">
+Latest SEC filings for your watched tickers.
+</div>""", unsafe_allow_html=True)
+
+    for f in filings:
+        sym = f.get("symbol", "")
+        form = f.get("form", "")
+        filed = f.get("filedDate", "")
+        desc = f.get("description", form)
+        url = f.get("reportUrl") or f.get("filingUrl") or "#"
+
+        form_color = "#f87171" if form in ["8-K", "SC 13G", "SC 13D"] else \
+                     "#4b8bf5" if form in ["10-K", "10-Q"] else "#94a3b8"
+
+        st.markdown(f"""
+<a href="{url}" target="_blank" style="text-decoration:none;">
+<div style="background:#0d1219; border:1px solid #1a2130; border-radius:8px;
+padding:12px 16px; margin-bottom:8px; display:flex; align-items:center;
+gap:16px; transition:border-color .15s ease;"
+onmouseover="this.style.borderColor='#4b8bf5'"
+onmouseout="this.style.borderColor='#1a2130'">
+    <span style="color:#e2e8f0; font-weight:700; font-size:14px;
+    font-family:JetBrains Mono,monospace; min-width:60px;">{sym}</span>
+    <span style="color:{form_color}; font-size:12px; font-weight:700;
+    background:{form_color}22; padding:2px 10px; border-radius:4px;
+    min-width:50px; text-align:center;">{form}</span>
+    <span style="color:#94a3b8; font-size:13px; flex:1;">{desc}</span>
+    <span style="color:#64748b; font-size:12px;">{filed}</span>
+</div></a>""", unsafe_allow_html=True)
 def render_news_page():
     st.markdown(CSS, unsafe_allow_html=True)
 
@@ -336,8 +574,18 @@ padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:20p
     </div>
 </div>""", unsafe_allow_html=True)
 
-    # --- Top News Grid ---
-    render_top_news(feed)
+    # --- News Tabs ---
+    tab_news, tab_earnings, tab_econ, tab_sec = st.tabs([
+        "📰 Top News", "📅 Earnings", "🗓 Economic Calendar", "📄 SEC Filings"
+    ])
+    with tab_news:
+        render_top_news(feed)
+    with tab_earnings:
+        render_earnings()
+    with tab_econ:
+        render_economic_calendar()
+    with tab_sec:
+        render_sec_filings()
 
 
 if __name__ == "__main__":
