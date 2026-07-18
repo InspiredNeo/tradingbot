@@ -8,14 +8,17 @@ from datetime import datetime, timezone
 
 import requests
 import streamlit as st
+import yfinance as yf
 from dotenv import load_dotenv
 
 # --- Config ---
 load_dotenv(os.path.expanduser("~/tradingbot/config/.env"))
 ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 AV_URL = "https://www.alphavantage.co/query"
-CACHE_TTL_SECONDS = 1800  # 30 minutes
+CACHE_TTL_SECONDS = 1800
 
 SENTIMENT_COLORS = {
     "Bullish": "#12b76a",
@@ -27,12 +30,8 @@ SENTIMENT_COLORS = {
 
 
 # --- Data ---
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
-TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
-
-
-def _fetch_alpha_vantage(limit):
-    """Try Alpha Vantage NEWS_SENTIMENT. Returns (feed_list, error_or_None)."""
+@st.cache_data(ttl=CACHE_TTL_SECONDS, show_spinner=False)
+def fetch_news(limit=50):
     if not ALPHA_VANTAGE_API_KEY:
         return [], "No Alpha Vantage key."
     try:
@@ -43,78 +42,96 @@ def _fetch_alpha_vantage(limit):
             "sort": "LATEST",
         }, timeout=15)
         data = resp.json()
-        if "feed" in data:
-            return data["feed"], None
-        msg = (data.get("Information") or data.get("Note")
-               or data.get("Error Message") or "No feed returned.")
-        return [], msg
-    except Exception as exc:
-        return [], str(exc)
+        if "feed" in data and len(data["feed"]) > 0:
+            return data["feed"], "Alpha Vantage"
+    except Exception:
+        pass
 
-
-def _fetch_finnhub(limit):
-    """Try Finnhub general market news. Returns (feed_list, error_or_None)."""
-    if not FINNHUB_API_KEY:
-        return [], "No Finnhub key."
+    # Finnhub fallback
     try:
-        resp = requests.get(
-            "https://finnhub.io/api/v1/news",
-            params={"category": "general", "token": FINNHUB_API_KEY},
-            timeout=15,
-        )
-        raw = resp.json()
-        if not isinstance(raw, list) or len(raw) == 0:
-            return [], "Finnhub returned no articles."
-        feed = []
-        for a in raw[:limit]:
-            feed.append({
-                "title": a.get("headline", ""),
-                "summary": a.get("summary", ""),
-                "url": a.get("url", "#"),
-                "banner_image": a.get("image", ""),
-                "source": a.get("source", ""),
-                "time_published": _finnhub_time(a.get("datetime", 0)),
-                "overall_sentiment_label": "Neutral",
-                "overall_sentiment_score": 0,
-            })
-        return feed, None
-    except Exception as exc:
-        return [], str(exc)
+        if FINNHUB_API_KEY:
+            resp = requests.get(
+                "https://finnhub.io/api/v1/news",
+                params={"category": "general", "token": FINNHUB_API_KEY},
+                timeout=15,
+            )
+            raw = resp.json()
+            if isinstance(raw, list) and len(raw) > 0:
+                feed = []
+                for a in raw[:limit]:
+                    feed.append({
+                        "title": a.get("headline", ""),
+                        "summary": a.get("summary", ""),
+                        "url": a.get("url", "#"),
+                        "banner_image": a.get("image", ""),
+                        "source": a.get("source", ""),
+                        "time_published": _finnhub_time(a.get("datetime", 0)),
+                        "overall_sentiment_label": "Neutral",
+                        "overall_sentiment_score": 0,
+                    })
+                return feed, "Finnhub"
+    except Exception:
+        pass
 
-
-def _fetch_twelve_data(limit):
-    """Try Twelve Data news endpoint. Returns (feed_list, error_or_None)."""
-    if not TWELVE_DATA_API_KEY:
-        return [], "No Twelve Data key."
+    # Twelve Data fallback
     try:
-        resp = requests.get(
-            "https://api.twelvedata.com/news",
-            params={"apikey": TWELVE_DATA_API_KEY, "count": limit},
-            timeout=15,
-        )
-        data = resp.json()
-        raw = data.get("data") or data.get("news") or []
-        if not raw:
-            return [], "Twelve Data returned no articles."
-        feed = []
-        for a in raw[:limit]:
-            feed.append({
-                "title": a.get("title", ""),
-                "summary": a.get("description", ""),
-                "url": a.get("url", "#"),
-                "banner_image": a.get("thumbnail", ""),
-                "source": a.get("source", ""),
-                "time_published": _twelve_time(a.get("published_at", "")),
-                "overall_sentiment_label": "Neutral",
-                "overall_sentiment_score": 0,
-            })
-        return feed, None
-    except Exception as exc:
-        return [], str(exc)
+        if TWELVE_DATA_API_KEY:
+            resp = requests.get(
+                "https://api.twelvedata.com/news",
+                params={"apikey": TWELVE_DATA_API_KEY, "count": limit},
+                timeout=15,
+            )
+            data = resp.json()
+            raw = data.get("data") or data.get("news") or []
+            if raw:
+                feed = []
+                for a in raw[:limit]:
+                    feed.append({
+                        "title": a.get("title", ""),
+                        "summary": a.get("description", ""),
+                        "url": a.get("url", "#"),
+                        "banner_image": a.get("thumbnail", ""),
+                        "source": a.get("source", ""),
+                        "time_published": _twelve_time(a.get("published_at", "")),
+                        "overall_sentiment_label": "Neutral",
+                        "overall_sentiment_score": 0,
+                    })
+                return feed, "Twelve Data"
+    except Exception:
+        pass
+
+    return [], None
 
 
+@st.cache_data(ttl=60)
+def get_snapshot():
+    symbols = {
+        "S&P 500": "^GSPC",
+        "NASDAQ": "^IXIC",
+        "VIX": "^VIX",
+        "Gold": "GC=F",
+        "Oil": "CL=F",
+        "10Y Yield": "^TNX",
+    }
+    results = {}
+    try:
+        data = yf.download(list(symbols.values()), period="2d", progress=False, group_by="ticker")
+        for label, sym in symbols.items():
+            try:
+                closes = data[sym]["Close"].dropna()
+                if len(closes) >= 2:
+                    prev, curr = float(closes.iloc[-2]), float(closes.iloc[-1])
+                    pct = ((curr - prev) / prev) * 100
+                    results[label] = (curr, pct)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return results
+
+
+# --- Helpers ---
 def _finnhub_time(unix_ts):
-    """Convert Finnhub unix timestamp to Alpha Vantage format YYYYMMDDTHHMMSS."""
     try:
         return datetime.utcfromtimestamp(int(unix_ts)).strftime("%Y%m%dT%H%M%S")
     except Exception:
@@ -122,7 +139,6 @@ def _finnhub_time(unix_ts):
 
 
 def _twelve_time(iso_str):
-    """Convert Twelve Data ISO string to Alpha Vantage format YYYYMMDDTHHMMSS."""
     try:
         dt = datetime.strptime(iso_str[:19], "%Y-%m-%dT%H:%M:%S")
         return dt.strftime("%Y%m%dT%H%M%S")
@@ -130,25 +146,6 @@ def _twelve_time(iso_str):
         return ""
 
 
-@st.cache_data(ttl=CACHE_TTL_SECONDS, show_spinner=False)
-def fetch_news(tickers="", topics="", limit=50):
-    """Try Alpha Vantage → Finnhub → Twelve Data. Returns (feed, source_name)."""
-    feed, err = _fetch_alpha_vantage(limit)
-    if feed:
-        return feed, "Alpha Vantage"
-
-    feed, err = _fetch_finnhub(limit)
-    if feed:
-        return feed, "Finnhub"
-
-    feed, err = _fetch_twelve_data(limit)
-    if feed:
-        return feed, "Twelve Data"
-
-    return [], None
-
-
-# --- Helpers ---
 def _time_ago(published):
     try:
         dt = datetime.strptime(published, "%Y%m%dT%H%M%S").replace(tzinfo=timezone.utc)
@@ -188,7 +185,7 @@ CSS = """
   display: block; position: relative; border-radius: 14px; overflow: hidden;
   margin-bottom: 22px; box-shadow: 0 6px 24px rgba(0,0,0,.18);
 }
-.hero img { width: 100%; height: 400px; object-fit: cover; display: block; }
+.hero img { width: 100%; height: 320px; object-fit: cover; object-position: top; display: block; }
 .hero-overlay {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 26px 22px;
   background: linear-gradient(to top, rgba(0,0,0,.85) 10%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 100%);
@@ -199,34 +196,15 @@ CSS = """
 @media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 700px)  { .grid { grid-template-columns: 1fr; } }
 .card {
-  display: block; background: #1a2332; border: 1px solid #2d3748; border-radius: 12px; overflow: hidden;
+  display: block; border-radius: 12px; overflow: hidden;
+  background: #1a2332; border: 1px solid #2d3748;
   box-shadow: 0 2px 10px rgba(0,0,0,.12); transition: transform .12s ease, box-shadow .12s ease;
 }
 .card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,.20); }
-.card img { width: 100%; height: 168px; object-fit: cover; display: block; }
+.card img { width: 100%; height: 140px; object-fit: cover; object-position: top; display: block; }
 .card-body { padding: 14px 15px 16px; }
 .card-body h3 { color: #e5e7eb; font-size: 16px; line-height: 1.3; margin: 9px 0 6px; font-weight: 700; }
-.card-body p  { color#9aa4b2; font-size: 13px; line-height: 1.45; margin: 0; }
-.breaking-list { display: flex; flex-direction: column; gap: 2px; }
-.row {
-  display: flex; gap: 15px; padding: 14px 8px; border-bottom: 1px solid rgba(128,128,128,.22);
-  align-items: center; transition: background .12s ease;
-}
-.row:hover { background: rgba(128,128,128,.08); }
-.row img, .row .noimg {
-  width: 132px; height: 84px; object-fit: cover; border-radius: 8px; flex: 0 0 auto;
-  background: linear-gradient(135deg,#374151,#111827);
-}
-.row-body { flex: 1 1 auto; min-width: 0; }
-.row-top { font-size: 12.5px; color: #6b7280; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.row-title { font-size: 16.5px; font-weight: 700; line-height: 1.3; margin-top: 5px; }
-.live {
-  color: #fff; background: #e11d2e; font-size: 11px; font-weight: 800; letter-spacing: .4px;
-  padding: 2px 8px; border-radius: 4px; text-transform: uppercase;
-  animation: pulse 1.6s infinite;
-}
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
-.ago { font-weight: 700; color: #e11d2e; }
+.card-body p  { color: #9aa4b2; font-size: 13px; line-height: 1.45; margin: 0; }
 </style>
 """
 
@@ -256,7 +234,14 @@ def _card_html(a):
 
 
 def render_top_news(feed):
-    with_img = [a for a in feed if a.get("banner_image")]
+    # Filter out placeholder/logo images by checking for common bad patterns
+    def good_image(a):
+        img = a.get("banner_image", "")
+        if not img:
+            return False
+        bad = ["logo", "icon", "avatar", "placeholder", "default", "blank"]
+        return not any(b in img.lower() for b in bad)
+    with_img = [a for a in feed if good_image(a)]
     if not with_img:
         st.info("No articles with images available right now.")
         return
@@ -269,27 +254,6 @@ def render_top_news(feed):
     )
 
 
-def render_breaking(feed):
-    recent = feed[:14]
-    if not recent:
-        st.info("No recent headlines available right now.")
-        return
-    rows = ""
-    for i, a in enumerate(recent):
-        img = a.get("banner_image") or ""
-        thumb = f'<img src="{img}">' if img else '<div class="noimg"></div>'
-        flag = '<span class="live">&#9679; Live</span>' if i == 0 else ""
-        rows += (
-            f'<a class="row" href="{a.get("url", "#")}" target="_blank">{thumb}'
-            f'<div class="row-body"><div class="row-top">{flag}'
-            f'<span class="ago">{_time_ago(a.get("time_published", ""))}</span> &middot; '
-            f'<span>{html.escape(a.get("source", ""))}</span> {_pill(a)}</div>'
-            f'<div class="row-title">{_clean(a.get("title"), 170)}</div>'
-            f'</div></a>'
-        )
-    st.markdown(f'<div class="news-wrap"><div class="breaking-list">{rows}</div></div>', unsafe_allow_html=True)
-
-
 def render_news_page():
     st.markdown(CSS, unsafe_allow_html=True)
 
@@ -297,6 +261,7 @@ def render_news_page():
     with right:
         if st.button("🔄 Refresh", use_container_width=True):
             fetch_news.clear()
+            get_snapshot.clear()
             st.rerun()
 
     feed, source = fetch_news(limit=50)
@@ -305,15 +270,77 @@ def render_news_page():
         return
     st.caption(f"Source: {source}")
 
-    tab_top, tab_breaking = st.tabs(["📰  Top News", "🔴  Breaking News"])
-    with tab_top:
-        render_top_news(feed)
-    with tab_breaking:
-        render_breaking(feed)
+    # --- Market Snapshot Bar ---
+    snapshot = get_snapshot()
+    if snapshot:
+        cols = st.columns(len(snapshot))
+        for col, (label, (price, pct)) in zip(cols, snapshot.items()):
+            color = "#4ade80" if pct >= 0 else "#f87171"
+            arrow = "▲" if pct >= 0 else "▼"
+            if label in ["VIX", "10Y Yield"]:
+                price_str = f"{price:.2f}"
+            elif price > 1000:
+                price_str = f"{price:,.0f}"
+            else:
+                price_str = f"{price:.2f}"
+            col.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130; border-radius:10px;
+padding:12px 16px; text-align:center; margin-bottom:16px;">
+    <div style="color:#64748b; font-size:11px; font-weight:600;
+    letter-spacing:0.5px; font-family:JetBrains Mono,monospace;">{label}</div>
+    <div style="color:#e2e8f0; font-size:18px; font-weight:700;
+    margin:4px 0 2px; font-family:JetBrains Mono,monospace;">{price_str}</div>
+    <div style="color:{color}; font-size:12px; font-weight:700;">{arrow} {pct:+.2f}%</div>
+</div>""", unsafe_allow_html=True)
+
+    # --- Sentiment Summary ---
+    labels = [a.get("overall_sentiment_label", "Neutral") for a in feed]
+    bullish = sum(1 for l in labels if "Bullish" in l)
+    bearish = sum(1 for l in labels if "Bearish" in l)
+    total = len(labels)
+    bull_pct = int((bullish / total) * 100) if total else 0
+    bear_pct = int((bearish / total) * 100) if total else 0
+    neu_pct = 100 - bull_pct - bear_pct
+
+    if bull_pct > 50:
+        mood, mood_color = "Bullish", "#4ade80"
+    elif bear_pct > 50:
+        mood, mood_color = "Bearish", "#f87171"
+    elif bull_pct > bear_pct:
+        mood, mood_color = "Leaning Bullish", "#86efac"
+    elif bear_pct > bull_pct:
+        mood, mood_color = "Leaning Bearish", "#fca5a5"
+    else:
+        mood, mood_color = "Neutral", "#94a3b8"
+
+    st.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130; border-radius:10px;
+padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:20px;">
+    <div>
+        <div style="color:#64748b; font-size:11px; font-weight:600;
+        letter-spacing:0.5px;">MARKET SENTIMENT</div>
+        <div style="color:{mood_color}; font-size:20px; font-weight:800;
+        margin-top:2px;">● {mood}</div>
+    </div>
+    <div style="flex:1; background:#1a2130; border-radius:999px; height:8px; overflow:hidden;">
+        <div style="display:flex; height:100%;">
+            <div style="width:{bull_pct}%; background:#4ade80;"></div>
+            <div style="width:{neu_pct}%; background:#475569;"></div>
+            <div style="width:{bear_pct}%; background:#f87171;"></div>
+        </div>
+    </div>
+    <div style="display:flex; gap:16px; font-size:12px; font-family:JetBrains Mono,monospace;">
+        <span style="color:#4ade80;">▲ {bull_pct}%</span>
+        <span style="color:#94a3b8;">● {neu_pct}%</span>
+        <span style="color:#f87171;">▼ {bear_pct}%</span>
+    </div>
+</div>""", unsafe_allow_html=True)
+
+    # --- Top News Grid ---
+    render_top_news(feed)
 
 
 if __name__ == "__main__":
     st.set_page_config(page_title="Market Terminal — News", layout="wide")
     st.title("📰  Market News")
     render_news_page()
-
