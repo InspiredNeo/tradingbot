@@ -36,6 +36,8 @@ if "articles" not in st.session_state:
     st.session_state.articles = {}
 if "sentiment_filter" not in st.session_state:
     st.session_state.sentiment_filter = {}
+if "selected_ticker" not in st.session_state:
+    st.session_state.selected_ticker = None
 if "article_insights" not in st.session_state:
     st.session_state.article_insights = {}
 if "summary_insight" not in st.session_state:
@@ -156,9 +158,29 @@ border-radius:8px; padding:10px 14px; margin-bottom:8px;">
 # --- Watchlist ---
 st.sidebar.markdown("### Watchlist")
 
+WATCHLIST_FILE = os.path.expanduser("~/tradingbot/config/watchlist.json")
+
+def load_watchlist_symbols():
+    try:
+        if os.path.exists(WATCHLIST_FILE):
+            import json
+            with open(WATCHLIST_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return ["AAPL", "MSFT", "NVDA", "TSLA", "SPY", "QQQ", "BND", "VTI"]
+
+def save_watchlist_symbols(symbols):
+    try:
+        import json
+        with open(WATCHLIST_FILE, "w") as f:
+            json.dump(symbols, f)
+    except Exception:
+        pass
+
 @st.cache_data(ttl=60)
-def get_watchlist():
-    symbols = ["AAPL", "MSFT", "NVDA", "TSLA", "SPY", "QQQ", "BND", "VTI"]
+def get_watchlist(symbols_tuple):
+    symbols = list(symbols_tuple)
     try:
         data = yf.download(symbols, period="2d", progress=False, group_by="ticker")
         results = []
@@ -175,22 +197,74 @@ def get_watchlist():
     except Exception:
         return []
 
-watchlist = get_watchlist()
+wl_symbols = load_watchlist_symbols()
+watchlist = get_watchlist(tuple(wl_symbols))
+
+# Add ticker input
+add_col, btn_col = st.sidebar.columns([2, 1])
+with add_col:
+    new_ticker = st.text_input("", placeholder="Add ticker...", label_visibility="collapsed", key="add_ticker_input")
+with btn_col:
+    if st.button("Add", key="add_ticker_btn", use_container_width=True):
+        ticker_upper = new_ticker.strip().upper()
+        if ticker_upper and ticker_upper not in wl_symbols:
+            # Validate ticker is real
+            try:
+                test = yf.Ticker(ticker_upper)
+                info = test.info
+                if info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose"):
+                    wl_symbols.append(ticker_upper)
+                    save_watchlist_symbols(wl_symbols)
+                    get_watchlist.clear()
+                    st.rerun()
+                else:
+                    st.sidebar.error(f"Could not find ticker: {ticker_upper}")
+            except Exception:
+                st.sidebar.error(f"Invalid ticker: {ticker_upper}")
+        elif ticker_upper in wl_symbols:
+            st.sidebar.warning(f"{ticker_upper} already in watchlist")
+
 if watchlist:
-    rows = ""
+    st.sidebar.markdown("""
+<style>
+section[data-testid="stSidebar"] button[kind="secondary"] {
+    background: #0d1219 !important;
+    border: 1px solid #2d3748 !important;
+    border-radius: 8px !important;
+    color: #e2e8f0 !important;
+    font-family: JetBrains Mono, monospace !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+}
+section[data-testid="stSidebar"] button[kind="secondary"]:hover {
+    border-color: #4b8bf5 !important;
+    color: #4b8bf5 !important;
+    background: #0f1622 !important;
+}
+</style>
+""", unsafe_allow_html=True)
     for sym, price, pct in watchlist:
         color = "#4ade80" if pct >= 0 else "#f87171"
         arrow = "▲" if pct >= 0 else "▼"
-        rows += f"""
-        <div style="display:flex; justify-content:space-between; align-items:center;
-        padding:7px 0; border-bottom:1px solid #1a2130;">
-            <span style="color:#e2e8f0; font-weight:600; font-size:13px; font-family:JetBrains Mono,monospace;">{sym}</span>
-            <span style="text-align:right;">
-                <span style="color:#94a3b8; font-size:12px; font-family:JetBrains Mono,monospace;">${price:.2f}</span>
-                <span style="color:{color}; font-size:12px; font-weight:700; margin-left:6px;">{arrow}{pct:+.2f}%</span>
-            </span>
-        </div>"""
-    st.sidebar.markdown(f'<div style="background:#0d1219; border:1px solid #1a2130; border-radius:8px; padding:4px 14px;">{rows}</div>', unsafe_allow_html=True)
+        col1, col2, col3 = st.sidebar.columns([1, 1.4, 0.5])
+        with col1:
+            if st.button(sym, key=f"wl_{sym}", use_container_width=True):
+                st.session_state.selected_ticker = sym
+                st.rerun()
+        with col2:
+            st.markdown(
+                f'<div style="padding:10px 0; line-height:1;">'
+                f'<span style="color:#94a3b8; font-size:12px; font-family:JetBrains Mono,monospace;">${price:.2f} </span>'
+                f'<span style="color:{color}; font-size:12px; font-weight:700;">{arrow}{pct:+.2f}%</span>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        with col3:
+            if st.button("✕", key=f"rm_{sym}", use_container_width=True):
+                wl_symbols.remove(sym)
+                save_watchlist_symbols(wl_symbols)
+                get_watchlist.clear()
+                st.rerun()
 
 # --- Bot Status ---
 st.sidebar.divider()
@@ -393,6 +467,228 @@ def render_category(category, tickers):
                     st.markdown(f'<div class="ai-box">{st.session_state.article_insights[a["url"]]}</div>', unsafe_allow_html=True)
 
 
+
+@st.cache_data(ttl=300)
+def get_ticker_detail(sym):
+    """Fetch price history and key ratios for a ticker."""
+    try:
+        ticker = yf.Ticker(sym)
+        hist = ticker.history(period="1y")
+        info = ticker.info
+        return hist, info
+    except Exception:
+        return None, {}
+
+def render_ticker_detail(sym):
+    """Full page ticker detail view with chart and ratios."""
+    if st.button("← Back"):
+        st.session_state.selected_ticker = None
+        st.rerun()
+
+    hist, info = get_ticker_detail(sym)
+
+    # Header
+    name = info.get("longName", sym)
+    price = info.get("currentPrice") or info.get("regularMarketPrice", 0)
+    prev_close = info.get("previousClose", 0)
+    change = price - prev_close if price and prev_close else 0
+    change_pct = (change / prev_close * 100) if prev_close else 0
+    color = "#4ade80" if change >= 0 else "#f87171"
+    arrow = "▲" if change >= 0 else "▼"
+
+    st.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130; border-radius:12px; padding:20px 24px; margin-bottom:20px;">
+    <div style="color:#64748b; font-size:12px; font-weight:600;">{name}</div>
+    <div style="display:flex; align-items:baseline; gap:16px; margin-top:6px;">
+        <span style="color:#e2e8f0; font-size:36px; font-weight:800; font-family:JetBrains Mono,monospace;">{sym}</span>
+        <span style="color:#e2e8f0; font-size:28px; font-weight:700;">${price:,.2f}</span>
+        <span style="color:{color}; font-size:18px; font-weight:700;">{arrow} {change:+.2f} ({change_pct:+.2f}%)</span>
+    </div>
+</div>""", unsafe_allow_html=True)
+
+    # Time range selector
+    periods = {"1D": "1d", "1W": "5d", "1M": "1mo", "3M": "3mo", "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y"}
+    if "chart_period" not in st.session_state:
+        st.session_state.chart_period = "1Y"
+    cols = st.columns(len(periods))
+    for col, (label, period) in zip(cols, periods.items()):
+        with col:
+            if st.button(label, key=f"period_{label}_{sym}", use_container_width=True):
+                st.session_state.chart_period = label
+                st.rerun()
+
+    # Chart
+    selected_period = periods.get(st.session_state.chart_period, "1y")
+    try:
+        chart_hist = yf.Ticker(sym).history(period=selected_period)
+        if not chart_hist.empty:
+            import plotly.graph_objects as go
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=chart_hist.index,
+                y=chart_hist["Close"],
+                mode="lines",
+                line=dict(color="#4b8bf5", width=2),
+                fill="tozeroy",
+                fillcolor="rgba(75,139,245,0.1)"
+            ))
+            fig.update_layout(
+                paper_bgcolor="#0d1219",
+                plot_bgcolor="#0d1219",
+                font=dict(color="#94a3b8"),
+                xaxis=dict(gridcolor="#1a2130", showgrid=True),
+                yaxis=dict(gridcolor="#1a2130", showgrid=True),
+                margin=dict(l=0, r=0, t=0, b=0),
+                height=350,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+    except Exception:
+        st.info("Chart data unavailable.")
+
+    # Key Ratios
+    st.markdown('<div style="color:#64748b; font-size:11px; font-weight:600; letter-spacing:0.5px; margin:20px 0 12px 0;">KEY RATIOS</div>', unsafe_allow_html=True)
+    ratios = [
+        ("P/E Ratio", info.get("trailingPE")),
+        ("Forward P/E", info.get("forwardPE")),
+        ("P/B Ratio", info.get("priceToBook")),
+        ("EV/EBITDA", info.get("enterpriseToEbitda")),
+        ("Profit Margin", info.get("profitMargins")),
+        ("Revenue Growth", info.get("revenueGrowth")),
+        ("Debt/Equity", info.get("debtToEquity")),
+        ("ROE", info.get("returnOnEquity")),
+        ("Market Cap", info.get("marketCap")),
+        ("52W High", info.get("fiftyTwoWeekHigh")),
+        ("52W Low", info.get("fiftyTwoWeekLow")),
+        ("Div Yield", info.get("dividendYield")),
+    ]
+    cols = st.columns(4)
+    for i, (label, val) in enumerate(ratios):
+        with cols[i % 4]:
+            if val is None:
+                display = "N/A"
+            elif label in ["Profit Margin", "Revenue Growth", "ROE", "Div Yield"]:
+                display = f"{val*100:.2f}%"
+            elif label == "Market Cap":
+                display = f"${val/1e9:.2f}B" if val > 1e9 else f"${val/1e6:.0f}M"
+            else:
+                display = f"{val:.2f}"
+            st.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130; border-radius:8px; padding:12px 16px; margin-bottom:8px;">
+    <div style="color:#64748b; font-size:11px; font-weight:600;">{label}</div>
+    <div style="color:#e2e8f0; font-size:18px; font-weight:700; margin-top:4px;">{display}</div>
+</div>""", unsafe_allow_html=True)
+
+    # AI Analysis
+    st.markdown('<div style="color:#64748b; font-size:11px; font-weight:600; letter-spacing:0.5px; margin:20px 0 12px 0;">AI ANALYSIS</div>', unsafe_allow_html=True)
+    ai_key = f"ticker_insight_{sym}"
+    if ai_key not in st.session_state:
+        with st.spinner(f"Analyzing {sym}..."):
+            prompt = (
+                f"You are a senior financial analyst. Provide a deep professional analysis of {sym} ({name}).\n\n"
+                f"**COMPANY OVERVIEW**\nWhat does this company do and what is its market position?\n\n"
+                f"**FINANCIAL HEALTH**\nAnalyze these key metrics: P/E {info.get('trailingPE', 'N/A')}, "
+                f"Revenue Growth {info.get('revenueGrowth', 'N/A')}, Profit Margin {info.get('profitMargins', 'N/A')}, "
+                f"Debt/Equity {info.get('debtToEquity', 'N/A')}.\n\n"
+                f"**RISKS**\nWhat are the key risks facing this company?\n\n"
+                f"**OPPORTUNITY**\nWhat is the bull case for this stock?\n\n"
+                f"**VERDICT**\nOverall assessment in 2-3 sentences."
+            )
+            st.session_state[ai_key] = generate_ai_text(prompt)
+    if st.session_state.get(ai_key):
+        st.markdown(f'<div class="ai-box">{st.session_state[ai_key]}</div>', unsafe_allow_html=True)
+
+BROWSE_STOCKS = [
+    "AAPL","MSFT","NVDA","GOOGL","AMZN","META","TSLA","BRK-B","JPM","V",
+    "JNJ","WMT","PG","MA","HD","BAC","XOM","PFE","ABBV","KO",
+    "PEP","AVGO","COST","MRK","CVX","TMO","ABT","CRM","ACN","MCD",
+    "NFLX","ADBE","NKE","DHR","TXN","PM","NEE","ORCL","AMD","QCOM",
+    "LIN","UPS","RTX","HON","AMGN","IBM","GS","CAT","SBUX","GE"
+]
+
+BROWSE_ETFS = [
+    "SPY","QQQ","VTI","VOO","IWM","DIA","GLD","SLV","TLT","HYG",
+    "VNQ","XLF","XLK","XLE","XLV","XLI","XLY","XLP","XLU","XLB",
+    "ARKK","ARKG","ARKW","VGT","VHT","VFH","VDE","VPU","VIS","VAW",
+    "BND","AGG","LQD","EMB","VCIT","VCSH","BSV","BNDX","MUB","VTEB"
+]
+
+def render_browse_tab():
+    wl_symbols = load_watchlist_symbols()
+    search = st.text_input("Search by ticker (e.g. AAPL, MSFT, BTC-USD)", placeholder="Type any ticker...", key="browse_search")
+
+    def render_ticker_card(sym):
+        in_watchlist = sym in wl_symbols
+        border = "#4b8bf5" if in_watchlist else "#1a2130"
+        st.markdown(f"""
+<div style="background:#0d1219; border:1px solid {border}; border-radius:8px;
+padding:10px 14px; margin-bottom:8px; text-align:center;">
+    <div style="color:#e2e8f0; font-weight:700; font-size:14px;
+    font-family:JetBrains Mono,monospace;">{sym}</div>
+    {"<div style='color:#4b8bf5; font-size:10px;'>IN WATCHLIST</div>" if in_watchlist else ""}
+</div>""", unsafe_allow_html=True)
+        btn1, btn2 = st.columns(2)
+        with btn1:
+            if st.button("View", key=f"browse_view_{sym}", use_container_width=True):
+                st.session_state.selected_ticker = sym
+                st.rerun()
+        with btn2:
+            if in_watchlist:
+                if st.button("✕ Remove", key=f"browse_rm_{sym}", use_container_width=True):
+                    wl_symbols.remove(sym)
+                    save_watchlist_symbols(wl_symbols)
+                    get_watchlist.clear()
+                    st.rerun()
+            else:
+                if st.button("+ Add", key=f"browse_add_{sym}", use_container_width=True):
+                    wl_symbols.append(sym)
+                    save_watchlist_symbols(wl_symbols)
+                    get_watchlist.clear()
+                    st.rerun()
+
+    # If searching, try to find in lists first, then fetch live
+    if search:
+        search_upper = search.strip().upper()
+        matches = [s for s in BROWSE_STOCKS + BROWSE_ETFS if search_upper in s]
+        if matches:
+            cols_per_row = 4
+            for row_start in range(0, len(matches), cols_per_row):
+                row = matches[row_start:row_start + cols_per_row]
+                cols = st.columns(cols_per_row)
+                for col, sym in zip(cols, row):
+                    with col:
+                        render_ticker_card(sym)
+        else:
+            # Try live lookup
+            try:
+                test = yf.Ticker(search_upper)
+                info = test.info
+                if info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose"):
+                    st.markdown(f"**Found: {search_upper}** — {info.get('longName', '')}")
+                    render_ticker_card(search_upper)
+                else:
+                    st.info(f"No results found for '{search}'")
+            except Exception:
+                st.info(f"No results found for '{search}'")
+    else:
+        tab_stocks, tab_etfs = st.tabs(["📈 Stocks", "📊 ETFs"])
+        with tab_stocks:
+            cols_per_row = 4
+            for row_start in range(0, len(BROWSE_STOCKS), cols_per_row):
+                row = BROWSE_STOCKS[row_start:row_start + cols_per_row]
+                cols = st.columns(cols_per_row)
+                for col, sym in zip(cols, row):
+                    with col:
+                        render_ticker_card(sym)
+        with tab_etfs:
+            cols_per_row = 4
+            for row_start in range(0, len(BROWSE_ETFS), cols_per_row):
+                row = BROWSE_ETFS[row_start:row_start + cols_per_row]
+                cols = st.columns(cols_per_row)
+                for col, sym in zip(cols, row):
+                    with col:
+                        render_ticker_card(sym)
+
+
 render_ticker_tape()
 st.markdown(f"""
 <div class="top-bar">
@@ -400,11 +696,17 @@ st.markdown(f"""
     <div class="live-pulse"><span class="pulse-dot"></span> LIVE - updates every {auto_refresh_sec}s</div>
 </div>""", unsafe_allow_html=True)
 
-tab_labels = ["📰 News"] + list(CATEGORY_TICKERS.keys()) 
-tabs = st.tabs(tab_labels)
-for label, tab in zip(tab_labels, tabs):
-    with tab:
-        if label =="📰 News":
-            render_news_page()
-        else:
-            render_category(label, CATEGORY_TICKERS[label])
+# Show ticker detail view if a ticker is selected
+if st.session_state.selected_ticker:
+    render_ticker_detail(st.session_state.selected_ticker)
+else:
+    tab_labels = ["📰 News"] + list(CATEGORY_TICKERS.keys()) + ["Browse"]
+    tabs = st.tabs(tab_labels)
+    for label, tab in zip(tab_labels, tabs):
+        with tab:
+            if label == "📰 News":
+                render_news_page()
+            elif label == "Browse":
+                render_browse_tab()
+            else:
+                render_category(label, CATEGORY_TICKERS[label])

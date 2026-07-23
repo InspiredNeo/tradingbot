@@ -31,6 +31,37 @@ SENTIMENT_COLORS = {
 
 # --- Data ---
 @st.cache_data(ttl=CACHE_TTL_SECONDS, show_spinner=False)
+def _score_feed_sentiment(feed):
+    """Use Gemini/Groq/Ollama to score sentiment for articles with Neutral placeholder."""
+    try:
+        from ai_utils import generate_ai_text
+        titles = [a["title"] for a in feed]
+        numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(titles))
+        prompt = (
+            "You are a financial sentiment analyst. For each headline below, "
+            "respond with ONLY the number and one of these exact labels: "
+            "Bullish, Somewhat-Bullish, Neutral, Somewhat-Bearish, Bearish.\n"
+            "One per line, no explanation.\n\n"
+            f"{numbered}"
+        )
+        result = generate_ai_text(prompt)
+        lines_out = result.strip().split("\n")
+        score_map = {
+            "Bullish": 0.5, "Somewhat-Bullish": 0.25,
+            "Neutral": 0.0, "Somewhat-Bearish": -0.25, "Bearish": -0.5
+        }
+        for i, line in enumerate(lines_out):
+            if i >= len(feed):
+                break
+            parts = line.strip().split(" ", 1)
+            label = parts[-1].strip() if len(parts) > 1 else "Neutral"
+            if label in score_map:
+                feed[i]["overall_sentiment_label"] = label
+                feed[i]["overall_sentiment_score"] = score_map[label]
+    except Exception:
+        pass
+    return feed
+
 def fetch_news(limit=50):
     if not ALPHA_VANTAGE_API_KEY:
         return [], "No Alpha Vantage key."
@@ -69,7 +100,7 @@ def fetch_news(limit=50):
                         "overall_sentiment_label": "Neutral",
                         "overall_sentiment_score": 0,
                     })
-                return feed, "Finnhub"
+                return _score_feed_sentiment(feed), "Finnhub"
     except Exception:
         pass
 
@@ -96,7 +127,7 @@ def fetch_news(limit=50):
                         "overall_sentiment_label": "Neutral",
                         "overall_sentiment_score": 0,
                     })
-                return feed, "Twelve Data"
+                return _score_feed_sentiment(feed), "Twelve Data"
     except Exception:
         pass
 
@@ -250,6 +281,29 @@ def render_top_news(feed):
     if "selected_article_url" not in st.session_state:
         st.session_state.selected_article_url = None
 
+    # Add CSS to make buttons look like headlines
+    st.markdown("""
+    <style>
+    div[data-testid="stButton"] button {
+        background: none;
+        border: none;
+        padding: 0;
+        color: #e2e8f0;
+        font-size: 15px;
+        font-weight: 700;
+        text-align: left;
+        cursor: pointer;
+        width: 100%;
+        line-height: 1.3;
+    }
+    div[data-testid="stButton"] button:hover {
+        color: #4b8bf5;
+        border: none;
+        background: none;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # --- Article Detail View ---
     if st.session_state.selected_article_url:
         selected = next((a for a in with_img if a.get("url") == st.session_state.selected_article_url), None)
@@ -290,12 +344,16 @@ def render_top_news(feed):
             return
 
     # --- Normal Grid View ---
-    # Hero article
     hero = with_img[0]
-    st.markdown(_hero_html(hero), unsafe_allow_html=True)
-    if st.button("View Analysis", key="hero_btn"):
+    if hero.get("banner_image"):
+        st.image(hero["banner_image"], use_container_width=True)
+    label = hero.get("overall_sentiment_label", "Neutral")
+    color = SENTIMENT_COLORS.get(label, "#8a8f98")
+    st.markdown(f'<span class="pill" style="background:{color}">{label}</span>', unsafe_allow_html=True)
+    if st.button(hero.get("title", ""), key="hero_btn"):
         st.session_state.selected_article_url = hero.get("url")
         st.rerun()
+    st.caption(f'{hero.get("source", "")} · {_time_ago(hero.get("time_published", ""))}')
 
     st.divider()
 
@@ -312,11 +370,10 @@ def render_top_news(feed):
                 label = a.get("overall_sentiment_label", "Neutral")
                 color = SENTIMENT_COLORS.get(label, "#8a8f98")
                 st.markdown(f'<span class="pill" style="background:{color}">{label}</span>', unsafe_allow_html=True)
-                st.markdown(f'**{a.get("title", "")}**')
-                st.caption(f'{a.get("source", "")} · {_time_ago(a.get("time_published", ""))}')
-                if st.button("View Analysis", key=f"btn_{a.get('url', '')}_{row_start}"):
+                if st.button(a.get("title", ""), key=f"btn_{a.get('url', '')}_{row_start}"):
                     st.session_state.selected_article_url = a.get("url")
                     st.rerun()
+                st.caption(f'{a.get("source", "")} · {_time_ago(a.get("time_published", ""))}')
         st.markdown("")
 
 @st.cache_data(ttl=3600)
@@ -576,6 +633,11 @@ def render_news_page():
 
     # --- Market Snapshot Bar ---
     snapshot = get_snapshot()
+    # Map display labels to ticker symbols for clickable tiles
+    label_to_ticker = {
+        "S&P 500": "^GSPC", "NASDAQ": "^IXIC", "VIX": "^VIX",
+        "Gold": "GC=F", "Oil": "CL=F", "10Y Yield": "^TNX"
+    }
     if snapshot:
         cols = st.columns(len(snapshot))
         for col, (label, (price, pct)) in zip(cols, snapshot.items()):
@@ -587,15 +649,21 @@ def render_news_page():
                 price_str = f"{price:,.0f}"
             else:
                 price_str = f"{price:.2f}"
-            col.markdown(f"""
+            with col:
+                st.markdown(f"""
 <div style="background:#0d1219; border:1px solid #1a2130; border-radius:10px;
-padding:12px 16px; text-align:center; margin-bottom:16px;">
+padding:12px 16px; text-align:center; margin-bottom:8px;">
     <div style="color:#64748b; font-size:11px; font-weight:600;
     letter-spacing:0.5px; font-family:JetBrains Mono,monospace;">{label}</div>
     <div style="color:#e2e8f0; font-size:18px; font-weight:700;
     margin:4px 0 2px; font-family:JetBrains Mono,monospace;">{price_str}</div>
     <div style="color:{color}; font-size:12px; font-weight:700;">{arrow} {pct:+.2f}%</div>
 </div>""", unsafe_allow_html=True)
+                ticker = label_to_ticker.get(label)
+                if ticker and st.button(f"View {label}", key=f"snap_{label}", use_container_width=True):
+                    import streamlit as _st
+                    _st.session_state.selected_ticker = ticker
+                    _st.rerun()
 
     # --- Sentiment Summary ---
     labels = [a.get("overall_sentiment_label", "Neutral") for a in feed]
