@@ -234,7 +234,6 @@ def _card_html(a):
 
 
 def render_top_news(feed):
-    # Filter out placeholder/logo images by checking for common bad patterns
     def good_image(a):
         img = a.get("banner_image", "")
         if not img:
@@ -245,13 +244,80 @@ def render_top_news(feed):
     if not with_img:
         st.info("No articles with images available right now.")
         return
+
+    if "news_insights" not in st.session_state:
+        st.session_state.news_insights = {}
+    if "selected_article_url" not in st.session_state:
+        st.session_state.selected_article_url = None
+
+    # --- Article Detail View ---
+    if st.session_state.selected_article_url:
+        selected = next((a for a in with_img if a.get("url") == st.session_state.selected_article_url), None)
+        if selected:
+            if st.button("← Back to News"):
+                st.session_state.selected_article_url = None
+                st.rerun()
+            st.markdown("---")
+            if selected.get("banner_image"):
+                st.image(selected["banner_image"], use_container_width=True)
+            label = selected.get("overall_sentiment_label", "Neutral")
+            color = SENTIMENT_COLORS.get(label, "#8a8f98")
+            st.markdown(f'<span class="pill" style="background:{color}">{label}</span>', unsafe_allow_html=True)
+            st.markdown(f'# {selected.get("title", "")}')
+            st.caption(f'{selected.get("source", "")} · {_time_ago(selected.get("time_published", ""))}')
+            if selected.get("summary"):
+                st.write(selected["summary"])
+            st.markdown(f'[Read full article →]({selected.get("url", "")})')
+            st.markdown("---")
+            url = selected.get("url", "")
+            if url not in st.session_state.news_insights:
+                with st.spinner("Generating AI analysis..."):
+                    from ai_utils import generate_ai_text
+                    prompt = (
+                        f"You are a senior financial analyst. Analyze this news article and provide a deep professional breakdown.\n\n"
+                        f"**KEY TAKEAWAY**\n2-3 sentences on what this article is actually saying.\n\n"
+                        f"**MARKET IMPACT**\nHow does this affect markets, sectors, or specific companies?\n\n"
+                        f"**RISK/OPPORTUNITY**\nWhat risk or opportunity does this signal for investors?\n\n"
+                        f"**BOTTOM LINE**\n1-2 sentences on what investors should do with this information.\n\n"
+                        f"Article Title: {selected.get('title', '')}\n"
+                        f"Summary: {selected.get('summary', '')}\n"
+                        f"Source: {selected.get('source', '')}\n"
+                        f"Sentiment: {label}"
+                    )
+                    st.session_state.news_insights[url] = generate_ai_text(prompt)
+            if url in st.session_state.news_insights:
+                st.markdown(f'<div class="ai-box">{st.session_state.news_insights[url]}</div>', unsafe_allow_html=True)
+            return
+
+    # --- Normal Grid View ---
+    # Hero article
     hero = with_img[0]
-    rest = with_img[1:8]
-    grid = "".join(_card_html(a) for a in rest)
-    st.markdown(
-        f'<div class="news-wrap">{_hero_html(hero)}<div class="grid">{grid}</div></div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(_hero_html(hero), unsafe_allow_html=True)
+    if st.button("View Analysis", key="hero_btn"):
+        st.session_state.selected_article_url = hero.get("url")
+        st.rerun()
+
+    st.divider()
+
+    # Grid of articles
+    rest = with_img[1:20]
+    cols_per_row = 3
+    for row_start in range(0, len(rest), cols_per_row):
+        row = rest[row_start:row_start + cols_per_row]
+        cols = st.columns(cols_per_row)
+        for col, a in zip(cols, row):
+            with col:
+                if a.get("banner_image"):
+                    st.image(a["banner_image"], use_container_width=True)
+                label = a.get("overall_sentiment_label", "Neutral")
+                color = SENTIMENT_COLORS.get(label, "#8a8f98")
+                st.markdown(f'<span class="pill" style="background:{color}">{label}</span>', unsafe_allow_html=True)
+                st.markdown(f'**{a.get("title", "")}**')
+                st.caption(f'{a.get("source", "")} · {_time_ago(a.get("time_published", ""))}')
+                if st.button("View Analysis", key=f"btn_{a.get('url', '')}_{row_start}"):
+                    st.session_state.selected_article_url = a.get("url")
+                    st.rerun()
+        st.markdown("")
 
 @st.cache_data(ttl=3600)
 def get_earnings():

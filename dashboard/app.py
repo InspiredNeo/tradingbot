@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import streamlit as st
 import yfinance as yf
 from google import genai
+import groq as groq_lib
+from ai_utils import generate_ai_text
 from streamlit_autorefresh import st_autorefresh
 from news_view import render_news_page
 
@@ -15,6 +17,8 @@ from data_sources import get_news
 load_dotenv(os.path.expanduser("~/tradingbot/config/.env"))
 gemini_key = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=gemini_key)
+groq_key = os.getenv("GROQ_API_KEY")
+groq_client = groq_lib.Groq(api_key=groq_key)
 
 st.set_page_config(page_title="Market Terminal", layout="wide")
 
@@ -277,9 +281,9 @@ Summary: {article.get('summary', 'N/A')}
 Overall sentiment: {article['sentiment_label']} ({article['sentiment_score']})
 Source: {article['source']}
 """
-    result = client.models.generate_content(model="gemini-flash-lite-latest", contents=prompt)
-    st.session_state.article_insights[key] = result.text
-    return result.text
+    result_text = generate_ai_text(prompt)
+    st.session_state.article_insights[key] = result_text
+    return result_text
 
 
 def render_category(category, tickers):
@@ -328,16 +332,27 @@ def render_category(category, tickers):
         st.caption(f"Filtering by: {current_filter} — click ALL to reset")
     
 
-    if st.button("Generate Overall Market Summary", key=f"summary_{category}"):
-        with st.spinner("Synthesizing..."):
+    if category not in st.session_state.summary_insight:
+        with st.spinner("Generating market summary..."):
             headline_block = "\n".join(f"- {a['title']} (sentiment: {a['sentiment_label']})" for a in articles)
-            prompt = f"""Summarize the key market-moving themes from these headlines covering {tickers}
-in 4-6 concise bullet points, grouped by ticker where relevant. Be factual, no speculation.
-
-{headline_block}
-"""
-            result = client.models.generate_content(model="gemini-flash-lite-latest", contents=prompt)
-            st.session_state.summary_insight[category] = result.text
+            prompt = (
+                f"You are a senior financial analyst at a top investment bank. Analyze these headlines and provide a deep, professional market briefing.\n\n"
+                f"**MARKET OVERVIEW**\n"
+                f"2-3 sentences summarizing the overall market mood and macro environment.\n\n"
+                f"**KEY THEMES**\n"
+                f"- Theme 1: detailed explanation of what is driving it and why it matters\n"
+                f"- Theme 2: detailed explanation\n"
+                f"- Theme 3: detailed explanation\n"
+                f"(4-6 themes total)\n\n"
+                f"**RISKS TO WATCH**\n"
+                f"- 2-3 specific risks or catalysts that could move markets\n\n"
+                f"**BOTTOM LINE**\n"
+                f"1-2 sentences on what investors should be paying attention to right now.\n\n"
+                f"Only reference companies or tickers directly mentioned in the headlines. Be specific, factual, and professional.\n\n"
+                f"HEADLINES:\n{headline_block}"
+            )
+            result_text = generate_ai_text(prompt)
+            st.session_state.summary_insight[category] = result_text
 
     if st.session_state.summary_insight.get(category):
         st.markdown(f'<div class="ai-box">{st.session_state.summary_insight[category]}</div>', unsafe_allow_html=True)
@@ -371,12 +386,11 @@ in 4-6 concise bullet points, grouped by ticker where relevant. Be factual, no s
                 if a.get("url"):
                     st.markdown(f"[Read full article]({a['url']})")
 
-            if st.button("Get AI Insight", key=f"insight_{category}_{i}"):
-                with st.spinner("Analyzing..."):
-                    insight = get_article_insight(a)
-                st.markdown(f'<div class="ai-box">{insight}</div>', unsafe_allow_html=True)
-            elif a["url"] in st.session_state.article_insights:
-                st.markdown(f'<div class="ai-box">{st.session_state.article_insights[a["url"]]}</div>', unsafe_allow_html=True)
+                if a["url"] not in st.session_state.article_insights:
+                    with st.spinner("Analyzing..."):
+                        get_article_insight(a)
+                if a["url"] in st.session_state.article_insights:
+                    st.markdown(f'<div class="ai-box">{st.session_state.article_insights[a["url"]]}</div>', unsafe_allow_html=True)
 
 
 render_ticker_tape()
