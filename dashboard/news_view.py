@@ -399,25 +399,75 @@ def get_earnings():
 
 
 @st.cache_data(ttl=3600)
-def get_economic_calendar():
+@st.cache_data(ttl=3600)
+def get_insider_trading():
     try:
         key = os.getenv("FINNHUB_API_KEY")
-        from datetime import date, timedelta
-        today = date.today()
-        to = today + timedelta(days=14)
-        resp = requests.get(
-            "https://finnhub.io/api/v1/calendar/economic",
-            params={
-                "from": today.strftime("%Y-%m-%d"),
-                "to": to.strftime("%Y-%m-%d"),
-                "token": key
-            },
-            timeout=15
-        )
-        data = resp.json()
-        return data.get("economicCalendar", [])
+        symbols = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "SPY", "QQQ", "BND"]
+        all_trades = []
+        for sym in symbols:
+            try:
+                resp = requests.get(
+                    "https://finnhub.io/api/v1/stock/insider-transactions",
+                    params={"symbol": sym, "token": key},
+                    timeout=10
+                )
+                data = resp.json()
+                trades = data.get("data", [])
+                for t in trades[:5]:
+                    t["symbol"] = sym
+                    all_trades.append(t)
+            except Exception:
+                continue
+        all_trades.sort(key=lambda x: x.get("filingDate", ""), reverse=True)
+        return all_trades[:50]
     except Exception:
         return []
+
+
+def render_insider_trading():
+    trades = get_insider_trading()
+    if not trades:
+        st.info("No insider trading data available right now.")
+        return
+
+    st.markdown('<div style="color:#64748b; font-size:12px; margin-bottom:16px;">Recent insider transactions for your watched tickers. B = Buy · S = Sell · M = Exercise</div>', unsafe_allow_html=True)
+
+    # Filter to only show buys and sells, not derivatives
+    trades = [t for t in trades if t.get("transactionCode") in ["B", "S", "P", "S"] and not t.get("isDerivative", False)]
+
+    current_sym = None
+    for t in trades:
+        sym = t.get("symbol", "")
+        code = t.get("transactionCode", "")
+        name = t.get("name", "Unknown")
+        shares = t.get("change", 0)
+        price = t.get("transactionPrice", 0)
+        date_str = t.get("transactionDate", "")
+        value = abs(shares * price) if price else 0
+
+        is_buy = shares > 0
+        color = "#4ade80" if is_buy else "#f87171"
+        action = "BUY" if is_buy else "SELL"
+        arrow = "▲" if is_buy else "▼"
+
+        if sym != current_sym:
+            current_sym = sym
+            st.markdown(f'<div style="color:#4b8bf5; font-size:13px; font-weight:700; margin:16px 0 8px 0; padding-bottom:6px; border-bottom:1px solid #1a2130;">{sym}</div>', unsafe_allow_html=True)
+
+        val_str = f"${value:,.0f}" if value > 0 else "N/A"
+        price_str = f"${price:.2f}" if price else "N/A"
+
+        st.markdown(f"""
+<div style="background:#0d1219; border:1px solid #1a2130; border-left:3px solid {color};
+border-radius:8px; padding:10px 16px; margin-bottom:6px;
+display:flex; align-items:center; gap:16px;">
+    <span style="color:{color}; font-weight:700; font-size:12px; min-width:40px;">{arrow} {action}</span>
+    <span style="color:#e2e8f0; font-size:13px; flex:1;">{name}</span>
+    <span style="color:#94a3b8; font-size:12px;">{abs(shares):,} shares @ {price_str}</span>
+    <span style="color:{color}; font-size:12px; font-weight:700;">{val_str}</span>
+    <span style="color:#64748b; font-size:12px;">{date_str}</span>
+</div>""", unsafe_allow_html=True)
 
 
 @st.cache_data(ttl=3600)
@@ -519,63 +569,6 @@ padding:12px 16px; margin-bottom:8px; display:flex; align-items:center; gap:16px
         <span style="color:#e2e8f0; font-size:12px; font-weight:600;">{rev_str}</span>
     </div>
     <div>{result_str}</div>
-</div>""", unsafe_allow_html=True)
-
-
-def render_economic_calendar():
-    events = get_economic_calendar()
-    if not events:
-        st.info("No economic calendar data available right now.")
-        return
-
-    # Filter to high impact only first, fallback to all
-    high = [e for e in events if str(e.get("impact", "")).lower() == "high"]
-    display = high if high else events
-
-    st.markdown("""
-<div style="color:#64748b; font-size:12px; margin-bottom:16px;">
-Key economic events for the next 14 days. High impact events highlighted in red.
-</div>""", unsafe_allow_html=True)
-
-    current_date = None
-    for e in display[:40]:
-        date_str = e.get("time", "")[:10] if e.get("time") else e.get("date", "")
-        if date_str != current_date:
-            current_date = date_str
-            st.markdown(f"""
-<div style="color:#4b8bf5; font-size:13px; font-weight:700;
-margin:16px 0 8px 0; padding-bottom:6px; border-bottom:1px solid #1a2130;">
-🗓 {date_str}
-</div>""", unsafe_allow_html=True)
-
-        impact = str(e.get("impact", "")).lower()
-        impact_color = "#f87171" if impact == "high" else \
-                       "#f59e0b" if impact == "medium" else "#64748b"
-        impact_label = impact.upper() if impact else "LOW"
-
-        event_name = e.get("event", e.get("name", "Unknown Event"))
-        country = e.get("country", "")
-        actual = e.get("actual", "")
-        estimate = e.get("estimate", "")
-        prev = e.get("prev", "")
-
-        st.markdown(f"""
-<div style="background:#0d1219; border:1px solid #1a2130;
-border-left:3px solid {impact_color}; border-radius:8px;
-padding:12px 16px; margin-bottom:8px;">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-            <span style="color:#e2e8f0; font-weight:600; font-size:14px;">{event_name}</span>
-            <span style="color:#64748b; font-size:12px; margin-left:8px;">{country}</span>
-        </div>
-        <span style="color:{impact_color}; font-size:11px; font-weight:700;
-        background:{impact_color}22; padding:2px 8px; border-radius:4px;">{impact_label}</span>
-    </div>
-    <div style="margin-top:6px; display:flex; gap:16px; font-size:12px;">
-        <span style="color:#94a3b8;">Actual: <span style="color:#e2e8f0;">{actual or "—"}</span></span>
-        <span style="color:#94a3b8;">Estimate: <span style="color:#e2e8f0;">{estimate or "—"}</span></span>
-        <span style="color:#94a3b8;">Previous: <span style="color:#e2e8f0;">{prev or "—"}</span></span>
-    </div>
 </div>""", unsafe_allow_html=True)
 
 
@@ -710,14 +703,14 @@ padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:20p
 
     # --- News Tabs ---
     tab_news, tab_earnings, tab_econ, tab_sec = st.tabs([
-        "📰 Top News", "📅 Earnings", "🗓 Economic Calendar", "📄 SEC Filings"
+        "📰 Top News", "📅 Earnings", "📊 Insider Trading", "📄 SEC Filings"
     ])
     with tab_news:
         render_top_news(feed)
     with tab_earnings:
         render_earnings()
     with tab_econ:
-        render_economic_calendar()
+        render_insider_trading()
     with tab_sec:
         render_sec_filings()
 
