@@ -487,31 +487,19 @@ def _get_category_summary(category, articles):
 @callback(
     Output("tab-content", "children", allow_duplicate=True),
     Input({"type": "cat-filter", "cat": ALL, "val": ALL}, "n_clicks"),
-    State("main-tabs", "active_tab"),
     prevent_initial_call=True,
 )
-def apply_category_filter(n_clicks, active_tab):
-    if not any(n_clicks):
+def apply_category_filter(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
         return dash.no_update
     triggered = ctx.triggered_id
-    if not triggered:
+    if not triggered or not isinstance(triggered, dict):
         return dash.no_update
     category = triggered["cat"]
     _category_filters[category] = triggered["val"]
     articles = _get_category_articles(category)
     summary = _get_category_summary(category, articles)
-    return html.Div([
-        dbc.Tabs([
-            dbc.Tab(label="📰 News", tab_id="tab-news"),
-            dbc.Tab(label="Stocks", tab_id="tab-stocks"),
-            dbc.Tab(label="ETFs", tab_id="tab-etfs"),
-            dbc.Tab(label="World", tab_id="tab-world"),
-            dbc.Tab(label="Browse", tab_id="tab-browse"),
-        ], id="main-tabs", active_tab=active_tab),
-        html.Div(category_content(category, articles,
-                                   _category_filters[category], summary),
-                 id="tab-content-inner", style={"marginTop": "20px"}),
-    ])
+    return category_content(category, articles, _category_filters[category], summary)
 
 
 _cat_article_insights = {}
