@@ -1,0 +1,57 @@
+/* Dark theme for the watchlist ticker dropdown */
+#add-ticker-input .Select-control,
+#add-ticker-input > div,
+#add-ticker-input [class*="control"] {
+    background-color: #11161f !important;
+    border-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+}
+#add-ticker-input [class*="menu"],
+#add-ticker-input .Select-menu-outer {
+    background-color: #11161f !important;
+    border-color: #2d3748 !important;
+}
+#add-ticker-input [class*="option"],
+#add-ticker-input .Select-option {
+    background-color: #11161f !important;
+    color: #e2e8f0 !important;
+}
+#add-ticker-input [class*="option"]:hover,
+#add-ticker-input .Select-option:hover {
+    background-color: #1a2130 !important;
+}
+#add-ticker-input [class*="singleValue"],
+#add-ticker-input [class*="input"],
+#add-ticker-input .Select-value-label {
+    color: #e2e8f0 !important;
+}
+#add-ticker-input [class*="placeholder"],
+#add-ticker-input .Select-placeholder {
+    color: #64748b !important;
+}
+
+/* Hover highlight for snapshot tiles */
+[id*="snapshot-tile"] {
+    transition: border-color .15s ease, background-color .15s ease;
+}
+[id*="snapshot-tile"]:hover {
+    border-color: #4b8bf5 !important;
+    background-color: #11161f !important;
+}
+
+/* Hover highlight for watchlist items */
+[id*="wl-item"] {
+    transition: color .15s ease;
+}
+[id*="wl-item"]:hover {
+    color: #4b8bf5 !important;
+}
+
+/* Watchlist row hover */
+.watchlist-row {
+    transition: border-color .15s ease, background-color .15s ease;
+}
+.watchlist-row:hover {
+    border-color: #4b8bf5 !important;
+    background-color: #11161f !important;
+}

@@ -20,7 +20,9 @@ sys.path.append(os.path.expanduser("~/tradingbot/dashboard"))
 from data_sources import get_news
 from ai_utils import generate_ai_text
 import dash_pages
-from dash_pages import news_grid, article_detail, ticker_detail_page
+from dash_pages import (news_grid, article_detail, ticker_detail_page,
+    snapshot_bar, sentiment_gauge, earnings_tab, insider_tab, sec_tab, get_insider_trades,
+    category_content, browse_tab_content)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -69,6 +71,29 @@ def fetch_news_dash(limit=50):
                         "overall_sentiment_score": 0,
                     })
                 source = "Finnhub"
+                # Score sentiment with AI since Finnhub has no sentiment
+                try:
+                    titles = [a["title"] for a in feed]
+                    numbered = "\n".join(f"{i+1}. {t}" for i, t in enumerate(titles))
+                    s_prompt = (
+                        "You are a financial sentiment analyst. For each headline below, "
+                        "respond with ONLY the number and one of these exact labels: "
+                        "Bullish, Somewhat-Bullish, Neutral, Somewhat-Bearish, Bearish.\n"
+                        "One per line, no explanation.\n\n" + numbered
+                    )
+                    result = generate_ai_text(s_prompt)
+                    score_map = {"Bullish": 0.5, "Somewhat-Bullish": 0.25,
+                                 "Neutral": 0.0, "Somewhat-Bearish": -0.25, "Bearish": -0.5}
+                    for i, line in enumerate(result.strip().split("\n")):
+                        if i >= len(feed):
+                            break
+                        parts = line.strip().split(" ", 1)
+                        lab = parts[-1].strip() if len(parts) > 1 else "Neutral"
+                        if lab in score_map:
+                            feed[i]["overall_sentiment_label"] = lab
+                            feed[i]["overall_sentiment_score"] = score_map[lab]
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -201,7 +226,7 @@ def ticker_tape():
         className="tape-wrap"
     )
 
-def watchlist_panel():
+def get_watchlist_rows():
     data = get_watchlist_data()
     rows = []
     for sym, price, pct in data:
@@ -209,35 +234,64 @@ def watchlist_panel():
         arrow = "▲" if pct >= 0 else "▼"
         rows.append(
             html.Div([
-                html.Div([
-                    html.Span(sym, style={"color": COLORS["text"], "fontWeight": "700",
-                                          "fontSize": "13px", "fontFamily": FONT_MONO}),
-                ]),
-                html.Div([
-                    html.Span(f"${price:.2f} ", style={"color": COLORS["text2"], "fontSize": "12px",
-                                                        "fontFamily": FONT_MONO}),
-                    html.Span(f"{arrow}{pct:+.2f}%", style={"color": color, "fontSize": "12px",
-                                                             "fontWeight": "700"}),
-                    html.Span(" ✕", id={"type": "wl-remove", "index": sym},
-                              style={"color": COLORS["text3"], "cursor": "pointer",
-                                     "marginLeft": "10px", "fontSize": "12px"}),
-                ]),
-            ],
-            id={"type": "wl-item", "index": sym},
-            n_clicks=0,
-            style={
+                html.Div(
+                    sym,
+                    id={"type": "wl-item", "index": sym},
+                    n_clicks=0,
+                    style={"color": COLORS["text"], "fontWeight": "700",
+                           "fontSize": "13px", "fontFamily": FONT_MONO,
+                           "cursor": "pointer", "flex": "1"}
+                ),
+                html.Span(f"${price:.2f}", style={"color": COLORS["text2"],
+                                                   "fontSize": "12px",
+                                                   "fontFamily": FONT_MONO,
+                                                   "marginRight": "12px"}),
+                html.Span(f"{arrow}{pct:+.2f}%", style={"color": color,
+                                                          "fontSize": "12px",
+                                                          "fontWeight": "700",
+                                                          "marginRight": "12px"}),
+                html.Div("✕", id={"type": "wl-remove", "index": sym},
+                         n_clicks=0,
+                         style={"color": COLORS["text3"], "cursor": "pointer",
+                                "marginLeft": "10px", "fontSize": "14px",
+                                "fontWeight": "700", "padding": "2px 8px"}),
+            ], className="watchlist-row", style={
                 "background": COLORS["panel"],
                 "border": f"1px solid {COLORS['border2']}",
                 "borderRadius": "8px",
                 "padding": "10px 14px",
                 "marginBottom": "6px",
                 "display": "flex",
-                "justifyContent": "space-between",
                 "alignItems": "center",
-                "cursor": "pointer",
             })
         )
-    return html.Div(rows, id="watchlist-container")
+    return rows
+
+def watchlist_panel():
+    return html.Div(get_watchlist_rows(), id="watchlist-container")
+
+def _bot_status_panel():
+    try:
+        status_file = os.path.expanduser("~/tradingbot/engine/bot_status.json")
+        if os.path.exists(status_file):
+            with open(status_file) as f:
+                bot = json.load(f)
+            return html.Div([
+                html.Div("● RUNNING", style={"color": COLORS["green"], "fontSize": "12px", "fontWeight": "700"}),
+                html.Div(f"Last rebalance: {bot.get('last_rebalance', 'N/A')}",
+                         style={"color": COLORS["text2"], "fontSize": "11px", "marginTop": "4px"}),
+                html.Div(f"Next rebalance: {bot.get('next_rebalance', 'N/A')}",
+                         style={"color": COLORS["text2"], "fontSize": "11px"}),
+            ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                      "borderRadius": "8px", "padding": "10px 14px"})
+    except Exception:
+        pass
+    return html.Div([
+        html.Div("● NOT RUNNING", style={"color": COLORS["red"], "fontSize": "12px", "fontWeight": "700"}),
+        html.Div("Engine offline", style={"color": COLORS["text3"], "fontSize": "11px", "marginTop": "4px"}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "8px", "padding": "10px 14px"})
+
 
 def sidebar():
     status, status_msg = get_market_status()
@@ -252,13 +306,30 @@ def sidebar():
             "padding": "10px 14px", "marginBottom": "16px",
         }),
         html.H5("Watchlist", style={"color": COLORS["text"]}),
-        dbc.InputGroup([
-            dbc.Input(id="add-ticker-input", placeholder="Add ticker...",
-                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
-                             "color": COLORS["text"]}),
-            dbc.Button("Add", id="add-ticker-btn", color="primary", size="sm"),
-        ], className="mb-3"),
+        html.Datalist(id="ticker-datalist", children=[
+            html.Option(value=s) for s in [
+                "AAPL","MSFT","NVDA","GOOGL","AMZN","META","TSLA","BRK-B","JPM","V",
+                "JNJ","WMT","PG","MA","HD","BAC","XOM","PFE","ABBV","KO","PEP","AVGO",
+                "COST","MRK","CVX","TMO","ABT","CRM","ACN","MCD","NFLX","ADBE","NKE",
+                "DHR","TXN","PM","NEE","ORCL","AMD","QCOM","LIN","UPS","RTX","HON",
+                "AMGN","IBM","GS","CAT","SBUX","GE",
+                "SPY","QQQ","VTI","VOO","IWM","DIA","GLD","SLV","TLT","HYG",
+                "VNQ","XLF","XLK","XLE","XLV","XLI","XLY","XLP","XLU","XLB",
+                "BND","AGG","LQD","EMB","VCIT","VCSH","BSV","BNDX","MUB","VTEB",
+            ]
+        ]),
+        dbc.Input(
+            id="add-ticker-input",
+            placeholder="Type or search any ticker...",
+            list="ticker-datalist",
+            style={"backgroundColor": "#11161f", "border": "1px solid #2d3748",
+                   "color": "#e2e8f0", "marginBottom": "8px"},
+        ),
+        dbc.Button("Add", id="add-ticker-btn", color="primary", size="sm", className="mb-3 w-100"),
         watchlist_panel(),
+        html.Hr(style={"borderColor": COLORS["border"]}),
+        html.H5("Bot Status", style={"color": COLORS["text"]}),
+        _bot_status_panel(),
     ], style={
         "width": "300px", "minWidth": "300px", "padding": "20px",
         "background": "#0d1219", "borderRight": f"1px solid {COLORS['border']}",
@@ -273,6 +344,7 @@ app.title = "Market Terminal"
 app.layout = html.Div([
     dcc.Store(id="selected-ticker", data=None),
     dcc.Store(id="selected-article", data=None),
+    dcc.Store(id="chart-period", data="1y"),
     dcc.Interval(id="refresh-interval", interval=60_000),
     html.Div([
         sidebar(),
@@ -298,7 +370,13 @@ def render_main(selected_ticker, selected_article_idx):
         return ticker_detail_page(selected_ticker)
     if selected_article_idx is not None:
         feed, _ = fetch_news_dash()
-        with_img = [a for a in feed if a.get("banner_image")]
+        def _good_image(a):
+            img = a.get("banner_image", "")
+            if not img:
+                return False
+            bad = ["logo", "icon", "avatar", "placeholder", "default", "blank"]
+            return not any(b in img.lower() for b in bad)
+        with_img = [a for a in feed if _good_image(a)]
         if selected_article_idx < len(with_img):
             article = with_img[selected_article_idx]
             url = article.get("url", "")
@@ -328,7 +406,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="World", tab_id="tab-world"),
             dbc.Tab(label="Browse", tab_id="tab-browse"),
         ], id="main-tabs", active_tab="tab-news"),
-        html.Div(id="tab-content", style={"marginTop": "20px"}),
+        dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
 
 
@@ -348,9 +426,251 @@ def render_tab(active_tab):
         return html.Div([
             html.Div(f"Source: {source}", style={"color": COLORS["text3"],
                                                   "fontSize": "12px", "marginBottom": "12px"}),
-            news_grid(feed),
+            snapshot_bar(),
+            sentiment_gauge(feed),
+            dbc.Tabs([
+                dbc.Tab(label="📰 Top News", tab_id="sub-news"),
+                dbc.Tab(label="📅 Earnings", tab_id="sub-earnings"),
+                dbc.Tab(label="📊 Insider Trading", tab_id="sub-insider"),
+                dbc.Tab(label="📄 SEC Filings", tab_id="sub-sec"),
+            ], id="news-subtabs", active_tab="sub-news"),
+            html.Div(id="news-subtab-content", style={"marginTop": "20px"}),
         ])
-    return html.Div(f"{active_tab} — coming next", style={"color": COLORS["text2"]})
+    if active_tab in ("tab-stocks", "tab-etfs", "tab-world"):
+        cat_map = {"tab-stocks": "Stocks", "tab-etfs": "ETFs", "tab-world": "World"}
+        category = cat_map[active_tab]
+        articles = _get_category_articles(category)
+        summary = _get_category_summary(category, articles)
+        active_filter = _category_filters.get(category, "All")
+        return category_content(category, articles, active_filter, summary)
+    if active_tab == "tab-browse":
+        return html.Div([
+            dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
+                      debounce=True,
+                      style={"background": COLORS["panel"],
+                             "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "marginBottom": "16px"}),
+            html.Div(id="browse-content",
+                     children=browse_tab_content(load_watchlist_symbols())),
+        ])
+    return html.Div()
+
+
+_category_articles = {}
+_category_summaries = {}
+_category_filters = {}
+
+
+def _get_category_articles(category):
+    if category not in _category_articles:
+        _category_articles[category] = get_news(CATEGORY_TICKERS[category], limit=20)
+    return _category_articles[category]
+
+
+def _get_category_summary(category, articles):
+    if category not in _category_summaries and articles:
+        headline_block = "\n".join(
+            f"- {a['title']} (sentiment: {a['sentiment_label']})" for a in articles)
+        prompt = (
+            f"You are a senior financial analyst at a top investment bank. Analyze these headlines and provide a deep, professional market briefing.\n\n"
+            f"**MARKET OVERVIEW**\n2-3 sentences on overall market mood.\n\n"
+            f"**KEY THEMES**\n4-6 themes, each with detailed explanation.\n\n"
+            f"**RISKS TO WATCH**\n2-3 specific risks or catalysts.\n\n"
+            f"**BOTTOM LINE**\n1-2 sentences on what to pay attention to.\n\n"
+            f"Only reference companies directly mentioned. Be specific and factual.\n\n"
+            f"HEADLINES:\n{headline_block}"
+        )
+        _category_summaries[category] = generate_ai_text(prompt)
+    return _category_summaries.get(category)
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input({"type": "cat-filter", "cat": ALL, "val": ALL}, "n_clicks"),
+    State("main-tabs", "active_tab"),
+    prevent_initial_call=True,
+)
+def apply_category_filter(n_clicks, active_tab):
+    if not any(n_clicks):
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update
+    category = triggered["cat"]
+    _category_filters[category] = triggered["val"]
+    articles = _get_category_articles(category)
+    summary = _get_category_summary(category, articles)
+    return html.Div([
+        dbc.Tabs([
+            dbc.Tab(label="📰 News", tab_id="tab-news"),
+            dbc.Tab(label="Stocks", tab_id="tab-stocks"),
+            dbc.Tab(label="ETFs", tab_id="tab-etfs"),
+            dbc.Tab(label="World", tab_id="tab-world"),
+            dbc.Tab(label="Browse", tab_id="tab-browse"),
+        ], id="main-tabs", active_tab=active_tab),
+        html.Div(category_content(category, articles,
+                                   _category_filters[category], summary),
+                 id="tab-content-inner", style={"marginTop": "20px"}),
+    ])
+
+
+_cat_article_insights = {}
+
+
+@callback(
+    Output({"type": "cat-article-insight", "cat": ALL, "index": ALL}, "children"),
+    Input({"type": "cat-accordion", "cat": ALL}, "active_item"),
+    prevent_initial_call=True,
+)
+def cat_article_insight(active_items):
+    outputs = [dash.no_update] * len(ctx.outputs_list)
+    for accordion_idx, active_item in enumerate(active_items):
+        if not active_item:
+            continue
+        parts = active_item.rsplit("-", 1)
+        if len(parts) != 2:
+            continue
+        category, idx_str = parts
+        try:
+            idx = int(idx_str)
+        except ValueError:
+            continue
+        articles = _get_category_articles(category)
+        active_filter = _category_filters.get(category, "All")
+        if active_filter == "Bullish":
+            filtered = [a for a in articles if "Bullish" in a["sentiment_label"]]
+        elif active_filter == "Bearish":
+            filtered = [a for a in articles if "Bearish" in a["sentiment_label"]]
+        elif active_filter == "Neutral":
+            filtered = [a for a in articles
+                        if "Bullish" not in a["sentiment_label"]
+                        and "Bearish" not in a["sentiment_label"]]
+        else:
+            filtered = articles
+        if idx >= len(filtered):
+            continue
+        a = filtered[idx]
+        url = a.get("url", "")
+        if url not in _cat_article_insights:
+            prompt = (
+                f"You are a financial analyst. Give a sharp 3-4 sentence take on why this article matters "
+                f"for investors, the market implication, and any risk or opportunity.\n"
+                f"Title: {a.get('title', '')}\n"
+                f"Summary: {a.get('summary', 'N/A')}\n"
+                f"Sentiment: {a.get('sentiment_label', '')}"
+            )
+            _cat_article_insights[url] = generate_ai_text(prompt)
+        insight = _cat_article_insights.get(url, "")
+        # Find matching output
+        for out_idx, out in enumerate(ctx.outputs_list):
+            if out["id"].get("cat") == category and out["id"].get("index") == idx:
+                outputs[out_idx] = html.Div(dcc.Markdown(insight), style={
+                    "background": "#0d1a13", "border": "1px solid #1a3d2a",
+                    "borderLeft": "3px solid #4ade80", "borderRadius": "8px",
+                    "padding": "14px 18px", "marginTop": "12px", "color": "#d1d5db"})
+                break
+    return outputs
+
+@callback(
+    Output("browse-content", "children"),
+    Input("browse-search", "value"),
+    prevent_initial_call=True,
+)
+def browse_search(search):
+    return browse_tab_content(load_watchlist_symbols(), search or "")
+
+
+@callback(
+    Output("browse-content", "children", allow_duplicate=True),
+    Output("watchlist-container", "children", allow_duplicate=True),
+    Input({"type": "browse-toggle", "index": ALL}, "n_clicks"),
+    State("browse-search", "value"),
+    prevent_initial_call=True,
+)
+def browse_toggle(n_clicks, search):
+    if not any(n_clicks):
+        return dash.no_update, dash.no_update
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update, dash.no_update
+    sym = triggered["index"]
+    symbols = load_watchlist_symbols()
+    if sym in symbols:
+        symbols.remove(sym)
+    else:
+        symbols.append(sym)
+    save_watchlist_symbols(symbols)
+    return browse_tab_content(symbols, search or ""), watchlist_panel().children
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input({"type": "browse-view", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def browse_view(n_clicks):
+    if not any(n_clicks):
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if triggered and "index" in triggered:
+        return triggered["index"]
+    return dash.no_update
+
+
+@callback(
+    Output("news-subtab-content", "children"),
+    Input("news-subtabs", "active_tab"),
+)
+def render_news_subtab(active_subtab):
+    if active_subtab == "sub-news":
+        feed, _ = fetch_news_dash()
+        return news_grid(feed)
+    if active_subtab == "sub-earnings":
+        return earnings_tab()
+    if active_subtab == "sub-insider":
+        return insider_tab()
+    if active_subtab == "sub-sec":
+        return sec_tab()
+    return html.Div()
+
+
+_insider_insights = {}
+
+
+@callback(
+    Output({"type": "insider-insight", "index": dash.MATCH}, "children"),
+    Input({"type": "insider-trade", "index": dash.MATCH}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def insider_insight(n_clicks):
+    if not n_clicks:
+        return dash.no_update
+    idx = ctx.triggered_id["index"]
+    trades = get_insider_trades()
+    if idx >= len(trades):
+        return dash.no_update
+    t = trades[idx]
+    key = f'{t.get("symbol")}_{t.get("name")}_{t.get("transactionDate")}_{t.get("change")}'
+    if key not in _insider_insights:
+        sym = t.get("symbol", "")
+        name = t.get("name", "")
+        shares = t.get("change", 0)
+        price = t.get("transactionPrice", 0)
+        action = "BUY" if shares > 0 else "SELL"
+        value = abs(shares * price) if price else 0
+        prompt = (
+            f"You are a quantitative analyst at a hedge fund analyzing SEC Form 4 filings as alpha signals.\n\n"
+            f"Transaction: {name} at {sym}, {action} {abs(shares):,} shares @ ${price:.2f} = ${value:,.0f} on {t.get('transactionDate', '')}\n\n"
+            f"**SIGNAL TYPE**\nClassify: meaningful directional signal or noise (10b5-1 plan, tax, routine)?\n\n"
+            f"**MAGNITUDE**\nIs the size significant relative to typical insider trades?\n\n"
+            f"**HISTORICAL CONTEXT**\nBased on academic research (Seyhun 1986, Lakonishok & Lee 2001), what does this type of transaction historically predict?\n\n"
+            f"**ALPHA SIGNAL RATING**\nRate: Strong Buy / Weak Buy / Neutral / Weak Sell / Strong Sell with reasoning."
+        )
+        _insider_insights[key] = generate_ai_text(prompt)
+    return html.Div(dcc.Markdown(_insider_insights[key]), style={
+        "background": "#0d1a13", "border": "1px solid #1a3d2a",
+        "borderLeft": "3px solid #4ade80", "borderRadius": "8px",
+        "padding": "14px 18px", "marginTop": "10px", "color": "#d1d5db"})
 
 
 @callback(
@@ -381,7 +701,7 @@ def article_back(n):
     prevent_initial_call=True,
 )
 def select_ticker(n_clicks):
-    if not any(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
         return dash.no_update
     triggered = ctx.triggered_id
     if triggered and "index" in triggered:
@@ -415,6 +735,24 @@ body { font-family: 'Inter', sans-serif; background: #080c12; margin: 0; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: #0d1219; }
 ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 4px; }
+/* Dark dropdown */
+#add-ticker-input .Select-control, .dash-dark-dropdown .Select-control { background-color: #11161f !important; border: 1px solid #2d3748 !important; color: #e2e8f0 !important; }
+#add-ticker-input .Select-menu-outer, .dash-dark-dropdown .Select-menu-outer { background-color: #11161f !important; border: 1px solid #2d3748 !important; z-index: 9999 !important; }
+#add-ticker-input .Select-option, #add-ticker-input .VirtualizedSelectOption { background-color: #11161f !important; color: #e2e8f0 !important; }
+#add-ticker-input .Select-option:hover, #add-ticker-input .VirtualizedSelectFocusedOption, #add-ticker-input .Select-option.is-focused { background-color: #1a2130 !important; }
+#add-ticker-input .Select-value-label, #add-ticker-input .Select-input > input { color: #e2e8f0 !important; }
+#add-ticker-input .Select-placeholder { color: #64748b !important; }
+#add-ticker-input .Select-arrow { border-color: #64748b transparent transparent !important; }
+.Select-control { background: #0d1219 !important; border-color: #2d3748 !important; color: #e2e8f0 !important; }
+.Select-menu-outer { background: #0d1219 !important; border-color: #2d3748 !important; }
+.Select-option { background: #0d1219 !important; color: #e2e8f0 !important; }
+.Select-option:hover, .Select-option.is-focused { background: #1a2130 !important; }
+.Select-value-label { color: #e2e8f0 !important; }
+.Select-placeholder { color: #64748b !important; }
+.VirtualizedSelectOption { background: #0d1219 !important; color: #e2e8f0 !important; }
+.VirtualizedSelectFocusedOption { background: #1a2130 !important; }
+.dash-dropdown .Select-control { background-color: #0d1219 !important; }
+.dash-dropdown .Select-menu-outer { background-color: #0d1219 !important; }
 </style>
 </head>
 <body>
@@ -427,6 +765,165 @@ body { font-family: 'Inter', sans-serif; background: #080c12; margin: 0; }
 </body>
 </html>
 '''
+
+
+
+@callback(
+    Output("watchlist-container", "children"),
+    Input("add-ticker-btn", "n_clicks"),
+    State("add-ticker-input", "value"),
+    prevent_initial_call=True,
+)
+def add_ticker(n_clicks, value):
+    sym = (value or "").strip().upper()
+    if not sym:
+        return dash.no_update
+    symbols = load_watchlist_symbols()
+    if sym not in symbols:
+        try:
+            info = yf.Ticker(sym).info
+            if info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose") or info.get("symbol"):
+                symbols.append(sym)
+                save_watchlist_symbols(symbols)
+        except Exception:
+            pass
+    return get_watchlist_rows()
+
+
+@callback(
+    Output("watchlist-container", "children", allow_duplicate=True),
+    Input({"type": "wl-remove", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def remove_ticker(n_clicks):
+    if not any(n_clicks):
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update
+    sym = triggered["index"]
+    symbols = load_watchlist_symbols()
+    if sym in symbols:
+        symbols.remove(sym)
+        save_watchlist_symbols(symbols)
+    return get_watchlist_rows()
+
+
+
+
+_ticker_insights = {}
+_ticker_period = {}
+
+
+@callback(
+    Output("ticker-chart", "figure"),
+    Input({"type": "period-btn", "index": ALL, "sym": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def change_period(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update
+    sym = triggered["sym"]
+    label = triggered["index"]
+    period_map = {"1D": "1d", "1W": "5d", "1M": "1mo", "3M": "3mo",
+                  "6M": "6mo", "YTD": "ytd", "5Y": "5y", "MAX": "max"}
+    period = period_map.get(label, "1y")
+    try:
+        hist = yf.Ticker(sym).history(period=period)
+        if hist.empty:
+            return dash.no_update
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=hist.index, y=hist["Close"], mode="lines",
+            line=dict(color=COLORS["blue"], width=2),
+            fill="tozeroy", fillcolor="rgba(75,139,245,0.1)",
+        ))
+        fig.update_layout(
+            paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+            font=dict(color=COLORS["text2"]),
+            xaxis=dict(gridcolor=COLORS["border"]),
+            yaxis=dict(gridcolor=COLORS["border"]),
+            margin=dict(l=0, r=0, t=10, b=0), height=350,
+        )
+        return fig
+    except Exception:
+        return dash.no_update
+    try:
+        hist = yf.Ticker(selected_ticker).history(period=period)
+        if hist.empty:
+            return dash.no_update
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=hist.index, y=hist["Close"], mode="lines",
+            line=dict(color=COLORS["blue"], width=2),
+            fill="tozeroy", fillcolor="rgba(75,139,245,0.1)",
+        ))
+        fig.update_layout(
+            paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+            font=dict(color=COLORS["text2"]),
+            xaxis=dict(gridcolor=COLORS["border"]),
+            yaxis=dict(gridcolor=COLORS["border"]),
+            margin=dict(l=0, r=0, t=10, b=0), height=350,
+        )
+        return fig
+    except Exception:
+        return dash.no_update
+
+@callback(
+    Output("ticker-ai-analysis", "children"),
+    Input("ticker-ai-analysis", "id"),
+    State("selected-ticker", "data"),
+    prevent_initial_call=True,
+)
+def ticker_ai(_, selected_ticker):
+    if not selected_ticker:
+        return dash.no_update
+    if selected_ticker not in _ticker_insights:
+        try:
+            info = yf.Ticker(selected_ticker).info
+            name = info.get("longName", selected_ticker)
+            prompt = (
+                f"You are a senior financial analyst. Provide a deep professional analysis of {selected_ticker} ({name}).\n\n"
+                f"**COMPANY OVERVIEW**\nWhat does this company do and what is its market position?\n\n"
+                f"**FINANCIAL HEALTH**\nAnalyze: P/E {info.get('trailingPE', 'N/A')}, "
+                f"Revenue Growth {info.get('revenueGrowth', 'N/A')}, "
+                f"Profit Margin {info.get('profitMargins', 'N/A')}, "
+                f"Debt/Equity {info.get('debtToEquity', 'N/A')}.\n\n"
+                f"**RISKS**\nKey risks facing this company.\n\n"
+                f"**OPPORTUNITY**\nThe bull case for this stock.\n\n"
+                f"**VERDICT**\nOverall assessment in 2-3 sentences."
+            )
+            _ticker_insights[selected_ticker] = generate_ai_text(prompt)
+        except Exception:
+            _ticker_insights[selected_ticker] = "Analysis unavailable."
+    return html.Div([
+        html.Div("AI ANALYSIS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                        "fontWeight": "600", "letterSpacing": "0.5px",
+                                        "margin": "20px 0 12px"}),
+        html.Div(dcc.Markdown(_ticker_insights[selected_ticker]), style={
+            "background": "#0d1a13", "border": "1px solid #1a3d2a",
+            "borderLeft": f"3px solid {COLORS['green']}", "borderRadius": "8px",
+            "padding": "16px 20px", "color": "#d1d5db"}),
+    ])
+
+
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input({"type": "snapshot-tile", "sym": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def snapshot_click(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if triggered and "sym" in triggered:
+        return triggered["sym"]
+    return dash.no_update
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)

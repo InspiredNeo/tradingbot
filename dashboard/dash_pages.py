@@ -210,20 +210,19 @@ def ticker_detail_page(sym, period="1y"):
     ], style=card_style())
 
     # Period buttons
-    periods = ["1D", "1W", "1M", "3M", "6M", "YTD", "1Y", "5Y"]
+    periods = ["1D", "1W", "1M", "3M", "6M", "YTD", "5Y", "MAX"]
     period_map = {"1D": "1d", "1W": "5d", "1M": "1mo", "3M": "3mo",
-                  "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y"}
+                  "6M": "6mo", "YTD": "ytd", "1Y": "1y", "5Y": "5y", "MAX": "max"}
     current_label = next((k for k, v in period_map.items() if v == period), "1Y")
     period_btns = html.Div([
-        dbc.Button(p, id={"type": "period-btn", "index": p}, size="sm",
+        dbc.Button(p, id={"type": "period-btn", "index": p, "sym": sym}, size="sm",
                    color="primary" if p == current_label else "secondary",
                    outline=(p != current_label),
                    className="me-1")
         for p in periods
     ], className="mb-3")
 
-    # Chart
-    chart = html.Div("Chart data unavailable.", style={"color": COLORS["text2"]})
+    # Chart - use stable ID so period changes only update the graph
     if hist is not None and not hist.empty:
         fig = go.Figure()
         fig.add_trace(go.Scatter(
@@ -238,7 +237,10 @@ def ticker_detail_page(sym, period="1y"):
             yaxis=dict(gridcolor=COLORS["border"]),
             margin=dict(l=0, r=0, t=10, b=0), height=350,
         )
-        chart = dcc.Graph(figure=fig, config={"displayModeBar": False})
+        chart = dcc.Graph(figure=fig, id="ticker-chart", config={"displayModeBar": False})
+    else:
+        chart = html.Div("Chart data unavailable.", id="ticker-chart",
+                        style={"color": COLORS["text2"]})
 
     # Ratios
     ratios = [
@@ -285,4 +287,509 @@ def ticker_detail_page(sym, period="1y"):
                                        "margin": "20px 0 12px"}),
         ratios_grid,
         html.Div(id="ticker-ai-analysis", style={"marginTop": "20px"}),
+    ])
+
+
+# ---------- Market Snapshot ----------
+def get_snapshot():
+    symbols = {
+        "S&P 500": "^GSPC", "NASDAQ": "^IXIC", "VIX": "^VIX",
+        "Gold": "GC=F", "Oil": "CL=F", "10Y Yield": "^TNX",
+    }
+    results = {}
+    try:
+        data = yf.download(list(symbols.values()), period="2d", progress=False, group_by="ticker")
+        for label, sym in symbols.items():
+            try:
+                closes = data[sym]["Close"].dropna()
+                if len(closes) >= 2:
+                    prev, curr = float(closes.iloc[-2]), float(closes.iloc[-1])
+                    pct = ((curr - prev) / prev) * 100
+                    results[label] = (curr, pct)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return results
+
+
+SNAPSHOT_TICKERS = {
+    "S&P 500": "^GSPC", "NASDAQ": "^IXIC", "VIX": "^VIX",
+    "Gold": "GC=F", "Oil": "CL=F", "10Y Yield": "^TNX",
+}
+
+def snapshot_bar():
+    snapshot = get_snapshot()
+    if not snapshot:
+        return html.Div()
+    tiles = []
+    for label, (price, pct) in snapshot.items():
+        color = COLORS["green"] if pct >= 0 else COLORS["red"]
+        arrow = "▲" if pct >= 0 else "▼"
+        if label in ["VIX", "10Y Yield"]:
+            price_str = f"{price:.2f}"
+        elif price > 1000:
+            price_str = f"{price:,.0f}"
+        else:
+            price_str = f"{price:.2f}"
+        tiles.append(html.Div([
+            html.Div(label, style={"color": COLORS["text3"], "fontSize": "11px",
+                                   "fontWeight": "600", "letterSpacing": "0.5px",
+                                   "fontFamily": FONT_MONO}),
+            html.Div(price_str, style={"color": COLORS["text"], "fontSize": "18px",
+                                       "fontWeight": "700", "margin": "4px 0 2px",
+                                       "fontFamily": FONT_MONO}),
+            html.Div(f"{arrow} {pct:+.2f}%", style={"color": color, "fontSize": "12px",
+                                                     "fontWeight": "700"}),
+        ],
+        id={"type": "snapshot-tile", "sym": SNAPSHOT_TICKERS.get(label, label)},
+        n_clicks=0,
+        style={
+            "cursor": "pointer",
+            "background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+            "borderRadius": "10px", "padding": "12px 16px", "textAlign": "center",
+            "flex": "1",
+        }))
+    return html.Div(tiles, style={"display": "flex", "gap": "12px", "marginBottom": "16px"})
+
+
+def sentiment_gauge(feed):
+    labels = [a.get("overall_sentiment_label", "Neutral") for a in feed]
+    bullish = sum(1 for l in labels if "Bullish" in l)
+    bearish = sum(1 for l in labels if "Bearish" in l)
+    total = len(labels)
+    bull_pct = int((bullish / total) * 100) if total else 0
+    bear_pct = int((bearish / total) * 100) if total else 0
+    neu_pct = 100 - bull_pct - bear_pct
+
+    if bull_pct > 50:
+        mood, mood_color = "Bullish", COLORS["green"]
+    elif bear_pct > 50:
+        mood, mood_color = "Bearish", COLORS["red"]
+    elif bull_pct > bear_pct:
+        mood, mood_color = "Leaning Bullish", "#86efac"
+    elif bear_pct > bull_pct:
+        mood, mood_color = "Leaning Bearish", "#fca5a5"
+    else:
+        mood, mood_color = "Neutral", COLORS["text2"]
+
+    return html.Div([
+        html.Div([
+            html.Div("MARKET SENTIMENT", style={"color": COLORS["text3"], "fontSize": "11px",
+                                                 "fontWeight": "600", "letterSpacing": "0.5px"}),
+            html.Div(f"● {mood}", style={"color": mood_color, "fontSize": "20px",
+                                          "fontWeight": "800", "marginTop": "2px"}),
+        ]),
+        html.Div([
+            html.Div(style={"width": f"{bull_pct}%", "background": COLORS["green"], "height": "100%"}),
+            html.Div(style={"width": f"{neu_pct}%", "background": "#475569", "height": "100%"}),
+            html.Div(style={"width": f"{bear_pct}%", "background": COLORS["red"], "height": "100%"}),
+        ], style={"flex": "1", "background": COLORS["border"], "borderRadius": "999px",
+                  "height": "8px", "overflow": "hidden", "display": "flex", "margin": "0 20px"}),
+        html.Div([
+            html.Span(f"▲ {bull_pct}%  ", style={"color": COLORS["green"]}),
+            html.Span(f"● {neu_pct}%  ", style={"color": COLORS["text2"]}),
+            html.Span(f"▼ {bear_pct}%", style={"color": COLORS["red"]}),
+        ], style={"fontSize": "12px", "fontFamily": FONT_MONO}),
+    ], style={
+        "background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+        "borderRadius": "10px", "padding": "14px 20px", "marginBottom": "20px",
+        "display": "flex", "alignItems": "center",
+    })
+
+
+# ---------- Earnings ----------
+def get_earnings():
+    import requests
+    from datetime import date, timedelta
+    try:
+        key = os.getenv("FINNHUB_API_KEY")
+        today = date.today()
+        to = today + timedelta(days=7)
+        resp = requests.get("https://finnhub.io/api/v1/calendar/earnings",
+                            params={"from": today.strftime("%Y-%m-%d"),
+                                    "to": to.strftime("%Y-%m-%d"), "token": key}, timeout=15)
+        return resp.json().get("earningsCalendar", [])
+    except Exception:
+        return []
+
+
+def earnings_tab():
+    earnings = [e for e in get_earnings() if e.get("epsEstimate") is not None]
+    priority = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "SPY", "QQQ"]
+    earnings.sort(key=lambda x: (x.get("date", ""), 0 if x.get("symbol") in priority else 1))
+    if not earnings:
+        return html.Div("No earnings data available.", style={"color": COLORS["text2"]})
+
+    rows = [html.Div("Upcoming earnings for the next 7 days. BMO = Before Market Open · AMC = After Market Close",
+                     style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"})]
+    current_date = None
+    for e in earnings[:50]:
+        date_str = e.get("date", "")
+        if date_str != current_date:
+            current_date = date_str
+            rows.append(html.Div(f"📅 {date_str}", style={
+                "color": COLORS["blue"], "fontSize": "13px", "fontWeight": "700",
+                "margin": "16px 0 8px", "paddingBottom": "6px",
+                "borderBottom": f"1px solid {COLORS['border']}"}))
+        sym = e.get("symbol", "")
+        hour = e.get("hour", "")
+        timing = "🌅 BMO" if hour == "bmo" else "🌆 AMC" if hour == "amc" else "⏰ TBD"
+        eps_est = e.get("epsEstimate")
+        eps_act = e.get("epsActual")
+        rev_est = e.get("revenueEstimate")
+        eps_str = f"${eps_est:.2f}" if eps_est is not None else "N/A"
+        rev_str = f"${rev_est/1e9:.2f}B" if rev_est and rev_est > 1e9 else \
+                  f"${rev_est/1e6:.0f}M" if rev_est and rev_est > 1e6 else "N/A"
+        if eps_act is not None and eps_est:
+            beat = eps_act >= eps_est
+            result = html.Span(f'{"BEAT" if beat else "MISS"} ${eps_act:.2f}',
+                               style={"color": COLORS["green"] if beat else COLORS["red"],
+                                      "fontWeight": "700"})
+        else:
+            result = html.Span("Pending", style={"color": COLORS["text3"]})
+        is_priority = sym in priority
+        rows.append(html.Div([
+            html.Span(sym, style={"color": COLORS["text"], "fontWeight": "700",
+                                  "fontSize": "15px", "fontFamily": FONT_MONO,
+                                  "minWidth": "70px"}),
+            html.Span(timing, style={"color": COLORS["text3"], "fontSize": "12px",
+                                     "minWidth": "70px"}),
+            html.Span([
+                html.Span("EPS Est: ", style={"color": COLORS["text2"], "fontSize": "12px"}),
+                html.Span(eps_str, style={"color": COLORS["text"], "fontSize": "12px",
+                                          "fontWeight": "600"}),
+                html.Span("  |  Rev Est: ", style={"color": COLORS["text2"], "fontSize": "12px"}),
+                html.Span(rev_str, style={"color": COLORS["text"], "fontSize": "12px",
+                                          "fontWeight": "600"}),
+            ], style={"flex": "1"}),
+            result,
+        ], style={
+            "background": COLORS["panel"],
+            "border": f"1px solid {COLORS['blue'] if is_priority else COLORS['border']}",
+            "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "8px",
+            "display": "flex", "alignItems": "center", "gap": "16px"}))
+    return html.Div(rows)
+
+
+# ---------- Insider Trading ----------
+def get_insider_trades():
+    import requests
+    try:
+        key = os.getenv("FINNHUB_API_KEY")
+        symbols = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "SPY", "QQQ", "BND"]
+        all_trades = []
+        for sym in symbols:
+            try:
+                resp = requests.get("https://finnhub.io/api/v1/stock/insider-transactions",
+                                    params={"symbol": sym, "token": key}, timeout=10)
+                for t in resp.json().get("data", [])[:5]:
+                    t["symbol"] = sym
+                    all_trades.append(t)
+            except Exception:
+                continue
+        all_trades.sort(key=lambda x: x.get("filingDate", ""), reverse=True)
+        trades = [t for t in all_trades
+                  if t.get("transactionCode") in ["B", "S", "P"]
+                  and not t.get("isDerivative", False)]
+        return trades[:40]
+    except Exception:
+        return []
+
+
+def insider_tab():
+    trades = get_insider_trades()
+    if not trades:
+        return html.Div("No insider trading data available.", style={"color": COLORS["text2"]})
+    rows = [html.Div("Recent insider transactions. Click any trade for AI analysis.",
+                     style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"})]
+    current_sym = None
+    for i, t in enumerate(trades):
+        sym = t.get("symbol", "")
+        name = t.get("name", "Unknown")
+        shares = t.get("change", 0)
+        price = t.get("transactionPrice", 0)
+        date_str = t.get("transactionDate", "")
+        value = abs(shares * price) if price else 0
+        is_buy = shares > 0
+        color = COLORS["green"] if is_buy else COLORS["red"]
+        action = "BUY" if is_buy else "SELL"
+        arrow = "▲" if is_buy else "▼"
+        val_str = f"${value:,.0f}" if value > 0 else "N/A"
+        price_str = f"${price:.2f}" if price else "N/A"
+        if sym != current_sym:
+            current_sym = sym
+            rows.append(html.Div(sym, style={
+                "color": COLORS["blue"], "fontSize": "13px", "fontWeight": "700",
+                "margin": "16px 0 8px", "paddingBottom": "6px",
+                "borderBottom": f"1px solid {COLORS['border']}"}))
+        rows.append(html.Div([
+            html.Div([
+                html.Span(f"{arrow} {action}", style={"color": color, "fontWeight": "700",
+                                                       "fontSize": "12px", "minWidth": "60px"}),
+                html.Span(name, style={"color": COLORS["text"], "fontSize": "13px", "flex": "1"}),
+                html.Span(f"{abs(shares):,} @ {price_str}", style={"color": COLORS["text2"],
+                                                                     "fontSize": "12px"}),
+                html.Span(val_str, style={"color": color, "fontSize": "12px",
+                                          "fontWeight": "700"}),
+                html.Span(date_str, style={"color": COLORS["text3"], "fontSize": "12px"}),
+            ], style={"display": "flex", "alignItems": "center", "gap": "16px"}),
+            html.Div(id={"type": "insider-insight", "index": i}),
+        ],
+        id={"type": "insider-trade", "index": i},
+        n_clicks=0,
+        style={
+            "background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+            "borderLeft": f"3px solid {color}", "borderRadius": "8px",
+            "padding": "10px 16px", "marginBottom": "6px", "cursor": "pointer"}))
+    return html.Div(rows)
+
+
+# ---------- SEC Filings ----------
+def get_sec_filings():
+    import requests
+    try:
+        key = os.getenv("FINNHUB_API_KEY")
+        symbols = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META"]
+        all_filings = []
+        for sym in symbols:
+            try:
+                resp = requests.get("https://finnhub.io/api/v1/stock/filings",
+                                    params={"symbol": sym, "token": key}, timeout=10)
+                filings = resp.json()
+                if isinstance(filings, list):
+                    for f in filings[:3]:
+                        f["symbol"] = sym
+                        all_filings.append(f)
+            except Exception:
+                continue
+        all_filings.sort(key=lambda x: x.get("filedDate", ""), reverse=True)
+        return all_filings[:30]
+    except Exception:
+        return []
+
+
+def sec_tab():
+    filings = get_sec_filings()
+    if not filings:
+        return html.Div("No SEC filings available.", style={"color": COLORS["text2"]})
+    rows = [html.Div("Latest SEC filings for your watched tickers.",
+                     style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"})]
+    for f in filings:
+        sym = f.get("symbol", "")
+        form = f.get("form", "")
+        filed = f.get("filedDate", "")
+        desc = f.get("description", form)
+        url = f.get("reportUrl") or f.get("filingUrl") or "#"
+        form_color = COLORS["red"] if form in ["8-K", "SC 13G", "SC 13D"] else \
+                     COLORS["blue"] if form in ["10-K", "10-Q"] else COLORS["text2"]
+        rows.append(html.A([
+            html.Span(sym, style={"color": COLORS["text"], "fontWeight": "700",
+                                  "fontSize": "14px", "fontFamily": FONT_MONO,
+                                  "minWidth": "60px"}),
+            html.Span(form, style={"color": form_color, "fontSize": "12px",
+                                   "fontWeight": "700", "background": f"{form_color}22",
+                                   "padding": "2px 10px", "borderRadius": "4px",
+                                   "minWidth": "50px", "textAlign": "center"}),
+            html.Span(desc, style={"color": COLORS["text2"], "fontSize": "13px", "flex": "1"}),
+            html.Span(filed, style={"color": COLORS["text3"], "fontSize": "12px"}),
+        ], href=url, target="_blank", style={
+            "background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+            "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "8px",
+            "display": "flex", "alignItems": "center", "gap": "16px",
+            "textDecoration": "none"}))
+    return html.Div(rows)
+
+
+# ---------- Category tabs (Stocks/ETFs/World) ----------
+sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+
+
+def category_content(category, articles, active_filter="All", summary_text=None):
+    """Render a Stocks/ETFs/World tab with filters, summary, and articles."""
+    if not articles:
+        return html.Div("No articles available right now from any source.",
+                        style={"color": COLORS["text2"]})
+
+    bullish = sum(1 for a in articles if "Bullish" in a["sentiment_label"])
+    bearish = sum(1 for a in articles if "Bearish" in a["sentiment_label"])
+    neutral = len(articles) - bullish - bearish
+
+    def filter_btn(label, count, filter_val, color):
+        active = active_filter == filter_val
+        return html.Div(
+            f"{label}  {count}",
+            id={"type": "cat-filter", "cat": category, "val": filter_val},
+            n_clicks=0,
+            style={
+                "background": COLORS["panel2"] if active else COLORS["panel"],
+                "border": f"1px solid {color if active else COLORS['border2']}",
+                "borderRadius": "8px", "padding": "10px 16px", "flex": "1",
+                "textAlign": "center", "cursor": "pointer",
+                "color": color, "fontWeight": "700", "fontSize": "13px",
+            })
+
+    filters = html.Div([
+        filter_btn("📊 ALL", len(articles), "All", COLORS["text"]),
+        filter_btn("🟢 BULLISH", bullish, "Bullish", COLORS["green"]),
+        filter_btn("🔴 BEARISH", bearish, "Bearish", COLORS["red"]),
+        filter_btn("⚪ NEUTRAL", neutral, "Neutral", COLORS["text2"]),
+    ], style={"display": "flex", "gap": "12px", "marginBottom": "16px"})
+
+    summary_box = html.Div(dcc.Markdown(summary_text), style={
+        "background": "#0d1a13", "border": "1px solid #1a3d2a",
+        "borderLeft": f"3px solid {COLORS['green']}", "borderRadius": "8px",
+        "padding": "16px 20px", "marginBottom": "20px", "color": "#d1d5db",
+    }) if summary_text else html.Div("Generating market summary...",
+                                      style={"color": COLORS["text2"], "marginBottom": "20px"})
+
+    # Filter articles
+    if active_filter == "Bullish":
+        filtered = [a for a in articles if "Bullish" in a["sentiment_label"]]
+    elif active_filter == "Bearish":
+        filtered = [a for a in articles if "Bearish" in a["sentiment_label"]]
+    elif active_filter == "Neutral":
+        filtered = [a for a in articles
+                    if "Bullish" not in a["sentiment_label"]
+                    and "Bearish" not in a["sentiment_label"]]
+    else:
+        filtered = articles
+
+    article_items = []
+    for i, a in enumerate(filtered):
+        s_label = a.get("sentiment_label", "Neutral")
+        s_color = COLORS["green"] if "Bullish" in s_label else \
+                  COLORS["red"] if "Bearish" in s_label else COLORS["text2"]
+        article_items.append(
+            dbc.AccordionItem([
+                html.Div([
+                    html.Span(a.get("source", ""), style={"color": COLORS["text3"],
+                                                           "fontSize": "12px"}),
+                    html.Span(f'  |  {a.get("data_source", "")}  |  ',
+                              style={"color": COLORS["text3"], "fontSize": "12px"}),
+                    html.Span(f'{s_label} ({a.get("sentiment_score", 0)})',
+                              style={"color": s_color, "fontSize": "12px",
+                                     "fontWeight": "600"}),
+                ], style={"marginBottom": "10px"}),
+                html.Div([
+                    html.Img(src=a.get("banner_image", ""), style={
+                        "width": "200px", "borderRadius": "8px", "marginRight": "16px",
+                        "objectFit": "cover",
+                    }) if a.get("banner_image") else None,
+                    html.Div([
+                        html.P(a.get("summary", ""), style={"color": COLORS["text2"],
+                                                             "fontSize": "13px"}),
+                        html.A("Read full article", href=a.get("url", "#"), target="_blank",
+                               style={"color": COLORS["blue"], "fontSize": "13px"}),
+                    ], style={"flex": "1"}),
+                ], style={"display": "flex"}),
+                html.Div(id={"type": "cat-article-insight", "cat": category, "index": i}),
+            ], title=a.get("title", ""), item_id=f"{category}-{i}")
+        )
+
+    accordion = dbc.Accordion(article_items, start_collapsed=True, flush=True,
+                              id={"type": "cat-accordion", "cat": category})
+
+    return html.Div([
+        filters,
+        summary_box,
+        html.Div("Headlines", style={"color": "#cbd5e1", "fontSize": "15px",
+                                      "fontWeight": "600", "margin": "8px 0 4px"}),
+        html.Div("Click an article to expand for full AI analysis.",
+                 style={"color": COLORS["text3"], "fontSize": "12px",
+                        "marginBottom": "16px"}),
+        accordion,
+    ])
+
+
+# ---------- Browse tab ----------
+BROWSE_STOCKS = [
+    "AAPL","MSFT","NVDA","GOOGL","AMZN","META","TSLA","BRK-B","JPM","V",
+    "JNJ","WMT","PG","MA","HD","BAC","XOM","PFE","ABBV","KO",
+    "PEP","AVGO","COST","MRK","CVX","TMO","ABT","CRM","ACN","MCD",
+    "NFLX","ADBE","NKE","DHR","TXN","PM","NEE","ORCL","AMD","QCOM",
+    "LIN","UPS","RTX","HON","AMGN","IBM","GS","CAT","SBUX","GE"
+]
+BROWSE_ETFS = [
+    "SPY","QQQ","VTI","VOO","IWM","DIA","GLD","SLV","TLT","HYG",
+    "VNQ","XLF","XLK","XLE","XLV","XLI","XLY","XLP","XLU","XLB",
+    "ARKK","ARKG","ARKW","VGT","VHT","VFH","VDE","VPU","VIS","VAW",
+    "BND","AGG","LQD","EMB","VCIT","VCSH","BSV","BNDX","MUB","VTEB"
+]
+
+
+def browse_ticker_card(sym, in_watchlist):
+    border = COLORS["blue"] if in_watchlist else COLORS["border"]
+    return html.Div([
+        html.Div(sym, style={"color": COLORS["text"], "fontWeight": "700",
+                             "fontSize": "14px", "fontFamily": FONT_MONO,
+                             "textAlign": "center"}),
+        html.Div("IN WATCHLIST" if in_watchlist else "", style={
+            "color": COLORS["blue"], "fontSize": "9px", "textAlign": "center",
+            "height": "12px"}),
+        html.Div([
+            html.Div("View", id={"type": "browse-view", "index": sym}, n_clicks=0,
+                     style={"flex": "1", "textAlign": "center", "padding": "6px",
+                            "background": COLORS["panel2"], "borderRadius": "6px",
+                            "cursor": "pointer", "color": COLORS["text2"],
+                            "fontSize": "12px"}),
+            html.Div("✕ Remove" if in_watchlist else "+ Add",
+                     id={"type": "browse-toggle", "index": sym}, n_clicks=0,
+                     style={"flex": "1", "textAlign": "center", "padding": "6px",
+                            "background": COLORS["panel2"], "borderRadius": "6px",
+                            "cursor": "pointer",
+                            "color": COLORS["red"] if in_watchlist else COLORS["green"],
+                            "fontSize": "12px"}),
+        ], style={"display": "flex", "gap": "6px", "marginTop": "8px"}),
+    ], style={
+        "background": COLORS["panel"], "border": f"1px solid {border}",
+        "borderRadius": "8px", "padding": "12px 14px",
+    })
+
+
+def browse_tab_content(watchlist_symbols, search=""):
+    search_upper = (search or "").strip().upper()
+
+    def grid(symbols):
+        cards = [browse_ticker_card(s, s in watchlist_symbols) for s in symbols]
+        return html.Div(cards, style={
+            "display": "grid", "gridTemplateColumns": "repeat(5, 1fr)", "gap": "12px"})
+
+    if search_upper:
+        matches = [s for s in BROWSE_STOCKS + BROWSE_ETFS if search_upper in s]
+        if matches:
+            return grid(matches)
+        # Live lookup - try any valid ticker
+        try:
+            ticker_obj = yf.Ticker(search_upper)
+            info = ticker_obj.info
+            # Accept if we get any useful info back
+            has_data = (info.get("regularMarketPrice") or 
+                       info.get("currentPrice") or 
+                       info.get("previousClose") or
+                       info.get("symbol") or
+                       info.get("shortName"))
+            if has_data and info.get("symbol"):
+                name = info.get("longName") or info.get("shortName") or search_upper
+                return html.Div([
+                    html.Div(f"Found: {search_upper} — {name}",
+                             style={"color": COLORS["text"], "marginBottom": "12px",
+                                    "fontWeight": "600"}),
+                    html.Div(browse_ticker_card(search_upper, search_upper in watchlist_symbols),
+                             style={"maxWidth": "220px"}),
+                ])
+        except Exception as e:
+            pass
+        return html.Div(f"No results found for '{search}'. Try the exact ticker symbol (e.g. AAPL, BTC-USD, EURUSD=X)",
+                       style={"color": COLORS["text2"]})
+
+    return html.Div([
+        html.Div("STOCKS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                   "fontWeight": "600", "letterSpacing": "0.5px",
+                                   "margin": "10px 0"}),
+        grid(BROWSE_STOCKS),
+        html.Div("ETFS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                 "fontWeight": "600", "letterSpacing": "0.5px",
+                                 "margin": "20px 0 10px"}),
+        grid(BROWSE_ETFS),
     ])
