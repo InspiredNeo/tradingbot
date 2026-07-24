@@ -86,7 +86,7 @@ def _fetch_alpha_vantage(tickers, limit):
                 "banner_image": a.get("banner_image", ""),
                 "sentiment_label": best_label,
                 "sentiment_score": best_score,
-                "tickers": [t["ticker"] for t in a.get("ticker_sentiment", [])[:4]],
+                "tickers": [t["ticker"] for t in sorted(a.get("ticker_sentiment", []), key=lambda x: float(x.get("relevance_score", 0)), reverse=True)[:4]],
                 "data_source": "Alpha Vantage"
             })
         return articles
