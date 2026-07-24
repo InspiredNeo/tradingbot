@@ -30,7 +30,6 @@ SENTIMENT_COLORS = {
 
 
 # --- Data ---
-@st.cache_data(ttl=CACHE_TTL_SECONDS, show_spinner=False)
 def _score_feed_sentiment(feed):
     """Use Gemini/Groq/Ollama to score sentiment for articles with Neutral placeholder."""
     try:
@@ -62,6 +61,7 @@ def _score_feed_sentiment(feed):
         pass
     return feed
 
+@st.cache_data(ttl=CACHE_TTL_SECONDS, show_spinner=False)
 def fetch_news(limit=50):
     if not ALPHA_VANTAGE_API_KEY:
         return [], "No Alpha Vantage key."
@@ -131,6 +131,62 @@ def fetch_news(limit=50):
     except Exception:
         pass
 
+    # Marketaux fallback
+    try:
+        marketaux_key = os.getenv("MARKETAUX_API_KEY")
+        if marketaux_key:
+            resp = requests.get(
+                "https://api.marketaux.com/v1/news/all",
+                params={"api_token": marketaux_key, "language": "en", "limit": min(limit, 100)},
+                timeout=15,
+            )
+            data = resp.json()
+            raw = data.get("data", [])
+            if raw:
+                feed = []
+                for a in raw[:limit]:
+                    feed.append({
+                        "title": a.get("title", ""),
+                        "summary": a.get("description", ""),
+                        "url": a.get("url", "#"),
+                        "banner_image": a.get("image_url", ""),
+                        "source": a.get("source", ""),
+                        "time_published": _marketaux_time(a.get("published_at", "")),
+                        "overall_sentiment_label": "Neutral",
+                        "overall_sentiment_score": 0,
+                    })
+                return _score_feed_sentiment(feed), "Marketaux"
+    except Exception:
+        pass
+
+    # NewsAPI fallback
+    try:
+        newsapi_key = os.getenv("NEWSAPI_KEY")
+        if newsapi_key:
+            resp = requests.get(
+                "https://newsapi.org/v2/top-headlines",
+                params={"apiKey": newsapi_key, "category": "business", "language": "en", "pageSize": min(limit, 100)},
+                timeout=15,
+            )
+            data = resp.json()
+            raw = data.get("articles", [])
+            if raw:
+                feed = []
+                for a in raw[:limit]:
+                    feed.append({
+                        "title": a.get("title", ""),
+                        "summary": a.get("description", "") or "",
+                        "url": a.get("url", "#"),
+                        "banner_image": a.get("urlToImage", "") or "",
+                        "source": (a.get("source") or {}).get("name", ""),
+                        "time_published": _newsapi_time(a.get("publishedAt", "")),
+                        "overall_sentiment_label": "Neutral",
+                        "overall_sentiment_score": 0,
+                    })
+                return _score_feed_sentiment(feed), "NewsAPI"
+    except Exception:
+        pass
+
     return [], None
 
 
@@ -165,6 +221,22 @@ def get_snapshot():
 def _finnhub_time(unix_ts):
     try:
         return datetime.utcfromtimestamp(int(unix_ts)).strftime("%Y%m%dT%H%M%S")
+    except Exception:
+        return ""
+
+
+def _marketaux_time(iso_str):
+    try:
+        dt = datetime.strptime(iso_str[:19], "%Y-%m-%dT%H:%M:%S")
+        return dt.strftime("%Y%m%dT%H%M%S")
+    except Exception:
+        return ""
+
+
+def _newsapi_time(iso_str):
+    try:
+        dt = datetime.strptime(iso_str[:19], "%Y-%m-%dT%H:%M:%S")
+        return dt.strftime("%Y%m%dT%H%M%S")
     except Exception:
         return ""
 
@@ -431,44 +503,75 @@ def render_insider_trading():
         st.info("No insider trading data available right now.")
         return
 
-    st.markdown('<div style="color:#64748b; font-size:12px; margin-bottom:16px;">Recent insider transactions for your watched tickers. B = Buy · S = Sell · M = Exercise</div>', unsafe_allow_html=True)
+    if "insider_insights" not in st.session_state:
+        st.session_state.insider_insights = {}
 
-    # Filter to only show buys and sells, not derivatives
-    trades = [t for t in trades if t.get("transactionCode") in ["B", "S", "P", "S"] and not t.get("isDerivative", False)]
+    st.markdown('<div style="color:#64748b; font-size:12px; margin-bottom:16px;">Recent insider transactions. Click any trade for AI analysis.</div>', unsafe_allow_html=True)
+
+    trades = [t for t in trades if t.get("transactionCode") in ["B", "S", "P"] and not t.get("isDerivative", False)]
 
     current_sym = None
-    for t in trades:
+    for i, t in enumerate(trades):
         sym = t.get("symbol", "")
-        code = t.get("transactionCode", "")
         name = t.get("name", "Unknown")
         shares = t.get("change", 0)
         price = t.get("transactionPrice", 0)
         date_str = t.get("transactionDate", "")
         value = abs(shares * price) if price else 0
-
         is_buy = shares > 0
         color = "#4ade80" if is_buy else "#f87171"
         action = "BUY" if is_buy else "SELL"
         arrow = "▲" if is_buy else "▼"
+        val_str = f"${value:,.0f}" if value > 0 else "N/A"
+        price_str = f"${price:.2f}" if price else "N/A"
+        trade_key = f"{sym}_{name}_{date_str}_{shares}"
 
         if sym != current_sym:
             current_sym = sym
             st.markdown(f'<div style="color:#4b8bf5; font-size:13px; font-weight:700; margin:16px 0 8px 0; padding-bottom:6px; border-bottom:1px solid #1a2130;">{sym}</div>', unsafe_allow_html=True)
 
-        val_str = f"${value:,.0f}" if value > 0 else "N/A"
-        price_str = f"${price:.2f}" if price else "N/A"
-
-        st.markdown(f"""
+        with st.expander(f"{arrow} {action}  {name}  {val_str}  {date_str}"):
+            st.markdown(f"""
 <div style="background:#0d1219; border:1px solid #1a2130; border-left:3px solid {color};
-border-radius:8px; padding:10px 16px; margin-bottom:6px;
+border-radius:8px; padding:10px 16px; margin-bottom:12px;
 display:flex; align-items:center; gap:16px;">
-    <span style="color:{color}; font-weight:700; font-size:12px; min-width:40px;">{arrow} {action}</span>
+    <span style="color:{color}; font-weight:700; font-size:14px;">{arrow} {action}</span>
     <span style="color:#e2e8f0; font-size:13px; flex:1;">{name}</span>
     <span style="color:#94a3b8; font-size:12px;">{abs(shares):,} shares @ {price_str}</span>
-    <span style="color:{color}; font-size:12px; font-weight:700;">{val_str}</span>
+    <span style="color:{color}; font-size:13px; font-weight:700;">{val_str}</span>
     <span style="color:#64748b; font-size:12px;">{date_str}</span>
 </div>""", unsafe_allow_html=True)
-
+            if trade_key not in st.session_state.insider_insights:
+                with st.spinner("Analyzing trade..."):
+                    from ai_utils import generate_ai_text
+                    prompt = (
+                        f"You are a senior financial analyst specializing in insider trading signals.\n\n"
+                        f"Analyze this insider transaction and explain what it means for investors:\n"
+                        f"- Company: {sym}\n"
+                        f"- Insider: {name}\n"
+                        f"- Action: {action}\n"
+                        f"- Shares: {abs(shares):,}\n"
+                        f"- Price: {price_str}\n"
+                        f"- Total Value: {val_str}\n"
+                        f"- Date: {date_str}\n\n"
+                        f"You are a quantitative analyst at a hedge fund analyzing SEC Form 4 filings as alpha signals.\n\n"
+                        f"Transaction data:\n"
+                        f"- Insider: {name} at {sym}\n"
+                        f"- Action: {action} {abs(shares):,} shares @ {price_str} = {val_str}\n"
+                        f"- Date: {date_str}\n\n"
+                        f"Analyze this as a market signal:\n\n"
+                        f"**SIGNAL TYPE**\n"
+                        f"Classify this: is it a meaningful directional signal (large discretionary buy/sell) or noise (routine 10b5-1 plan, tax withholding, options exercise)? Be specific.\n\n"
+                        f"**MAGNITUDE ANALYSIS**\n"
+                        f"Is the transaction size significant relative to typical insider trades? Does the price suggest conviction?\n\n"
+                        f"**HISTORICAL CONTEXT**\n"
+                        f"Based on academic research (Seyhun 1986, Lakonishok & Lee 2001), what does this type of transaction historically predict for 6-month forward returns?\n\n"
+                        f"**ALPHA SIGNAL RATING**\n"
+                        f"Rate this signal: Strong Buy / Weak Buy / Neutral / Weak Sell / Strong Sell. Justify with specific reasoning."
+                    )
+                    st.session_state.insider_insights[trade_key] = generate_ai_text(prompt)
+            if trade_key in st.session_state.insider_insights:
+                st.markdown(f'<div class="ai-box">{st.session_state.insider_insights[trade_key]}</div>', unsafe_allow_html=True)
 
 @st.cache_data(ttl=3600)
 def get_sec_filings():
