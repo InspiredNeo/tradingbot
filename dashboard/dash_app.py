@@ -19,6 +19,64 @@ sys.path.append(os.path.expanduser("~/tradingbot/engine"))
 sys.path.append(os.path.expanduser("~/tradingbot/dashboard"))
 from data_sources import get_news
 from ai_utils import generate_ai_text
+import dash_pages
+from dash_pages import news_grid, article_detail, ticker_detail_page
+
+# Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
+import requests as _req
+
+_news_cache = {"feed": [], "source": None, "fetched_at": None}
+
+def fetch_news_dash(limit=50):
+    """Same 5-source fallover as news_view.py but with simple time-based cache."""
+    import time
+    now = time.time()
+    if _news_cache["fetched_at"] and now - _news_cache["fetched_at"] < 1800 and _news_cache["feed"]:
+        return _news_cache["feed"], _news_cache["source"]
+
+    av_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+    feed, source = [], None
+
+    # Alpha Vantage
+    try:
+        resp = _req.get("https://www.alphavantage.co/query", params={
+            "function": "NEWS_SENTIMENT", "apikey": av_key,
+            "limit": limit, "sort": "LATEST"}, timeout=15)
+        data = resp.json()
+        if "feed" in data and data["feed"]:
+            feed, source = data["feed"], "Alpha Vantage"
+    except Exception:
+        pass
+
+    # Finnhub fallback
+    if not feed:
+        try:
+            fh_key = os.getenv("FINNHUB_API_KEY")
+            resp = _req.get("https://finnhub.io/api/v1/news",
+                            params={"category": "general", "token": fh_key}, timeout=15)
+            raw = resp.json()
+            if isinstance(raw, list) and raw:
+                for a in raw[:limit]:
+                    feed.append({
+                        "title": a.get("headline", ""),
+                        "summary": a.get("summary", ""),
+                        "url": a.get("url", "#"),
+                        "banner_image": a.get("image", ""),
+                        "source": a.get("source", ""),
+                        "time_published": datetime.utcfromtimestamp(
+                            int(a.get("datetime", 0))).strftime("%Y%m%dT%H%M%S") if a.get("datetime") else "",
+                        "overall_sentiment_label": "Neutral",
+                        "overall_sentiment_score": 0,
+                    })
+                source = "Finnhub"
+        except Exception:
+            pass
+
+    if feed:
+        _news_cache["feed"] = feed
+        _news_cache["source"] = source
+        _news_cache["fetched_at"] = now
+    return feed, source
 
 load_dotenv(os.path.expanduser("~/tradingbot/config/.env"))
 
@@ -214,6 +272,7 @@ app.title = "Market Terminal"
 
 app.layout = html.Div([
     dcc.Store(id="selected-ticker", data=None),
+    dcc.Store(id="selected-article", data=None),
     dcc.Interval(id="refresh-interval", interval=60_000),
     html.Div([
         sidebar(),
@@ -232,18 +291,89 @@ app.layout = html.Div([
 @callback(
     Output("main-content", "children"),
     Input("selected-ticker", "data"),
+    Input("selected-article", "data"),
 )
-def render_main(selected_ticker):
+def render_main(selected_ticker, selected_article_idx):
     if selected_ticker:
-        return html.Div([
-            dbc.Button("← Back", id="back-btn", color="secondary", size="sm", className="mb-3"),
-            html.H3(selected_ticker, style={"color": COLORS["text"]}),
-            html.P("Ticker detail view — chart and ratios coming in next step",
-                   style={"color": COLORS["text2"]}),
-        ])
+        return ticker_detail_page(selected_ticker)
+    if selected_article_idx is not None:
+        feed, _ = fetch_news_dash()
+        with_img = [a for a in feed if a.get("banner_image")]
+        if selected_article_idx < len(with_img):
+            article = with_img[selected_article_idx]
+            url = article.get("url", "")
+            insight = _article_insights.get(url)
+            if insight is None:
+                label = article.get("overall_sentiment_label", "Neutral")
+                prompt = (
+                    f"You are a senior financial analyst. Analyze this news article and provide a deep professional breakdown.\n\n"
+                    f"**KEY TAKEAWAY**\n2-3 sentences on what this article is actually saying.\n\n"
+                    f"**MARKET IMPACT**\nHow does this affect markets, sectors, or specific companies?\n\n"
+                    f"**RISK/OPPORTUNITY**\nWhat risk or opportunity does this signal for investors?\n\n"
+                    f"**BOTTOM LINE**\n1-2 sentences summarizing the key insight.\n\n"
+                    f"Article Title: {article.get('title', '')}\n"
+                    f"Summary: {article.get('summary', '')}\n"
+                    f"Source: {article.get('source', '')}\n"
+                    f"Sentiment: {label}"
+                )
+                insight = generate_ai_text(prompt)
+                _article_insights[url] = insight
+            return article_detail(article, insight)
+    # Default: tabs
     return html.Div([
-        html.P("Main tabs coming in next step", style={"color": COLORS["text2"]}),
+        dbc.Tabs([
+            dbc.Tab(label="📰 News", tab_id="tab-news"),
+            dbc.Tab(label="Stocks", tab_id="tab-stocks"),
+            dbc.Tab(label="ETFs", tab_id="tab-etfs"),
+            dbc.Tab(label="World", tab_id="tab-world"),
+            dbc.Tab(label="Browse", tab_id="tab-browse"),
+        ], id="main-tabs", active_tab="tab-news"),
+        html.Div(id="tab-content", style={"marginTop": "20px"}),
     ])
+
+
+_article_insights = {}
+
+
+@callback(
+    Output("tab-content", "children"),
+    Input("main-tabs", "active_tab"),
+)
+def render_tab(active_tab):
+    if active_tab == "tab-news":
+        feed, source = fetch_news_dash()
+        if not feed:
+            return html.Div("All news sources unavailable. Try again in a few minutes.",
+                            style={"color": COLORS["text2"]})
+        return html.Div([
+            html.Div(f"Source: {source}", style={"color": COLORS["text3"],
+                                                  "fontSize": "12px", "marginBottom": "12px"}),
+            news_grid(feed),
+        ])
+    return html.Div(f"{active_tab} — coming next", style={"color": COLORS["text2"]})
+
+
+@callback(
+    Output("selected-article", "data"),
+    Input({"type": "news-card", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def select_article(n_clicks):
+    if not any(n_clicks):
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if triggered and "index" in triggered:
+        return triggered["index"]
+    return dash.no_update
+
+
+@callback(
+    Output("selected-article", "data", allow_duplicate=True),
+    Input("news-back-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def article_back(n):
+    return None
 
 @callback(
     Output("selected-ticker", "data"),
@@ -260,7 +390,7 @@ def select_ticker(n_clicks):
 
 @callback(
     Output("selected-ticker", "data", allow_duplicate=True),
-    Input("back-btn", "n_clicks"),
+    Input("ticker-back-btn", "n_clicks"),
     prevent_initial_call=True,
 )
 def go_back(n):
