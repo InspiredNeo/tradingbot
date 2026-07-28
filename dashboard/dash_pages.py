@@ -793,3 +793,165 @@ def browse_tab_content(watchlist_symbols, search=""):
                                  "margin": "20px 0 10px"}),
         grid(BROWSE_ETFS),
     ])
+
+
+# ---------- Portfolio ----------
+import json
+
+PORTFOLIO_FILE = os.path.expanduser("~/tradingbot/config/portfolio.json")
+
+
+def load_portfolio():
+    try:
+        if os.path.exists(PORTFOLIO_FILE):
+            with open(PORTFOLIO_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return []  # list of {"symbol": "VTI", "shares": 10, "cost_basis": 250.00}
+
+
+def save_portfolio(holdings):
+    try:
+        with open(PORTFOLIO_FILE, "w") as f:
+            json.dump(holdings, f)
+    except Exception:
+        pass
+
+
+def portfolio_tab():
+    holdings = load_portfolio()
+
+    # Add holding form
+    add_form = html.Div([
+        html.Div("ADD HOLDING", style={"color": COLORS["text3"], "fontSize": "11px",
+                                        "fontWeight": "600", "letterSpacing": "0.5px",
+                                        "marginBottom": "10px"}),
+        html.Div([
+            dbc.Input(id="pf-symbol", placeholder="Ticker (e.g. VTI)",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Input(id="pf-shares", placeholder="Shares", type="number",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Input(id="pf-cost", placeholder="Cost/share", type="number",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Button("Add", id="pf-add-btn", color="primary", size="sm"),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "24px"}),
+    ])
+
+    if not holdings:
+        return html.Div([add_form,
+                         html.Div("No holdings yet. Add your positions above to track them.",
+                                  style={"color": COLORS["text2"]})])
+
+    # Fetch current prices
+    symbols = [h["symbol"] for h in holdings]
+    prices = {}
+    for sym in symbols:
+        try:
+            hist = yf.Ticker(sym).history(period="5d")
+            if not hist.empty:
+                prices[sym] = float(hist["Close"].dropna().iloc[-1])
+            else:
+                prices[sym] = 0
+        except Exception:
+            prices[sym] = 0
+
+    # Calculate totals
+    total_value = 0
+    total_cost = 0
+    rows_data = []
+    for h in holdings:
+        sym = h["symbol"]
+        shares = h.get("shares", 0)
+        cost = h.get("cost_basis", 0)
+        price = prices.get(sym, 0)
+        value = shares * price
+        cost_total = shares * cost
+        gain = value - cost_total
+        gain_pct = (gain / cost_total * 100) if cost_total else 0
+        total_value += value
+        total_cost += cost_total
+        rows_data.append((sym, shares, cost, price, value, gain, gain_pct))
+
+    total_gain = total_value - total_cost
+    total_gain_pct = (total_gain / total_cost * 100) if total_cost else 0
+    gain_color = COLORS["green"] if total_gain >= 0 else COLORS["red"]
+
+    # Summary cards
+    summary = html.Div([
+        html.Div([
+            html.Div("TOTAL VALUE", style={"color": COLORS["text3"], "fontSize": "11px", "fontWeight": "600"}),
+            html.Div(f"${total_value:,.2f}", style={"color": COLORS["text"], "fontSize": "24px",
+                                                     "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "flex": "1"}),
+        html.Div([
+            html.Div("TOTAL COST", style={"color": COLORS["text3"], "fontSize": "11px", "fontWeight": "600"}),
+            html.Div(f"${total_cost:,.2f}", style={"color": COLORS["text"], "fontSize": "24px",
+                                                    "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "flex": "1"}),
+        html.Div([
+            html.Div("TOTAL GAIN/LOSS", style={"color": COLORS["text3"], "fontSize": "11px", "fontWeight": "600"}),
+            html.Div(f"${total_gain:,.2f} ({total_gain_pct:+.2f}%)",
+                     style={"color": gain_color, "fontSize": "24px", "fontWeight": "800",
+                            "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "flex": "1"}),
+    ], style={"display": "flex", "gap": "12px", "marginBottom": "24px"})
+
+    # Allocation pie chart
+    import plotly.graph_objects as go
+    labels = [r[0] for r in rows_data]
+    values = [r[4] for r in rows_data]
+    pie = go.Figure(data=[go.Pie(labels=labels, values=values, hole=0.5,
+                                  marker=dict(colors=["#4b8bf5", "#4ade80", "#f59e0b", "#f87171",
+                                                       "#a78bfa", "#38bdf8", "#fb923c", "#34d399"]))])
+    pie.update_layout(paper_bgcolor=COLORS["panel"], font=dict(color=COLORS["text2"]),
+                      margin=dict(l=0, r=0, t=10, b=10), height=300, showlegend=True)
+    pie_card = html.Div([
+        html.Div("ALLOCATION", style={"color": COLORS["text3"], "fontSize": "11px",
+                                       "fontWeight": "600", "marginBottom": "10px"}),
+        dcc.Graph(figure=pie, config={"displayModeBar": False}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "24px"})
+
+    # Holdings table
+    header = html.Div([
+        html.Span("SYMBOL", style={"flex": "1", "color": COLORS["text3"], "fontSize": "11px"}),
+        html.Span("SHARES", style={"flex": "1", "color": COLORS["text3"], "fontSize": "11px", "textAlign": "right"}),
+        html.Span("COST", style={"flex": "1", "color": COLORS["text3"], "fontSize": "11px", "textAlign": "right"}),
+        html.Span("PRICE", style={"flex": "1", "color": COLORS["text3"], "fontSize": "11px", "textAlign": "right"}),
+        html.Span("VALUE", style={"flex": "1", "color": COLORS["text3"], "fontSize": "11px", "textAlign": "right"}),
+        html.Span("GAIN/LOSS", style={"flex": "1.5", "color": COLORS["text3"], "fontSize": "11px", "textAlign": "right"}),
+        html.Span("", style={"width": "30px"}),
+    ], style={"display": "flex", "padding": "8px 16px", "gap": "8px"})
+
+    table_rows = [header]
+    for sym, shares, cost, price, value, gain, gain_pct in rows_data:
+        g_color = COLORS["green"] if gain >= 0 else COLORS["red"]
+        table_rows.append(html.Div([
+            html.Span(sym, style={"flex": "1", "color": COLORS["text"], "fontWeight": "700",
+                                  "fontFamily": FONT_MONO}),
+            html.Span(f"{shares:g}", style={"flex": "1", "color": COLORS["text2"], "textAlign": "right",
+                                            "fontFamily": FONT_MONO}),
+            html.Span(f"${cost:.2f}", style={"flex": "1", "color": COLORS["text2"], "textAlign": "right",
+                                             "fontFamily": FONT_MONO}),
+            html.Span(f"${price:.2f}", style={"flex": "1", "color": COLORS["text2"], "textAlign": "right",
+                                              "fontFamily": FONT_MONO}),
+            html.Span(f"${value:,.2f}", style={"flex": "1", "color": COLORS["text"], "textAlign": "right",
+                                               "fontFamily": FONT_MONO, "fontWeight": "600"}),
+            html.Span(f"${gain:,.2f} ({gain_pct:+.1f}%)", style={"flex": "1.5", "color": g_color,
+                                                                  "textAlign": "right", "fontFamily": FONT_MONO,
+                                                                  "fontWeight": "700"}),
+            html.Span("✕", id={"type": "pf-remove", "index": sym}, n_clicks=0,
+                      style={"width": "30px", "color": COLORS["text3"], "cursor": "pointer",
+                             "textAlign": "center"}),
+        ], style={"display": "flex", "padding": "12px 16px", "gap": "8px", "alignItems": "center",
+                  "background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "8px", "marginBottom": "6px"}))
+
+    return html.Div([add_form, summary, pie_card, html.Div(table_rows)])

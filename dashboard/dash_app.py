@@ -22,7 +22,8 @@ from ai_utils import generate_ai_text
 import dash_pages
 from dash_pages import (news_grid, article_detail, ticker_detail_page,
     snapshot_bar, sentiment_gauge, earnings_tab, insider_tab, sec_tab, get_insider_trades,
-    category_content, browse_tab_content)
+    category_content, browse_tab_content, portfolio_tab,
+    load_portfolio, save_portfolio)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -405,6 +406,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="ETFs", tab_id="tab-etfs"),
             dbc.Tab(label="World", tab_id="tab-world"),
             dbc.Tab(label="Browse", tab_id="tab-browse"),
+            dbc.Tab(label="💼 Portfolio", tab_id="tab-portfolio"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -443,6 +445,8 @@ def render_tab(active_tab):
         summary = _get_category_summary(category, articles)
         active_filter = _category_filters.get(category, "All")
         return category_content(category, articles, active_filter, summary)
+    if active_tab == "tab-portfolio":
+        return portfolio_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -912,6 +916,43 @@ def snapshot_click(n_clicks):
     if triggered and "sym" in triggered:
         return triggered["sym"]
     return dash.no_update
+
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input("pf-add-btn", "n_clicks"),
+    State("pf-symbol", "value"),
+    State("pf-shares", "value"),
+    State("pf-cost", "value"),
+    prevent_initial_call=True,
+)
+def pf_add(n_clicks, symbol, shares, cost):
+    if not symbol or not shares:
+        return dash.no_update
+    holdings = load_portfolio()
+    sym = symbol.strip().upper()
+    holdings = [h for h in holdings if h["symbol"] != sym]
+    holdings.append({"symbol": sym, "shares": float(shares), "cost_basis": float(cost or 0)})
+    save_portfolio(holdings)
+    return portfolio_tab()
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input({"type": "pf-remove", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def pf_remove(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update
+    sym = triggered["index"]
+    holdings = [h for h in load_portfolio() if h["symbol"] != sym]
+    save_portfolio(holdings)
+    return portfolio_tab()
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
