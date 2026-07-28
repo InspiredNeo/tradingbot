@@ -955,3 +955,494 @@ def portfolio_tab():
                   "borderRadius": "8px", "marginBottom": "6px"}))
 
     return html.Div([add_form, summary, pie_card, html.Div(table_rows)])
+
+
+# ---------- Sector / Geography Breakdown ----------
+SECTOR_LABELS = {
+    "technology": "Technology",
+    "financial_services": "Financial Services",
+    "healthcare": "Healthcare",
+    "consumer_cyclical": "Consumer Cyclical",
+    "consumer_defensive": "Consumer Defensive",
+    "industrials": "Industrials",
+    "communication_services": "Communication Services",
+    "energy": "Energy",
+    "basic_materials": "Basic Materials",
+    "realestate": "Real Estate",
+    "utilities": "Utilities",
+}
+
+PIE_COLORS = ["#4b8bf5", "#4ade80", "#f59e0b", "#f87171", "#a78bfa",
+              "#38bdf8", "#fb923c", "#34d399", "#fbbf24", "#f472b6", "#60a5fa"]
+
+
+def get_holding_sectors(sym):
+    """Return dict of sector -> weight (0-1) for a holding."""
+    try:
+        t = yf.Ticker(sym)
+        # Try ETF sector weightings first
+        try:
+            weights = t.funds_data.sector_weightings
+            if weights:
+                return {SECTOR_LABELS.get(k, k.title()): v for k, v in weights.items()}
+        except Exception:
+            pass
+        # Fall back to single-stock sector
+        sector = t.info.get("sector")
+        if sector:
+            return {sector: 1.0}
+    except Exception:
+        pass
+    return {}
+
+
+def get_holding_country(sym):
+    """Return dict of region -> weight for a holding."""
+    try:
+        t = yf.Ticker(sym)
+        # ETFs: try to infer from name/holdings
+        info = t.info
+        country = info.get("country")
+        if country:
+            return {country: 1.0}
+        # For ETFs without country, guess US vs International from name
+        name = (info.get("longName", "") or "").lower()
+        if any(w in name for w in ["international", "developed", "emerging", "world", "global", "ex-us", "ex us"]):
+            return {"International": 1.0}
+        return {"United States": 1.0}
+    except Exception:
+        pass
+    return {}
+
+
+def breakdown_tab():
+    holdings = load_portfolio()
+    if not holdings:
+        return html.Div("Add holdings in the Portfolio tab first to see your sector and geography exposure.",
+                        style={"color": COLORS["text2"]})
+
+    # Get current values to weight by dollar amount
+    holding_values = {}
+    total_value = 0
+    for h in holdings:
+        sym = h["symbol"]
+        try:
+            hist = yf.Ticker(sym).history(period="5d")
+            price = float(hist["Close"].dropna().iloc[-1]) if not hist.empty else 0
+        except Exception:
+            price = 0
+        val = h.get("shares", 0) * price
+        holding_values[sym] = val
+        total_value += val
+
+    if total_value == 0:
+        return html.Div("Could not fetch prices for your holdings.", style={"color": COLORS["text2"]})
+
+    # Aggregate sectors weighted by dollar value
+    sector_totals = {}
+    for h in holdings:
+        sym = h["symbol"]
+        weight = holding_values[sym] / total_value
+        for sector, sw in get_holding_sectors(sym).items():
+            sector_totals[sector] = sector_totals.get(sector, 0) + sw * weight
+
+    # Aggregate geography
+    geo_totals = {}
+    for h in holdings:
+        sym = h["symbol"]
+        weight = holding_values[sym] / total_value
+        for region, rw in get_holding_country(sym).items():
+            geo_totals[region] = geo_totals.get(region, 0) + rw * weight
+
+    import plotly.graph_objects as go
+
+    def make_pie(data_dict, title):
+        items = sorted(data_dict.items(), key=lambda x: x[1], reverse=True)
+        labels = [k for k, v in items]
+        values = [v * 100 for k, v in items]
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=0.5,
+                                      marker=dict(colors=PIE_COLORS),
+                                      textinfo="label+percent",
+                                      textfont=dict(size=11))])
+        fig.update_layout(paper_bgcolor=COLORS["panel"], font=dict(color=COLORS["text2"]),
+                          margin=dict(l=0, r=0, t=10, b=10), height=380, showlegend=False)
+        return html.Div([
+            html.Div(title, style={"color": COLORS["text3"], "fontSize": "11px",
+                                   "fontWeight": "600", "letterSpacing": "0.5px",
+                                   "marginBottom": "10px"}),
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "flex": "1"})
+
+    # Sector detail bars
+    sector_items = sorted(sector_totals.items(), key=lambda x: x[1], reverse=True)
+    bars = []
+    for i, (sector, weight) in enumerate(sector_items):
+        pct = weight * 100
+        bars.append(html.Div([
+            html.Div([
+                html.Span(sector, style={"color": COLORS["text"], "fontSize": "13px", "fontWeight": "600"}),
+                html.Span(f"{pct:.1f}%", style={"color": COLORS["text2"], "fontSize": "13px",
+                                                "fontFamily": FONT_MONO, "float": "right"}),
+            ]),
+            html.Div(html.Div(style={"width": f"{pct}%", "background": PIE_COLORS[i % len(PIE_COLORS)],
+                                     "height": "6px", "borderRadius": "3px"}),
+                     style={"background": COLORS["border"], "borderRadius": "3px", "height": "6px",
+                            "marginTop": "6px"}),
+        ], style={"marginBottom": "12px"}))
+
+    return html.Div([
+        html.Div([
+            make_pie(sector_totals, "SECTOR EXPOSURE"),
+            make_pie(geo_totals, "GEOGRAPHIC EXPOSURE"),
+        ], style={"display": "flex", "gap": "12px", "marginBottom": "24px"}),
+        html.Div([
+            html.Div("SECTOR DETAIL", style={"color": COLORS["text3"], "fontSize": "11px",
+                                             "fontWeight": "600", "letterSpacing": "0.5px",
+                                             "marginBottom": "16px"}),
+            html.Div(bars),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "20px"}),
+    ])
+
+
+# ---------- Correlation Matrix ----------
+def correlation_tab():
+    holdings = load_portfolio()
+    symbols = [h["symbol"] for h in holdings]
+
+    if len(symbols) < 2:
+        return html.Div("Add at least 2 holdings in the Portfolio tab to see how they correlate.",
+                        style={"color": COLORS["text2"]})
+
+    # Fetch 1 year of daily returns
+    import numpy as np
+    price_data = {}
+    for sym in symbols:
+        try:
+            hist = yf.Ticker(sym).history(period="1y")
+            if not hist.empty:
+                price_data[sym] = hist["Close"]
+        except Exception:
+            continue
+
+    valid_symbols = list(price_data.keys())
+    if len(valid_symbols) < 2:
+        return html.Div("Could not fetch enough price history for correlation.",
+                        style={"color": COLORS["text2"]})
+
+    # Build returns dataframe
+    import pandas as pd
+    df = pd.DataFrame(price_data)
+    returns = df.pct_change().dropna()
+    corr = returns.corr()
+
+    import plotly.graph_objects as go
+    fig = go.Figure(data=go.Heatmap(
+        z=corr.values,
+        x=corr.columns.tolist(),
+        y=corr.index.tolist(),
+        colorscale=[[0, "#0d1219"], [0.5, "#1e3a5f"], [1, "#4b8bf5"]],
+        zmin=-1, zmax=1,
+        text=[[f"{v:.2f}" for v in row] for row in corr.values],
+        texttemplate="%{text}",
+        textfont=dict(size=13, color="#e2e8f0"),
+        showscale=True,
+        colorbar=dict(tickfont=dict(color="#94a3b8")),
+    ))
+    fig.update_layout(
+        paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+        font=dict(color=COLORS["text2"]),
+        margin=dict(l=0, r=0, t=10, b=0), height=450,
+        xaxis=dict(side="bottom"), yaxis=dict(autorange="reversed"),
+    )
+
+    # Find highest correlated pairs (diversification warning)
+    warnings = []
+    for i in range(len(valid_symbols)):
+        for j in range(i + 1, len(valid_symbols)):
+            c = corr.iloc[i, j]
+            if c > 0.85:
+                warnings.append((valid_symbols[i], valid_symbols[j], c))
+    warnings.sort(key=lambda x: x[2], reverse=True)
+
+    warning_cards = []
+    if warnings:
+        warning_cards.append(html.Div("⚠️ HIGHLY CORRELATED PAIRS (low diversification)",
+                                       style={"color": COLORS["amber"], "fontSize": "11px",
+                                              "fontWeight": "600", "letterSpacing": "0.5px",
+                                              "margin": "20px 0 12px"}))
+        for a, b, c in warnings:
+            warning_cards.append(html.Div([
+                html.Span(f"{a} ↔ {b}", style={"color": COLORS["text"], "fontWeight": "600",
+                                               "fontFamily": FONT_MONO}),
+                html.Span(f"{c:.2f} correlation", style={"color": COLORS["amber"],
+                                                         "float": "right", "fontFamily": FONT_MONO}),
+            ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                      "borderLeft": f"3px solid {COLORS['amber']}", "borderRadius": "8px",
+                      "padding": "10px 16px", "marginBottom": "6px"}))
+
+    return html.Div([
+        html.Div("How your holdings move together over the past year. 1.00 = move identically (no diversification benefit), 0 = independent, negative = move opposite (best diversification).",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"}),
+        html.Div([
+            html.Div("CORRELATION MATRIX", style={"color": COLORS["text3"], "fontSize": "11px",
+                                                  "fontWeight": "600", "letterSpacing": "0.5px",
+                                                  "marginBottom": "12px"}),
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "20px", "marginBottom": "12px"}),
+        html.Div(warning_cards),
+    ])
+
+
+# ---------- Treemaps / Market Maps ----------
+MAP_STOCKS = {
+    "Technology": ["AAPL", "MSFT", "NVDA", "AVGO", "ORCL", "CRM", "AMD", "ADBE", "TXN", "QCOM"],
+    "Communication": ["GOOGL", "META", "NFLX", "DIS", "T", "VZ", "TMUS", "CMCSA"],
+    "Consumer": ["AMZN", "TSLA", "HD", "MCD", "NKE", "SBUX", "COST", "WMT", "PG", "KO"],
+    "Financials": ["JPM", "V", "MA", "BAC", "WFC", "GS", "MS", "BLK", "SCHW", "AXP"],
+    "Healthcare": ["UNH", "JNJ", "LLY", "PFE", "MRK", "ABBV", "TMO", "ABT", "DHR", "AMGN"],
+    "Energy": ["XOM", "CVX", "COP", "SLB", "EOG"],
+    "Industrials": ["CAT", "GE", "RTX", "HON", "UPS", "BA", "DE"],
+}
+
+
+def _treemap_data(symbols_flat):
+    """Fetch price changes for a list of symbols."""
+    results = {}
+    try:
+        data = yf.download(symbols_flat, period="2d", progress=False, group_by="ticker")
+        for sym in symbols_flat:
+            try:
+                closes = data[sym]["Close"].dropna()
+                if len(closes) >= 2:
+                    prev, curr = float(closes.iloc[-2]), float(closes.iloc[-1])
+                    pct = ((curr - prev) / prev) * 100
+                    results[sym] = pct
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return results
+
+
+def _make_treemap(labels, parents, values, colors, title=""):
+    import plotly.graph_objects as go
+    fig = go.Figure(go.Treemap(
+        labels=labels,
+        parents=parents,
+        values=values,
+        marker=dict(
+            colors=colors,
+            colorscale=[[0, "#7f1d1d"], [0.25, "#dc2626"], [0.5, "#1f2937"], [0.75, "#16a34a"], [1, "#14532d"]],
+            cmid=0, cmin=-3, cmax=3,
+            line=dict(width=2, color="#080c12"),
+        ),
+        textinfo="label+text",
+        textfont=dict(size=13, color="#ffffff"),
+        tiling=dict(pad=2),
+    ))
+    fig.update_layout(
+        paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0), height=600,
+        font=dict(family=FONT_MONO),
+    )
+    return dcc.Graph(figure=fig, config={"displayModeBar": False})
+
+
+def market_treemap():
+    all_syms = [s for syms in MAP_STOCKS.values() for s in syms]
+    changes = _treemap_data(all_syms)
+    caps = {}
+    try:
+        for sym in all_syms:
+            try:
+                caps[sym] = yf.Ticker(sym).info.get("marketCap", 0) or 0
+            except Exception:
+                caps[sym] = 0
+    except Exception:
+        pass
+
+    labels, parents, values, colors, texts = ["Market"], [""], [0], [0], [""]
+    for sector, syms in MAP_STOCKS.items():
+        labels.append(sector)
+        parents.append("Market")
+        values.append(0)
+        colors.append(0)
+        texts.append("")
+        for sym in syms:
+            if sym in changes and caps.get(sym, 0) > 0:
+                labels.append(sym)
+                parents.append(sector)
+                values.append(caps[sym] / 1e9)
+                colors.append(changes[sym])
+                texts.append(f"{changes[sym]:+.2f}%")
+
+    import plotly.graph_objects as go
+    fig = go.Figure(go.Treemap(
+        labels=labels, parents=parents, values=values,
+        marker=dict(colors=colors,
+                    colorscale=[[0, "#7f1d1d"], [0.25, "#dc2626"], [0.5, "#1f2937"], [0.75, "#16a34a"], [1, "#14532d"]],
+                    cmid=0, cmin=-3, cmax=3, line=dict(width=2, color="#080c12")),
+        text=texts, textinfo="label+text", textposition="middle center",
+        textfont=dict(size=14, color="#ffffff", family=FONT_MONO),
+        tiling=dict(pad=1),
+        hovertemplate="<b>%{label}</b><br>%{text}<extra></extra>",
+    ))
+    fig.update_layout(paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0),
+                      height=680, font=dict(family=FONT_MONO))
+    return dcc.Graph(figure=fig, id="market-treemap-graph", config={"displayModeBar": False})
+
+
+def portfolio_treemap():
+    holdings = load_portfolio()
+    if not holdings:
+        return html.Div("Add holdings in the Portfolio tab first.", style={"color": COLORS["text2"]})
+    syms = [h["symbol"] for h in holdings]
+    changes = _treemap_data(syms)
+    labels, parents, values, colors, texts = ["Portfolio"], [""], [0], [0], [""]
+    for h in holdings:
+        sym = h["symbol"]
+        try:
+            hist = yf.Ticker(sym).history(period="5d")
+            price = float(hist["Close"].dropna().iloc[-1]) if not hist.empty else 0
+        except Exception:
+            price = 0
+        value = h.get("shares", 0) * price
+        if value > 0:
+            labels.append(sym)
+            parents.append("Portfolio")
+            values.append(value)
+            colors.append(changes.get(sym, 0))
+            texts.append(f"${value:,.0f}\n{changes.get(sym, 0):+.2f}%")
+
+    import plotly.graph_objects as go
+    fig = go.Figure(go.Treemap(
+        labels=labels, parents=parents, values=values,
+        marker=dict(colors=colors,
+                    colorscale=[[0, "#7f1d1d"], [0.25, "#dc2626"], [0.5, "#1f2937"], [0.75, "#16a34a"], [1, "#14532d"]],
+                    cmid=0, cmin=-3, cmax=3, line=dict(width=2, color="#080c12")),
+        text=texts, textinfo="label+text",
+        textfont=dict(size=14, color="#ffffff"), tiling=dict(pad=2),
+    ))
+    fig.update_layout(paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0),
+                      height=600, font=dict(family=FONT_MONO))
+    return dcc.Graph(figure=fig, id="portfolio-treemap-graph", config={"displayModeBar": False})
+
+
+def sector_treemap():
+    all_syms = [s for syms in MAP_STOCKS.values() for s in syms]
+    changes = _treemap_data(all_syms)
+    caps = {}
+    for sym in all_syms:
+        try:
+            caps[sym] = yf.Ticker(sym).info.get("marketCap", 0) or 0
+        except Exception:
+            caps[sym] = 0
+
+    # Aggregate by sector - avg change weighted by cap
+    labels, parents, values, colors, texts = ["Sectors"], [""], [0], [0], [""]
+    for sector, syms in MAP_STOCKS.items():
+        total_cap = sum(caps.get(s, 0) for s in syms)
+        if total_cap == 0:
+            continue
+        weighted_change = sum(changes.get(s, 0) * caps.get(s, 0) for s in syms) / total_cap
+        labels.append(sector)
+        parents.append("Sectors")
+        values.append(total_cap / 1e9)
+        colors.append(weighted_change)
+        texts.append(f"{weighted_change:+.2f}%")
+
+    import plotly.graph_objects as go
+    fig = go.Figure(go.Treemap(
+        labels=labels, parents=parents, values=values,
+        marker=dict(colors=colors,
+                    colorscale=[[0, "#7f1d1d"], [0.25, "#dc2626"], [0.5, "#1f2937"], [0.75, "#16a34a"], [1, "#14532d"]],
+                    cmid=0, cmin=-2, cmax=2, line=dict(width=2, color="#080c12")),
+        text=texts, textinfo="label+text",
+        textfont=dict(size=16, color="#ffffff"), tiling=dict(pad=3),
+    ))
+    fig.update_layout(paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0),
+                      height=600, font=dict(family=FONT_MONO))
+    return dcc.Graph(figure=fig, config={"displayModeBar": False})
+
+
+def _color_legend():
+    stops = [("-3%", "#7f1d1d"), ("-1.5%", "#dc2626"), ("0%", "#1f2937"),
+             ("+1.5%", "#16a34a"), ("+3%", "#14532d")]
+    cells = []
+    for label, color in stops:
+        cells.append(html.Div([
+            html.Div(style={"width": "40px", "height": "14px", "background": color,
+                            "borderRadius": "2px"}),
+            html.Div(label, style={"color": COLORS["text3"], "fontSize": "10px",
+                                   "marginTop": "3px", "textAlign": "center",
+                                   "fontFamily": FONT_MONO}),
+        ], style={"display": "flex", "flexDirection": "column", "alignItems": "center"}))
+    return html.Div(cells, style={"display": "flex", "gap": "8px", "justifyContent": "flex-end",
+                                  "marginBottom": "8px"})
+
+
+def market_map_tab():
+    return html.Div([
+        dbc.Tabs([
+            dbc.Tab(label="🌎 Market", tab_id="map-market"),
+            dbc.Tab(label="📊 ETFs", tab_id="map-etfs"),
+            dbc.Tab(label="💼 Portfolio", tab_id="map-portfolio"),
+            dbc.Tab(label="🏢 Sectors", tab_id="map-sectors"),
+        ], id="map-subtabs", active_tab="map-market"),
+        _color_legend(),
+        dcc.Loading(html.Div(id="map-subtab-content", style={"marginTop": "8px"}),
+                    type="circle", color="#4b8bf5"),
+    ])
+
+
+# ---------- ETF Treemap ----------
+MAP_ETFS = {
+    "Broad Market": ["SPY", "QQQ", "VTI", "VOO", "IWM", "DIA"],
+    "Sectors": ["XLF", "XLK", "XLE", "XLV", "XLI", "XLY", "XLP", "XLU", "XLB"],
+    "Tech/Growth": ["VGT", "ARKK", "SMH", "SOXX", "FTEC"],
+    "Bonds": ["BND", "AGG", "TLT", "LQD", "HYG"],
+    "Commodities/Intl": ["GLD", "SLV", "SCHF", "VXUS", "EEM", "VNQ"],
+}
+
+
+def etf_treemap():
+    all_syms = [s for syms in MAP_ETFS.values() for s in syms]
+    changes = _treemap_data(all_syms)
+    caps = {}
+    for sym in all_syms:
+        try:
+            caps[sym] = yf.Ticker(sym).info.get("totalAssets", 0) or yf.Ticker(sym).info.get("marketCap", 1e9) or 1e9
+        except Exception:
+            caps[sym] = 1e9
+
+    labels, parents, values, colors, texts = ["ETFs"], [""], [0], [0], [""]
+    for group, syms in MAP_ETFS.items():
+        labels.append(group)
+        parents.append("ETFs")
+        values.append(0)
+        colors.append(0)
+        texts.append("")
+        for sym in syms:
+            if sym in changes:
+                labels.append(sym)
+                parents.append(group)
+                values.append(caps.get(sym, 1e9) / 1e9)
+                colors.append(changes[sym])
+                texts.append(f"{changes[sym]:+.2f}%")
+
+    import plotly.graph_objects as go
+    fig = go.Figure(go.Treemap(
+        labels=labels, parents=parents, values=values,
+        marker=dict(colors=colors,
+                    colorscale=[[0, "#7f1d1d"], [0.25, "#dc2626"], [0.5, "#1f2937"],
+                                [0.75, "#16a34a"], [1, "#14532d"]],
+                    cmid=0, cmin=-3, cmax=3, line=dict(width=2, color="#080c12")),
+        text=texts, textinfo="label+text", textposition="middle center",
+        textfont=dict(size=14, color="#ffffff", family=FONT_MONO), tiling=dict(pad=1),
+        hovertemplate="<b>%{label}</b><br>%{text}<extra></extra>",
+    ))
+    fig.update_layout(paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0),
+                      height=680, font=dict(family=FONT_MONO))
+    return dcc.Graph(figure=fig, id="etf-treemap-graph", config={"displayModeBar": False})

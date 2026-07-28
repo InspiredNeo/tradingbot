@@ -23,7 +23,8 @@ import dash_pages
 from dash_pages import (news_grid, article_detail, ticker_detail_page,
     snapshot_bar, sentiment_gauge, earnings_tab, insider_tab, sec_tab, get_insider_trades,
     category_content, browse_tab_content, portfolio_tab,
-    load_portfolio, save_portfolio)
+    load_portfolio, save_portfolio, breakdown_tab, correlation_tab,
+    market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -407,6 +408,9 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="World", tab_id="tab-world"),
             dbc.Tab(label="Browse", tab_id="tab-browse"),
             dbc.Tab(label="💼 Portfolio", tab_id="tab-portfolio"),
+            dbc.Tab(label="🧭 Breakdown", tab_id="tab-breakdown"),
+            dbc.Tab(label="🔗 Correlation", tab_id="tab-correlation"),
+            dbc.Tab(label="🗺️ Map", tab_id="tab-map"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -447,6 +451,12 @@ def render_tab(active_tab):
         return category_content(category, articles, active_filter, summary)
     if active_tab == "tab-portfolio":
         return portfolio_tab()
+    if active_tab == "tab-breakdown":
+        return breakdown_tab()
+    if active_tab == "tab-correlation":
+        return correlation_tab()
+    if active_tab == "tab-map":
+        return market_map_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -953,6 +963,69 @@ def pf_remove(n_clicks):
     holdings = [h for h in load_portfolio() if h["symbol"] != sym]
     save_portfolio(holdings)
     return portfolio_tab()
+
+
+
+@callback(
+    Output("map-subtab-content", "children"),
+    Input("map-subtabs", "active_tab"),
+)
+def render_map_subtab(active_subtab):
+    if active_subtab == "map-market":
+        return market_treemap()
+    if active_subtab == "map-etfs":
+        return etf_treemap()
+    if active_subtab == "map-portfolio":
+        return portfolio_treemap()
+    if active_subtab == "map-sectors":
+        return sector_treemap()
+    return html.Div()
+
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input("market-treemap-graph", "clickData"),
+    prevent_initial_call=True,
+)
+def market_map_click(clickData):
+    if not clickData:
+        return dash.no_update
+    label = clickData["points"][0].get("label", "")
+    # Only navigate if it's a ticker (not a sector parent)
+    if label and label not in ["Market", "Technology", "Communication", "Consumer",
+                                "Financials", "Healthcare", "Energy", "Industrials"]:
+        return label
+    return dash.no_update
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input("etf-treemap-graph", "clickData"),
+    prevent_initial_call=True,
+)
+def etf_map_click(clickData):
+    if not clickData:
+        return dash.no_update
+    label = clickData["points"][0].get("label", "")
+    if label and label not in ["ETFs", "Broad Market", "Sectors", "Tech/Growth",
+                                "Bonds", "Commodities/Intl"]:
+        return label
+    return dash.no_update
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input("portfolio-treemap-graph", "clickData"),
+    prevent_initial_call=True,
+)
+def portfolio_map_click(clickData):
+    if not clickData:
+        return dash.no_update
+    label = clickData["points"][0].get("label", "")
+    if label and label != "Portfolio":
+        return label
+    return dash.no_update
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
