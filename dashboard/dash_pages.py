@@ -1446,3 +1446,121 @@ def etf_treemap():
     fig.update_layout(paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0),
                       height=680, font=dict(family=FONT_MONO))
     return dcc.Graph(figure=fig, id="etf-treemap-graph", config={"displayModeBar": False})
+
+
+# ---------- Compare Mode ----------
+def compare_input_row():
+    return html.Div([
+        html.Div("COMPARE TICKERS (up to 4)", style={"color": COLORS["text3"], "fontSize": "11px",
+                                                     "fontWeight": "600", "letterSpacing": "0.5px",
+                                                     "marginBottom": "10px"}),
+        html.Div([
+            dbc.Input(id="compare-input", placeholder="Add ticker (e.g. VTI)",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Button("Add", id="compare-add-btn", color="primary", size="sm"),
+            dbc.Button("Clear All", id="compare-clear-btn", color="secondary", size="sm",
+                       outline=True, className="ms-2"),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "20px"}),
+    ])
+
+
+def compare_results(symbols=None):
+    symbols = symbols or []
+    if not symbols:
+        return html.Div("Add 2-4 tickers above to compare them side by side.",
+                        style={"color": COLORS["text2"]})
+
+    # Chips showing selected tickers
+    chips = html.Div([
+        html.Span([
+            sym,
+            html.Span(" ✕", id={"type": "compare-remove", "index": sym},
+                      n_clicks=0, style={"cursor": "pointer", "marginLeft": "6px",
+                                         "color": COLORS["text3"]}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                  "borderRadius": "6px", "padding": "6px 12px", "marginRight": "8px",
+                  "color": COLORS["text"], "fontFamily": FONT_MONO, "fontSize": "13px"})
+        for sym in symbols
+    ], style={"marginBottom": "20px"})
+
+    # Overlaid normalized price chart (all start at 100 for fair comparison)
+    import plotly.graph_objects as go
+    chart_colors = ["#4b8bf5", "#4ade80", "#f59e0b", "#f87171"]
+    fig = go.Figure()
+    for i, sym in enumerate(symbols):
+        try:
+            hist = yf.Ticker(sym).history(period="1y")
+            if not hist.empty:
+                closes = hist["Close"]
+                normalized = (closes / closes.iloc[0]) * 100
+                fig.add_trace(go.Scatter(x=hist.index, y=normalized, mode="lines",
+                                         name=sym, line=dict(color=chart_colors[i % 4], width=2)))
+        except Exception:
+            continue
+    fig.update_layout(
+        paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+        font=dict(color=COLORS["text2"]),
+        xaxis=dict(gridcolor=COLORS["border"]), yaxis=dict(gridcolor=COLORS["border"], title="Normalized (start=100)"),
+        margin=dict(l=0, r=0, t=10, b=0), height=380, legend=dict(orientation="h"),
+    )
+    chart_card = html.Div([
+        html.Div("1-YEAR PERFORMANCE (normalized to 100)", style={"color": COLORS["text3"],
+                 "fontSize": "11px", "fontWeight": "600", "marginBottom": "10px"}),
+        dcc.Graph(figure=fig, config={"displayModeBar": False}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "20px"})
+
+    # Comparison table of ratios
+    metrics = [
+        ("Price", lambda i: f"${i.get('currentPrice') or i.get('regularMarketPrice', 0) or 0:,.2f}"),
+        ("Market Cap", lambda i: f"${(i.get('marketCap', 0) or 0)/1e9:.1f}B" if i.get('marketCap') else "N/A"),
+        ("P/E Ratio", lambda i: f"{i.get('trailingPE'):.2f}" if i.get('trailingPE') else "N/A"),
+        ("Forward P/E", lambda i: f"{i.get('forwardPE'):.2f}" if i.get('forwardPE') else "N/A"),
+        ("P/B Ratio", lambda i: f"{i.get('priceToBook'):.2f}" if i.get('priceToBook') else "N/A"),
+        ("Profit Margin", lambda i: f"{i.get('profitMargins')*100:.1f}%" if i.get('profitMargins') else "N/A"),
+        ("Rev Growth", lambda i: f"{i.get('revenueGrowth')*100:.1f}%" if i.get('revenueGrowth') else "N/A"),
+        ("Div Yield", lambda i: f"{i.get('dividendYield')*100:.2f}%" if i.get('dividendYield') else "N/A"),
+        ("52W High", lambda i: f"${i.get('fiftyTwoWeekHigh', 0) or 0:,.2f}" if i.get('fiftyTwoWeekHigh') else "N/A"),
+        ("52W Low", lambda i: f"${i.get('fiftyTwoWeekLow', 0) or 0:,.2f}" if i.get('fiftyTwoWeekLow') else "N/A"),
+        ("Beta", lambda i: f"{i.get('beta'):.2f}" if i.get('beta') else "N/A"),
+    ]
+
+    infos = {}
+    for sym in symbols:
+        try:
+            infos[sym] = yf.Ticker(sym).info
+        except Exception:
+            infos[sym] = {}
+
+    # Header row
+    header = html.Div([html.Span("METRIC", style={"flex": "1.5", "color": COLORS["text3"],
+                                                   "fontSize": "11px", "fontWeight": "600"})] +
+                      [html.Span(sym, style={"flex": "1", "color": COLORS["text"], "fontSize": "13px",
+                                             "fontWeight": "700", "textAlign": "right",
+                                             "fontFamily": FONT_MONO}) for sym in symbols],
+                      style={"display": "flex", "padding": "10px 16px", "gap": "12px",
+                             "borderBottom": f"1px solid {COLORS['border']}"})
+
+    metric_rows = [header]
+    for label, fn in metrics:
+        cells = [html.Span(label, style={"flex": "1.5", "color": COLORS["text2"], "fontSize": "13px"})]
+        for sym in symbols:
+            cells.append(html.Span(fn(infos[sym]), style={"flex": "1", "color": COLORS["text"],
+                                                           "fontSize": "13px", "textAlign": "right",
+                                                           "fontFamily": FONT_MONO}))
+        metric_rows.append(html.Div(cells, style={"display": "flex", "padding": "10px 16px",
+                                                   "gap": "12px",
+                                                   "borderBottom": f"1px solid {COLORS['border']}"}))
+
+    table_card = html.Div(metric_rows, style={"background": COLORS["panel"],
+                          "border": f"1px solid {COLORS['border']}", "borderRadius": "10px"})
+
+    return html.Div([chips, chart_card, table_card])
+
+
+def compare_tab(symbols=None):
+    return html.Div([
+        compare_input_row(),
+        html.Div(compare_results(symbols), id="compare-results"),
+    ])

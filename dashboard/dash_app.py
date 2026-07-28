@@ -24,7 +24,8 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     snapshot_bar, sentiment_gauge, earnings_tab, insider_tab, sec_tab, get_insider_trades,
     category_content, browse_tab_content, portfolio_tab,
     load_portfolio, save_portfolio, breakdown_tab, correlation_tab,
-    market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap)
+    market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap,
+    compare_tab, compare_results)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -347,6 +348,7 @@ app.layout = html.Div([
     dcc.Store(id="selected-ticker", data=None),
     dcc.Store(id="selected-article", data=None),
     dcc.Store(id="chart-period", data="1y"),
+    dcc.Store(id="compare-list", data=[]),
     dcc.Interval(id="refresh-interval", interval=60_000),
     html.Div([
         sidebar(),
@@ -411,6 +413,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="🧭 Breakdown", tab_id="tab-breakdown"),
             dbc.Tab(label="🔗 Correlation", tab_id="tab-correlation"),
             dbc.Tab(label="🗺️ Map", tab_id="tab-map"),
+            dbc.Tab(label="⚖️ Compare", tab_id="tab-compare"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -457,6 +460,8 @@ def render_tab(active_tab):
         return correlation_tab()
     if active_tab == "tab-map":
         return market_map_tab()
+    if active_tab == "tab-compare":
+        return compare_tab(_compare_list)
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -473,6 +478,7 @@ def render_tab(active_tab):
 _category_articles = {}
 _category_summaries = {}
 _category_filters = {}
+_compare_list = []
 
 
 def _get_category_articles(category):
@@ -1026,6 +1032,61 @@ def portfolio_map_click(clickData):
     if label and label != "Portfolio":
         return label
     return dash.no_update
+
+
+
+
+@callback(
+    Output("compare-results", "children"),
+    Input("compare-add-btn", "n_clicks"),
+    State("compare-input", "value"),
+    prevent_initial_call=True,
+)
+def compare_add(n_clicks, value):
+    global _compare_list
+    if not value:
+        return dash.no_update
+    sym = value.strip().upper()
+    if sym and sym not in _compare_list and len(_compare_list) < 4:
+        try:
+            info = yf.Ticker(sym).info
+            if info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose"):
+                _compare_list.append(sym)
+        except Exception:
+            pass
+    return compare_results(_compare_list)
+
+
+@callback(
+    Output("compare-results", "children", allow_duplicate=True),
+    Input({"type": "compare-remove", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def compare_remove(n_clicks):
+    global _compare_list
+    if not ctx.triggered:
+        return dash.no_update
+    val = ctx.triggered[0].get("value")
+    if not val or val == 0:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if triggered and "index" in triggered:
+        sym = triggered["index"]
+        if sym in _compare_list:
+            _compare_list.remove(sym)
+        return compare_results(_compare_list)
+    return dash.no_update
+
+
+@callback(
+    Output("compare-results", "children", allow_duplicate=True),
+    Input("compare-clear-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def compare_clear(n_clicks):
+    global _compare_list
+    _compare_list = []
+    return compare_results(_compare_list)
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
