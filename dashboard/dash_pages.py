@@ -3301,3 +3301,207 @@ def options_flow_tab():
         summary,
         html.Div(rows),
     ])
+
+
+# ---------- Short Interest ----------
+def short_interest_tab():
+    import json as _json
+    from datetime import datetime
+
+    wl_file = os.path.expanduser("~/tradingbot/config/watchlist.json")
+    try:
+        wl = _json.load(open(wl_file)) if os.path.exists(wl_file) else []
+    except Exception:
+        wl = []
+
+    default_stocks = [
+        "AAPL","MSFT","NVDA","TSLA","GOOGL","AMZN","META","JPM","V","JNJ",
+        "WMT","PG","MA","HD","BAC","XOM","PFE","ABBV","KO","PEP","AVGO",
+        "COST","MRK","CVX","TMO","ABT","CRM","ACN","MCD","NFLX","ADBE",
+        "NKE","DHR","TXN","PM","NEE","ORCL","AMD","QCOM","LIN","UPS",
+        "RTX","HON","AMGN","IBM","GS","CAT","SBUX","GE","F","GM",
+        "RIVN","LCID","PLTR","SOFI","AMC","GME","BBBY","COIN","HOOD"
+    ]
+    symbols = list(dict.fromkeys(wl + default_stocks))[:50]
+
+    data = []
+    for sym in symbols:
+        try:
+            info = yf.Ticker(sym).info
+            short_pct = info.get("shortPercentOfFloat", 0) or 0
+            short_ratio = info.get("shortRatio", 0) or 0
+            shares_short = info.get("sharesShort", 0) or 0
+            shares_prior = info.get("sharesShortPriorMonth", 0) or 0
+            date_ts = info.get("dateShortInterest", 0)
+            date_str = datetime.fromtimestamp(date_ts).strftime("%Y-%m-%d") if date_ts else "N/A"
+            change = shares_short - shares_prior
+            change_pct = (change / shares_prior * 100) if shares_prior else 0
+
+            if shares_short > 0:
+                data.append({
+                    "symbol": sym,
+                    "short_pct": short_pct * 100 if short_pct < 1 else short_pct,
+                    "short_ratio": short_ratio,
+                    "shares_short": shares_short,
+                    "shares_prior": shares_prior,
+                    "change": change,
+                    "change_pct": change_pct,
+                    "date": date_str,
+                })
+        except Exception:
+            continue
+
+    if not data:
+        return html.Div("No short interest data available.", style={"color": COLORS["text2"]})
+
+    # Sort by short % descending
+    data.sort(key=lambda x: x["short_pct"], reverse=True)
+
+    # Summary
+    most_shorted = data[0]
+    least_shorted = data[-1]
+    avg_short = sum(d["short_pct"] for d in data) / len(data)
+    increasing = sum(1 for d in data if d["change"] > 0)
+
+    summary = html.Div([
+        html.Div([
+            html.Div("MOST SHORTED", style={"color": COLORS["text3"], "fontSize": "10px",
+                                            "fontWeight": "600"}),
+            html.Div(most_shorted["symbol"], style={"color": COLORS["red"], "fontSize": "22px",
+                                                     "fontWeight": "800", "fontFamily": FONT_MONO}),
+            html.Div(f"{most_shorted['short_pct']:.2f}% of float",
+                     style={"color": COLORS["red"], "fontSize": "12px", "fontWeight": "600"}),
+            html.Div(f"{most_shorted['short_ratio']:.1f} days to cover",
+                     style={"color": COLORS["text3"], "fontSize": "11px"}),
+        ], style={"background": COLORS["panel"], "border": f"2px solid {COLORS['red']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("LEAST SHORTED", style={"color": COLORS["text3"], "fontSize": "10px",
+                                             "fontWeight": "600"}),
+            html.Div(least_shorted["symbol"], style={"color": COLORS["green"], "fontSize": "22px",
+                                                      "fontWeight": "800", "fontFamily": FONT_MONO}),
+            html.Div(f"{least_shorted['short_pct']:.2f}% of float",
+                     style={"color": COLORS["green"], "fontSize": "12px", "fontWeight": "600"}),
+            html.Div(f"{least_shorted['short_ratio']:.1f} days to cover",
+                     style={"color": COLORS["text3"], "fontSize": "11px"}),
+        ], style={"background": COLORS["panel"], "border": f"2px solid {COLORS['green']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("AVG SHORT INTEREST", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                  "fontWeight": "600"}),
+            html.Div(f"{avg_short:.2f}%", style={"color": COLORS["amber"], "fontSize": "22px",
+                                                   "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("SHORT INCREASING", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                "fontWeight": "600"}),
+            html.Div(f"{increasing}/{len(data)}",
+                     style={"color": COLORS["red"] if increasing > len(data)/2 else COLORS["green"],
+                            "fontSize": "22px", "fontWeight": "800", "fontFamily": FONT_MONO}),
+            html.Div("vs prior month", style={"color": COLORS["text3"], "fontSize": "11px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+    ], style={"display": "flex", "gap": "12px", "marginBottom": "20px"})
+
+    rows = []
+    for d in data:
+        short_pct = d["short_pct"]
+        change_pct = d["change_pct"]
+        change_color = COLORS["red"] if change_pct > 0 else COLORS["green"]
+        change_arrow = "▲" if change_pct > 0 else "▼"
+
+        # Risk level
+        if short_pct > 20:
+            risk = "🔥 Extreme"
+            risk_color = "#dc2626"
+        elif short_pct > 10:
+            risk = "⚠️ High"
+            risk_color = COLORS["red"]
+        elif short_pct > 5:
+            risk = "⚡ Moderate"
+            risk_color = COLORS["amber"]
+        else:
+            risk = "✅ Low"
+            risk_color = COLORS["green"]
+
+        # Short squeeze potential
+        squeeze = "🚀 High Squeeze Risk" if short_pct > 15 and d["short_ratio"] > 5 else ""
+
+        # Bar showing short % of float
+        bar_width = min(short_pct * 3, 100)  # scale for display
+
+        rows.append(html.Div([
+            html.Div([
+                html.Div([
+                    html.Span(d["symbol"], style={"color": COLORS["text"], "fontWeight": "800",
+                                                   "fontSize": "18px", "fontFamily": FONT_MONO,
+                                                   "marginRight": "12px"}),
+                    html.Span(risk, style={"color": risk_color, "fontSize": "12px",
+                                           "fontWeight": "600", "marginRight": "12px"}),
+                    html.Span(squeeze, style={"color": "#f59e0b", "fontSize": "12px",
+                                              "fontWeight": "700"}) if squeeze else html.Span(),
+                ], style={"flex": "1"}),
+                html.Div(f"As of {d['date']}",
+                         style={"color": COLORS["text3"], "fontSize": "11px"}),
+            ], style={"display": "flex", "alignItems": "center", "marginBottom": "12px"}),
+
+            # Short % bar
+            html.Div([
+                html.Div(f"Short % of Float: {short_pct:.2f}%",
+                         style={"color": COLORS["text2"], "fontSize": "12px",
+                                "marginBottom": "4px"}),
+                html.Div(
+                    html.Div(style={"width": f"{bar_width}%",
+                                    "background": risk_color,
+                                    "height": "8px", "borderRadius": "4px"}),
+                    style={"background": COLORS["border"], "borderRadius": "4px",
+                           "height": "8px", "marginBottom": "12px"}),
+            ]),
+
+            # Stats row
+            html.Div([
+                html.Div([
+                    html.Div("SHARES SHORT", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                    "fontWeight": "600"}),
+                    html.Div(f"{d['shares_short']:,}", style={"color": COLORS["text"],
+                                                               "fontSize": "14px", "fontWeight": "700",
+                                                               "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("PRIOR MONTH", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                   "fontWeight": "600"}),
+                    html.Div(f"{d['shares_prior']:,}", style={"color": COLORS["text2"],
+                                                               "fontSize": "14px",
+                                                               "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("CHANGE", style={"color": COLORS["text3"], "fontSize": "10px",
+                                              "fontWeight": "600"}),
+                    html.Div(f"{change_arrow} {abs(d['change']):,} ({change_pct:+.1f}%)",
+                             style={"color": change_color, "fontSize": "14px",
+                                    "fontWeight": "700", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("DAYS TO COVER", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                     "fontWeight": "600"}),
+                    html.Div(f"{d['short_ratio']:.1f} days",
+                             style={"color": COLORS["amber"] if d["short_ratio"] > 3 else COLORS["text2"],
+                                    "fontSize": "14px", "fontWeight": "700",
+                                    "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+            ], style={"display": "flex", "gap": "12px", "background": COLORS["panel2"],
+                      "borderRadius": "8px", "padding": "12px 16px"}),
+        ], style={"background": COLORS["panel"],
+                  "border": f"1px solid {COLORS['border']}",
+                  "borderLeft": f"3px solid {risk_color}",
+                  "borderRadius": "10px", "padding": "16px 20px",
+                  "marginBottom": "12px"}))
+
+    return html.Div([
+        html.Div("Short interest shows how many shares are being borrowed and sold short. "
+                 "High short % = bearish sentiment. High Days to Cover + High Short % = short squeeze risk.",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"}),
+        summary,
+        html.Div(rows),
+    ])
