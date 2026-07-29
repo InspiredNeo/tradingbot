@@ -26,7 +26,8 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     load_portfolio, save_portfolio, breakdown_tab, correlation_tab,
     market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap,
     compare_tab, compare_results, economic_tab, backtest_tab,
-    alerts_tab, load_alerts, save_alerts, check_alerts)
+    alerts_tab, load_alerts, save_alerts, check_alerts, crypto_tab,
+    bot_control_tab, load_bot_config, save_bot_config)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -420,6 +421,8 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="📈 Economy", tab_id="tab-economy"),
             dbc.Tab(label="⏱️ Backtest", tab_id="tab-backtest"),
             dbc.Tab(label="🔔 Alerts", tab_id="tab-alerts"),
+            dbc.Tab(label="₿ Crypto", tab_id="tab-crypto"),
+            dbc.Tab(label="🤖 Bot", tab_id="tab-bot"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -474,6 +477,10 @@ def render_tab(active_tab):
         return backtest_tab()
     if active_tab == "tab-alerts":
         return alerts_tab()
+    if active_tab == "tab-crypto":
+        return crypto_tab()
+    if active_tab == "tab-bot":
+        return bot_control_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -1285,5 +1292,149 @@ def check_alert_notifications(n):
                   "display": "flex", "alignItems": "center"}))
     return notifications
 
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input({"type": "crypto-card", "sym": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def crypto_card_click(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if triggered and "sym" in triggered:
+        return triggered["sym"]
+    return dash.no_update
+
+
+@callback(
+    Output("selected-ticker", "data", allow_duplicate=True),
+    Input("crypto-treemap-graph", "clickData"),
+    prevent_initial_call=True,
+)
+def crypto_map_click(clickData):
+    if not clickData:
+        return dash.no_update
+    label = clickData["points"][0].get("label", "")
+    crypto_names = list(__import__("dash_pages").CRYPTO_TICKERS.keys())
+    if label in crypto_names:
+        from dash_pages import CRYPTO_TICKERS
+        return CRYPTO_TICKERS.get(label, label)
+    return dash.no_update
+
+
+
+@callback(
+    Output("bot-save-status", "children"),
+    Input("bot-save-btn", "n_clicks"),
+    State("bot-strategy", "value"),
+    State("bot-frequency", "value"),
+    State("bot-drift", "value"),
+    State("bot-maxpos", "value"),
+    prevent_initial_call=True,
+)
+def bot_save_settings(n_clicks, strategy, frequency, drift, maxpos):
+    config = load_bot_config()
+    config["risk_tolerance"] = strategy
+    config["rebalance_frequency"] = frequency
+    config["drift_threshold"] = float(drift or 5)
+    config["max_position_size"] = float(maxpos or 40)
+    save_bot_config(config)
+    return "✓ Configuration saved"
+
+
+@callback(
+    Output("bot-alloc-status", "children"),
+    Input("bot-alloc-btn", "n_clicks"),
+    State("bot-alloc-input", "value"),
+    prevent_initial_call=True,
+)
+def bot_save_allocation(n_clicks, alloc_str):
+    if not alloc_str:
+        return "Enter an allocation first"
+    try:
+        alloc = {}
+        for part in alloc_str.split(","):
+            sym, w = part.strip().split(":")
+            alloc[sym.strip().upper()] = float(w.strip())
+        total = sum(alloc.values())
+        if abs(total - 100) > 1:
+            return f"⚠ Weights sum to {total:.0f}% — must sum to 100%"
+        config = load_bot_config()
+        config["target_allocation"] = alloc
+        save_bot_config(config)
+        return "✓ Allocation saved"
+    except Exception as e:
+        return f"Error: {e}"
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input("bot-start-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def bot_start(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    config = load_bot_config()
+    config["active"] = True
+    save_bot_config(config)
+    return bot_control_tab()
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input("bot-stop-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def bot_stop(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    config = load_bot_config()
+    config["active"] = False
+    save_bot_config(config)
+    return bot_control_tab()
+
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input("bot-phase-next", "n_clicks"),
+    prevent_initial_call=True,
+)
+def phase_next(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    config = load_bot_config()
+    if config.get("phase", 1) < 3:
+        config["phase"] = config.get("phase", 1) + 1
+        if config["phase"] == 2:
+            config["mode"] = "paper"
+            from datetime import datetime
+            config["paper_start_date"] = datetime.now().isoformat()
+        elif config["phase"] == 3:
+            config["mode"] = "live"
+        save_bot_config(config)
+    return bot_control_tab()
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input("bot-phase-back", "n_clicks"),
+    prevent_initial_call=True,
+)
+def phase_back(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    config = load_bot_config()
+    if config.get("phase", 1) > 1:
+        config["phase"] = config.get("phase", 1) - 1
+        config["mode"] = "backtest" if config["phase"] == 1 else "paper"
+        save_bot_config(config)
+    return bot_control_tab()
+
+
+
 if __name__ == "__main__":
-    app.run(debug=True, port=8050)
+    app.run(debug=False, port=8050)

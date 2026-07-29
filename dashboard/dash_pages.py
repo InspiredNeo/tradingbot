@@ -2048,3 +2048,574 @@ def alerts_tab():
                   "display": "flex", "alignItems": "center"}))
 
     return html.Div([form, html.Div(rows, id="alerts-list")])
+
+
+# ---------- Crypto ----------
+CRYPTO_TICKERS = {
+    "Bitcoin": "BTC-USD",
+    "Ethereum": "ETH-USD",
+    "Solana": "SOL-USD",
+    "XRP": "XRP-USD",
+    "BNB": "BNB-USD",
+    "Cardano": "ADA-USD",
+    "Avalanche": "AVAX-USD",
+    "Dogecoin": "DOGE-USD",
+    "Chainlink": "LINK-USD",
+    "Polkadot": "DOT-USD",
+    "Polygon": "MATIC-USD",
+    "Litecoin": "LTC-USD",
+}
+
+
+def get_crypto_prices():
+    symbols = list(CRYPTO_TICKERS.values())
+    results = {}
+    try:
+        data = yf.download(symbols, period="2d", progress=False, group_by="ticker")
+        for name, sym in CRYPTO_TICKERS.items():
+            try:
+                closes = data[sym]["Close"].dropna()
+                if len(closes) >= 2:
+                    prev, curr = float(closes.iloc[-2]), float(closes.iloc[-1])
+                    pct = ((curr - prev) / prev) * 100
+                    results[name] = (sym, curr, pct)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return results
+
+
+def crypto_tab():
+    prices = get_crypto_prices()
+
+    # Price cards
+    cards = []
+    for name, (sym, price, pct) in prices.items():
+        color = COLORS["green"] if pct >= 0 else COLORS["red"]
+        arrow = "▲" if pct >= 0 else "▼"
+        price_str = f"${price:,.2f}" if price > 1 else f"${price:.4f}"
+        cards.append(html.Div([
+            html.Div(name, style={"color": COLORS["text3"], "fontSize": "10px",
+                                  "fontWeight": "600", "letterSpacing": "0.5px"}),
+            html.Div(price_str, style={"color": COLORS["text"], "fontSize": "16px",
+                                       "fontWeight": "700", "fontFamily": FONT_MONO,
+                                       "margin": "4px 0 2px"}),
+            html.Div(f"{arrow} {pct:+.2f}%", style={"color": color, "fontSize": "12px",
+                                                     "fontWeight": "700"}),
+        ],
+        id={"type": "crypto-card", "sym": sym},
+        n_clicks=0,
+        style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+               "borderRadius": "10px", "padding": "14px 16px", "cursor": "pointer",
+               "transition": "border-color .15s ease"}))
+
+    cards_grid = html.Div(cards, style={"display": "grid",
+                                         "gridTemplateColumns": "repeat(4, 1fr)",
+                                         "gap": "10px", "marginBottom": "20px"})
+
+    # Treemap
+    import plotly.graph_objects as go
+    labels, parents, values, colors, texts = ["Crypto"], [""], [0], [0], [""]
+    for name, (sym, price, pct) in prices.items():
+        try:
+            market_cap = yf.Ticker(sym).info.get("marketCap", 0) or 1e9
+        except Exception:
+            market_cap = 1e9
+        labels.append(name)
+        parents.append("Crypto")
+        values.append(market_cap / 1e9)
+        colors.append(pct)
+        texts.append(f"{pct:+.2f}%")
+
+    fig = go.Figure(go.Treemap(
+        labels=labels, parents=parents, values=values,
+        marker=dict(colors=colors,
+                    colorscale=[[0, "#7f1d1d"], [0.25, "#dc2626"], [0.5, "#1f2937"],
+                                [0.75, "#16a34a"], [1, "#14532d"]],
+                    cmid=0, cmin=-5, cmax=5, line=dict(width=2, color="#080c12")),
+        text=texts, textinfo="label+text", textposition="middle center",
+        textfont=dict(size=14, color="#ffffff", family=FONT_MONO), tiling=dict(pad=1),
+        hovertemplate="<b>%{label}</b><br>%{text}<extra></extra>",
+    ))
+    fig.update_layout(paper_bgcolor=COLORS["bg"], margin=dict(l=0, r=0, t=0, b=0),
+                      height=400, font=dict(family=FONT_MONO))
+
+    treemap_card = html.Div([
+        html.Div("CRYPTO MARKET MAP", style={"color": COLORS["text3"], "fontSize": "11px",
+                                             "fontWeight": "600", "marginBottom": "10px"}),
+        dcc.Graph(figure=fig, id="crypto-treemap-graph", config={"displayModeBar": False}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "16px 20px"})
+
+    return html.Div([cards_grid, treemap_card])
+
+
+# ---------- Bot Control Panel ----------
+BOT_CONFIG_FILE = os.path.expanduser("~/tradingbot/config/bot_config.json")
+BOT_STATUS_FILE = os.path.expanduser("~/tradingbot/config/bot_status.json")
+BOT_LOG_FILE = os.path.expanduser("~/tradingbot/config/bot_log.json")
+
+
+def load_bot_config():
+    try:
+        if os.path.exists(BOT_CONFIG_FILE):
+            with open(BOT_CONFIG_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {"active": False, "strategy": "moderate", "rebalance_frequency": "weekly",
+            "drift_threshold": 5.0, "max_position_size": 40.0,
+            "target_allocation": {}, "universe": [], "schwab_connected": False}
+
+
+def save_bot_config(config):
+    from datetime import datetime
+    config["last_updated"] = datetime.now().isoformat()
+    try:
+        with open(BOT_CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=2)
+    except Exception:
+        pass
+
+
+def load_bot_log():
+    try:
+        if os.path.exists(BOT_LOG_FILE):
+            with open(BOT_LOG_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return []
+
+
+def bot_control_tab():
+    config = load_bot_config()
+    status = {}
+    try:
+        if os.path.exists(BOT_STATUS_FILE):
+            with open(BOT_STATUS_FILE) as f:
+                status = json.load(f)
+    except Exception:
+        pass
+
+    is_active = config.get("active", False)
+    is_connected = config.get("schwab_connected", False)
+    status_color = COLORS["green"] if is_active else COLORS["red"]
+    schwab_color = COLORS["green"] if is_connected else COLORS["text3"]
+
+    # ---- Phase Indicator ----
+    mode = config.get("mode", "paper")
+    phase = config.get("phase", 1)
+    paper_value = config.get("paper_value", 100000)
+    paper_budget = config.get("paper_budget", 100000)
+    paper_pnl = paper_value - paper_budget
+    paper_pnl_pct = (paper_pnl / paper_budget * 100) if paper_budget else 0
+
+    PHASES = [
+        ("1", "Historical Backtesting", "Validate each model against historical data to find what works in which market regime.", "#4b8bf5"),
+        ("2", "Paper Trading", "Run live with fake money. Real prices, real decisions, simulated trades. Validate before risking real capital.", "#f59e0b"),
+        ("3", "Live Trading", "Real money via Schwab API. Only activated after paper trading proves the strategy.", "#4ade80"),
+    ]
+
+    phase_indicators = []
+    for num, title, desc, color in PHASES:
+        is_current = str(phase) == num
+        phase_indicators.append(html.Div([
+            html.Div(num, style={"width": "32px", "height": "32px", "borderRadius": "50%",
+                                 "background": color if is_current else COLORS["panel2"],
+                                 "color": "#fff" if is_current else COLORS["text3"],
+                                 "display": "flex", "alignItems": "center", "justifyContent": "center",
+                                 "fontWeight": "800", "fontSize": "14px", "marginBottom": "8px"}),
+            html.Div(title, style={"color": color if is_current else COLORS["text2"],
+                                   "fontWeight": "700" if is_current else "400",
+                                   "fontSize": "13px", "marginBottom": "4px"}),
+            html.Div(desc, style={"color": COLORS["text3"], "fontSize": "11px", "lineHeight": "1.5"}),
+        ], style={"flex": "1", "padding": "16px",
+                  "background": COLORS["panel2"] if is_current else COLORS["panel"],
+                  "border": f"1px solid {color if is_current else COLORS['border']}",
+                  "borderRadius": "8px", "marginRight": "12px" if num != "3" else "0",
+                  "opacity": "1" if is_current else "0.6"}))
+
+    phase_card = html.Div([
+        html.Div("TRADING PHASE", style={"color": COLORS["text3"], "fontSize": "11px",
+                                         "fontWeight": "600", "letterSpacing": "0.5px",
+                                         "marginBottom": "16px"}),
+        html.Div(phase_indicators, style={"display": "flex", "marginBottom": "16px"}),
+        html.Div([
+            dbc.Button("◀ Previous Phase", id="bot-phase-back", color="secondary",
+                       size="sm", outline=True, className="me-2", disabled=(phase <= 1)),
+            dbc.Button("Next Phase ▶", id="bot-phase-next", color="primary",
+                       size="sm", disabled=(phase >= 3 or (phase == 2 and paper_pnl_pct < 5))),
+            html.Span(
+                f"  Complete Phase 2 with +5% paper returns to unlock Live Trading" if phase == 2 and paper_pnl_pct < 5 else "",
+                style={"color": COLORS["text3"], "fontSize": "11px", "marginLeft": "12px"}
+            ),
+        ]),
+        # Paper trading P&L if in phase 2
+        html.Div([
+            html.Hr(style={"borderColor": COLORS["border"]}),
+            html.Div("PAPER TRADING PERFORMANCE", style={"color": COLORS["text3"],
+                     "fontSize": "11px", "fontWeight": "600", "marginBottom": "12px"}),
+            html.Div([
+                html.Div([
+                    html.Div("Paper Portfolio Value", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div(f"${paper_value:,.2f}", style={"color": COLORS["text"], "fontSize": "20px",
+                                                             "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("Starting Budget", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div(f"${paper_budget:,.2f}", style={"color": COLORS["text2"], "fontSize": "20px",
+                                                              "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("Paper P&L", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div(f"${paper_pnl:+,.2f} ({paper_pnl_pct:+.2f}%)",
+                             style={"color": COLORS["green"] if paper_pnl >= 0 else COLORS["red"],
+                                    "fontSize": "20px", "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("Target to Unlock Live", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div("+5.00%", style={"color": COLORS["amber"], "fontSize": "20px",
+                                              "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+            ], style={"display": "flex", "gap": "12px"}),
+        ]) if phase == 2 else html.Div(),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    # ---- Phase Indicator ----
+    mode = config.get("mode", "paper")
+    phase = config.get("phase", 1)
+    paper_value = config.get("paper_value", 100000)
+    paper_budget = config.get("paper_budget", 100000)
+    paper_pnl = paper_value - paper_budget
+    paper_pnl_pct = (paper_pnl / paper_budget * 100) if paper_budget else 0
+
+    PHASES = [
+        ("1", "Historical Backtesting", "Validate each model against historical data to find what works in which market regime.", "#4b8bf5"),
+        ("2", "Paper Trading", "Run live with fake money. Real prices, real decisions, simulated trades. Validate before risking real capital.", "#f59e0b"),
+        ("3", "Live Trading", "Real money via Schwab API. Only activated after paper trading proves the strategy.", "#4ade80"),
+    ]
+
+    phase_indicators = []
+    for num, title, desc, color in PHASES:
+        is_current = str(phase) == num
+        phase_indicators.append(html.Div([
+            html.Div(num, style={"width": "32px", "height": "32px", "borderRadius": "50%",
+                                 "background": color if is_current else COLORS["panel2"],
+                                 "color": "#fff" if is_current else COLORS["text3"],
+                                 "display": "flex", "alignItems": "center", "justifyContent": "center",
+                                 "fontWeight": "800", "fontSize": "14px", "marginBottom": "8px"}),
+            html.Div(title, style={"color": color if is_current else COLORS["text2"],
+                                   "fontWeight": "700" if is_current else "400",
+                                   "fontSize": "13px", "marginBottom": "4px"}),
+            html.Div(desc, style={"color": COLORS["text3"], "fontSize": "11px", "lineHeight": "1.5"}),
+        ], style={"flex": "1", "padding": "16px",
+                  "background": COLORS["panel2"] if is_current else COLORS["panel"],
+                  "border": f"1px solid {color if is_current else COLORS['border']}",
+                  "borderRadius": "8px", "marginRight": "12px" if num != "3" else "0",
+                  "opacity": "1" if is_current else "0.6"}))
+
+    phase_card = html.Div([
+        html.Div("TRADING PHASE", style={"color": COLORS["text3"], "fontSize": "11px",
+                                         "fontWeight": "600", "letterSpacing": "0.5px",
+                                         "marginBottom": "16px"}),
+        html.Div(phase_indicators, style={"display": "flex", "marginBottom": "16px"}),
+        html.Div([
+            dbc.Button("◀ Previous Phase", id="bot-phase-back", color="secondary",
+                       size="sm", outline=True, className="me-2", disabled=(phase <= 1)),
+            dbc.Button("Next Phase ▶", id="bot-phase-next", color="primary",
+                       size="sm", disabled=(phase >= 3 or (phase == 2 and paper_pnl_pct < 5))),
+            html.Span(
+                f"  Complete Phase 2 with +5% paper returns to unlock Live Trading" if phase == 2 and paper_pnl_pct < 5 else "",
+                style={"color": COLORS["text3"], "fontSize": "11px", "marginLeft": "12px"}
+            ),
+        ]),
+        # Paper trading P&L if in phase 2
+        html.Div([
+            html.Hr(style={"borderColor": COLORS["border"]}),
+            html.Div("PAPER TRADING PERFORMANCE", style={"color": COLORS["text3"],
+                     "fontSize": "11px", "fontWeight": "600", "marginBottom": "12px"}),
+            html.Div([
+                html.Div([
+                    html.Div("Paper Portfolio Value", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div(f"${paper_value:,.2f}", style={"color": COLORS["text"], "fontSize": "20px",
+                                                             "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("Starting Budget", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div(f"${paper_budget:,.2f}", style={"color": COLORS["text2"], "fontSize": "20px",
+                                                              "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("Paper P&L", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div(f"${paper_pnl:+,.2f} ({paper_pnl_pct:+.2f}%)",
+                             style={"color": COLORS["green"] if paper_pnl >= 0 else COLORS["red"],
+                                    "fontSize": "20px", "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("Target to Unlock Live", style={"color": COLORS["text3"], "fontSize": "11px"}),
+                    html.Div("+5.00%", style={"color": COLORS["amber"], "fontSize": "20px",
+                                              "fontWeight": "800", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+            ], style={"display": "flex", "gap": "12px"}),
+        ]) if phase == 2 else html.Div(),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    # ---- Status Header ----
+    header = html.Div([
+        html.Div([
+            html.Div([
+                html.Div("● RUNNING" if is_active else "● STOPPED",
+                         style={"color": status_color, "fontSize": "20px", "fontWeight": "800"}),
+                html.Div("● Schwab Connected" if is_connected else "● Schwab Not Connected",
+                         style={"color": schwab_color, "fontSize": "12px", "marginTop": "4px"}),
+                html.Div(f"Last rebalance: {status.get('last_rebalance', 'Never')}",
+                         style={"color": COLORS["text3"], "fontSize": "12px", "marginTop": "4px"}),
+                html.Div(f"Next rebalance: {status.get('next_rebalance', 'N/A')}",
+                         style={"color": COLORS["text3"], "fontSize": "12px"}),
+            ], style={"flex": "1"}),
+            html.Div([
+                dbc.Button("▶ START", id="bot-start-btn", color="success",
+                           size="lg", className="me-3", disabled=is_active),
+                dbc.Button("■ STOP", id="bot-stop-btn", color="danger",
+                           size="lg", disabled=not is_active),
+            ]),
+        ], style={"display": "flex", "alignItems": "center"}),
+    ], style={"background": COLORS["panel"], "border": f"2px solid {status_color}",
+              "borderRadius": "12px", "padding": "24px", "marginBottom": "20px"})
+
+    # ---- Market Regime ----
+    regime = config.get("market_regime") or status.get("market_regime", "Unknown")
+    active_model = config.get("active_model") or status.get("active_model", "Waiting...")
+    confidence = config.get("model_confidence") or status.get("model_confidence")
+
+    REGIME_COLORS = {
+        "bull": COLORS["green"], "recovery": "#86efac",
+        "bear": COLORS["red"], "crisis": "#dc2626",
+        "volatile": COLORS["amber"], "stable": COLORS["blue"],
+        "trending": "#38bdf8", "uncertain": COLORS["text3"],
+        "Unknown": COLORS["text3"], "Waiting...": COLORS["text3"],
+    }
+    regime_color = REGIME_COLORS.get(regime, COLORS["text3"])
+
+    MODEL_INFO = {
+        "black_litterman_mcmc": ("Black-Litterman + MCMC", "#4b8bf5",
+                                 "Bayesian portfolio optimization combining market equilibrium priors with AI sentiment views. Best in normal/bull markets."),
+        "mean_variance": ("Mean-Variance (Markowitz)", "#4ade80",
+                         "Classic modern portfolio theory. Maximizes return for given risk level. Best in stable, low-volatility regimes."),
+        "risk_parity": ("Risk Parity", "#f59e0b",
+                       "Equal risk contribution from each asset. Protects against concentration risk. Best in volatile or uncertain markets."),
+        "momentum": ("Momentum", "#38bdf8",
+                    "Trend-following strategy. Overweights recent winners. Best in strong trending bull or bear markets."),
+        "minimum_variance": ("Minimum Variance", "#a78bfa",
+                            "Pure risk minimization. Finds lowest-volatility portfolio. Best in crisis or high-correlation regimes."),
+        "equal_weight": ("Equal Weight", "#94a3b8",
+                        "Simple equal allocation across all assets. Fallback when no model has high confidence."),
+        "Waiting...": ("Waiting for engine...", COLORS["text3"], "Engine not yet started."),
+    }
+    model_name, model_color, model_desc = MODEL_INFO.get(active_model,
+        ("Unknown", COLORS["text3"], ""))
+
+    regime_card = html.Div([
+        html.Div("MARKET INTELLIGENCE", style={"color": COLORS["text3"], "fontSize": "11px",
+                                               "fontWeight": "600", "letterSpacing": "0.5px",
+                                               "marginBottom": "16px"}),
+        html.Div([
+            # Regime
+            html.Div([
+                html.Div("DETECTED REGIME", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                   "fontWeight": "600", "letterSpacing": "0.5px"}),
+                html.Div(regime.upper(), style={"color": regime_color, "fontSize": "22px",
+                                                "fontWeight": "800", "fontFamily": FONT_MONO,
+                                                "margin": "6px 0"}),
+                html.Div("Market environment classification based on VIX, yield curve, momentum and correlation signals.",
+                         style={"color": COLORS["text3"], "fontSize": "11px", "lineHeight": "1.5"}),
+            ], style={"flex": "1", "padding": "16px", "background": COLORS["panel2"],
+                      "borderRadius": "8px", "borderLeft": f"3px solid {regime_color}",
+                      "marginRight": "12px"}),
+            # Active model
+            html.Div([
+                html.Div("ACTIVE MODEL", style={"color": COLORS["text3"], "fontSize": "10px",
+                                               "fontWeight": "600", "letterSpacing": "0.5px"}),
+                html.Div(model_name, style={"color": model_color, "fontSize": "16px",
+                                            "fontWeight": "800", "margin": "6px 0",
+                                            "lineHeight": "1.2"}),
+                html.Div(model_desc, style={"color": COLORS["text3"], "fontSize": "11px",
+                                            "lineHeight": "1.5"}),
+            ], style={"flex": "2", "padding": "16px", "background": COLORS["panel2"],
+                      "borderRadius": "8px", "borderLeft": f"3px solid {model_color}",
+                      "marginRight": "12px"}),
+            # Confidence
+            html.Div([
+                html.Div("MODEL CONFIDENCE", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                   "fontWeight": "600", "letterSpacing": "0.5px"}),
+                html.Div(f"{confidence:.0f}%" if confidence else "N/A",
+                         style={"color": COLORS["blue"] if confidence and confidence > 70
+                                else COLORS["amber"] if confidence else COLORS["text3"],
+                                "fontSize": "28px", "fontWeight": "800",
+                                "fontFamily": FONT_MONO, "margin": "6px 0"}),
+                html.Div("MCMC posterior confidence in current allocation.",
+                         style={"color": COLORS["text3"], "fontSize": "11px"}),
+            ], style={"flex": "1", "padding": "16px", "background": COLORS["panel2"],
+                      "borderRadius": "8px"}),
+        ], style={"display": "flex"}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    # ---- Model Roster ----
+    models_config = config.get("models", {})
+    model_rows = []
+    for model_id, info in MODEL_INFO.items():
+        if model_id == "Waiting...":
+            continue
+        mname, mcolor, mdesc = info
+        enabled = models_config.get(model_id, {}).get("enabled", True)
+        regimes = models_config.get(model_id, {}).get("regimes", [])
+        is_active_model = model_id == active_model
+        model_rows.append(html.Div([
+            html.Div([
+                html.Div(mname, style={"color": mcolor if is_active_model else COLORS["text"],
+                                       "fontWeight": "700", "fontSize": "13px"}),
+                html.Div(f"Active in: {', '.join(regimes)}",
+                         style={"color": COLORS["text3"], "fontSize": "11px", "marginTop": "2px"}),
+            ], style={"flex": "1"}),
+            html.Div("● ACTIVE" if is_active_model else "",
+                     style={"color": mcolor, "fontSize": "11px", "fontWeight": "700",
+                            "marginRight": "16px"}),
+            dbc.Switch(id={"type": "model-toggle", "index": model_id},
+                       value=enabled, className="ms-2"),
+        ], style={"display": "flex", "alignItems": "center", "padding": "12px 16px",
+                  "background": COLORS["panel2"] if is_active_model else COLORS["panel"],
+                  "border": f"1px solid {mcolor if is_active_model else COLORS['border']}",
+                  "borderRadius": "8px", "marginBottom": "6px"}))
+
+    models_card = html.Div([
+        html.Div("STRATEGY ENGINE — MODEL ROSTER", style={"color": COLORS["text3"],
+                 "fontSize": "11px", "fontWeight": "600", "letterSpacing": "0.5px",
+                 "marginBottom": "4px"}),
+        html.Div("The bot autonomously selects the best model for current market conditions. Toggle models on/off to include/exclude them from the selection pool.",
+                 style={"color": COLORS["text3"], "fontSize": "11px", "marginBottom": "16px"}),
+        html.Div(model_rows),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    # ---- Basic Config ----
+    settings_card = html.Div([
+        html.Div("INVESTMENT PARAMETERS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                                 "fontWeight": "600", "letterSpacing": "0.5px",
+                                                 "marginBottom": "16px"}),
+        html.Div([
+            html.Div([
+                html.Div("Budget ($)", style={"color": COLORS["text2"], "fontSize": "13px",
+                                              "marginBottom": "6px"}),
+                dbc.Input(id="bot-budget", type="number", value=config.get("budget", 10000),
+                          min=100, step=100,
+                          style={"background": COLORS["panel2"],
+                                 "border": f"1px solid {COLORS['border2']}",
+                                 "color": COLORS["text"]}),
+            ], style={"flex": "1", "marginRight": "16px"}),
+            html.Div([
+                html.Div("Risk Tolerance", style={"color": COLORS["text2"], "fontSize": "13px",
+                                                  "marginBottom": "6px"}),
+                dbc.Select(id="bot-strategy",
+                           options=[{"label": "Conservative", "value": "conservative"},
+                                    {"label": "Moderate", "value": "moderate"},
+                                    {"label": "Aggressive", "value": "aggressive"}],
+                           value=config.get("risk_tolerance", "moderate"),
+                           style={"background": COLORS["panel2"],
+                                  "border": f"1px solid {COLORS['border2']}",
+                                  "color": COLORS["text"]}),
+            ], style={"flex": "1", "marginRight": "16px"}),
+            html.Div([
+                html.Div("Rebalance Frequency", style={"color": COLORS["text2"], "fontSize": "13px",
+                                                       "marginBottom": "6px"}),
+                dbc.Select(id="bot-frequency",
+                           options=[{"label": "Daily", "value": "daily"},
+                                    {"label": "Weekly", "value": "weekly"},
+                                    {"label": "Monthly", "value": "monthly"},
+                                    {"label": "Quarterly", "value": "quarterly"}],
+                           value=config.get("rebalance_frequency", "weekly"),
+                           style={"background": COLORS["panel2"],
+                                  "border": f"1px solid {COLORS['border2']}",
+                                  "color": COLORS["text"]}),
+            ], style={"flex": "1", "marginRight": "16px"}),
+            html.Div([
+                html.Div("Drift Threshold (%)", style={"color": COLORS["text2"], "fontSize": "13px",
+                                                       "marginBottom": "6px"}),
+                dbc.Input(id="bot-drift", type="number", value=config.get("drift_threshold", 5.0),
+                          min=1, max=20, step=0.5,
+                          style={"background": COLORS["panel2"],
+                                 "border": f"1px solid {COLORS['border2']}",
+                                 "color": COLORS["text"]}),
+            ], style={"flex": "1"}),
+        ], style={"display": "flex", "marginBottom": "16px"}),
+        dbc.Button("Save Parameters", id="bot-save-btn", color="primary", size="sm"),
+        html.Div(id="bot-save-status", style={"color": COLORS["green"], "fontSize": "12px",
+                                               "marginTop": "8px"}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    # ---- Current Allocation ----
+    current_alloc = config.get("current_allocation", {})
+    alloc_card = html.Div([
+        html.Div("CURRENT ALLOCATION", style={"color": COLORS["text3"], "fontSize": "11px",
+                                              "fontWeight": "600", "letterSpacing": "0.5px",
+                                              "marginBottom": "12px"}),
+        html.Div([
+            html.Div([
+                html.Span(sym, style={"color": COLORS["text"], "fontWeight": "700",
+                                      "fontFamily": FONT_MONO, "minWidth": "80px"}),
+                html.Div(html.Div(style={"width": f"{w}%", "background": COLORS["blue"],
+                                         "height": "6px", "borderRadius": "3px"}),
+                         style={"flex": "1", "background": COLORS["border"],
+                                "borderRadius": "3px", "height": "6px", "margin": "0 16px"}),
+                html.Span(f"{w:.1f}%", style={"color": COLORS["text2"], "fontFamily": FONT_MONO,
+                                               "fontSize": "13px", "minWidth": "45px",
+                                               "textAlign": "right"}),
+            ], style={"display": "flex", "alignItems": "center", "marginBottom": "10px"})
+            for sym, w in current_alloc.items()
+        ]) if current_alloc else
+        html.Div("Engine not started — allocation will appear here once the bot is running.",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "fontStyle": "italic"}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    # ---- Trade Log ----
+    log = load_bot_log()
+    log_rows = []
+    if log:
+        for entry in reversed(log[-20:]):
+            action_color = COLORS["green"] if entry.get("action") == "BUY" else COLORS["red"]
+            log_rows.append(html.Div([
+                html.Span(entry.get("date", ""), style={"color": COLORS["text3"],
+                                                         "fontSize": "11px", "minWidth": "140px"}),
+                html.Span(entry.get("action", ""), style={"color": action_color,
+                                                           "fontWeight": "700", "fontSize": "12px",
+                                                           "minWidth": "50px"}),
+                html.Span(entry.get("symbol", ""), style={"color": COLORS["text"],
+                                                           "fontWeight": "700",
+                                                           "fontFamily": FONT_MONO,
+                                                           "minWidth": "70px"}),
+                html.Span(entry.get("model", ""), style={"color": COLORS["blue"],
+                                                          "fontSize": "11px", "minWidth": "160px"}),
+                html.Span(entry.get("details", ""), style={"color": COLORS["text2"],
+                                                            "fontSize": "12px"}),
+            ], style={"display": "flex", "gap": "12px", "padding": "8px 0",
+                      "borderBottom": f"1px solid {COLORS['border']}"}))
+    else:
+        log_rows = [html.Div("No trades yet. Start the bot to begin trading.",
+                             style={"color": COLORS["text2"]})]
+
+    log_card = html.Div([
+        html.Div("TRADE LOG", style={"color": COLORS["text3"], "fontSize": "11px",
+                                     "fontWeight": "600", "letterSpacing": "0.5px",
+                                     "marginBottom": "12px"}),
+        html.Div(log_rows),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px"})
+
+    return html.Div([phase_card, header, regime_card, models_card, settings_card, alloc_card, log_card])
+

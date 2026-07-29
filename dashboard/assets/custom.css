@@ -55,3 +55,12 @@
     border-color: #4b8bf5 !important;
     background-color: #11161f !important;
 }
+
+/* Crypto card hover */
+[id*="crypto-card"] {
+    transition: border-color .15s ease, background-color .15s ease;
+}
+[id*="crypto-card"]:hover {
+    border-color: #4b8bf5 !important;
+    background-color: #11161f !important;
+}
