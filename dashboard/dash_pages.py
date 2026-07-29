@@ -3057,3 +3057,247 @@ def dividend_tracker_tab(extra_symbols=None):
         html.Div(cards, id="div-cards"),
     ])
 
+
+
+# ---------- Options Flow ----------
+def get_unusual_options(symbols):
+    """Find unusual options activity - high volume relative to open interest."""
+    unusual = []
+    for sym in symbols:
+        try:
+            t = yf.Ticker(sym)
+            if not t.options:
+                continue
+            # Check next 3 expiries
+            for expiry in t.options[:3]:
+                try:
+                    chain = t.option_chain(expiry)
+                    for opt_type, df in [("CALL", chain.calls), ("PUT", chain.puts)]:
+                        if df.empty:
+                            continue
+                        df = df.copy()
+                        df["vol_oi_ratio"] = df["volume"] / (df["openInterest"] + 1)
+                        # Flag unusual: volume > 500 AND vol/OI ratio > 2
+                        unusual_df = df[
+                            (df["volume"] > 100) &
+                            (df["vol_oi_ratio"] > 1.5) &
+                            (df["volume"].notna())
+                        ].copy()
+                        for _, row in unusual_df.iterrows():
+                            unusual.append({
+                                "symbol": sym,
+                                "type": opt_type,
+                                "strike": row["strike"],
+                                "expiry": expiry,
+                                "volume": int(row["volume"]),
+                                "open_interest": int(row["openInterest"]),
+                                "vol_oi_ratio": float(row["vol_oi_ratio"]),
+                                "iv": float(row["impliedVolatility"]) * 100,
+                                "last_price": float(row.get("lastPrice", 0)),
+                            })
+                except Exception:
+                    continue
+        except Exception:
+            continue
+    # Sort by volume descending
+    unusual.sort(key=lambda x: x["volume"], reverse=True)
+    return unusual[:50]
+
+
+def options_flow_tab():
+    from datetime import datetime
+    import zoneinfo
+    ny = datetime.now(zoneinfo.ZoneInfo('America/New_York'))
+    weekday = ny.weekday()
+    hour = ny.hour
+    minute = ny.minute
+    is_market_hours = (weekday < 5) and (hour > 9 or (hour == 9 and minute >= 30)) and (hour < 16)
+
+    if not is_market_hours:
+        next_open = "Monday" if weekday >= 4 else "Tomorrow"
+        if weekday < 4 and hour >= 16:
+            next_open = "Tomorrow at 9:30 AM ET"
+        elif weekday == 4 and hour >= 16:
+            next_open = "Monday at 9:30 AM ET"
+        elif weekday >= 5:
+            next_open = f"Monday at 9:30 AM ET"
+        else:
+            next_open = "Today at 9:30 AM ET"
+        return html.Div([
+            html.Div([
+                html.Div("🔴", style={"fontSize": "48px", "textAlign": "center",
+                                       "marginBottom": "16px"}),
+                html.Div("Options Market Closed", style={"color": COLORS["text"],
+                         "fontSize": "24px", "fontWeight": "800", "textAlign": "center",
+                         "marginBottom": "8px"}),
+                html.Div(f"Current time: {ny.strftime('%I:%M %p ET')}",
+                         style={"color": COLORS["text2"], "textAlign": "center",
+                                "marginBottom": "4px"}),
+                html.Div(f"Next open: {next_open}",
+                         style={"color": COLORS["green"], "textAlign": "center",
+                                "fontWeight": "600", "marginBottom": "24px"}),
+                html.Div([
+                    html.Div("OPTIONS MARKET HOURS", style={"color": COLORS["text3"],
+                             "fontSize": "11px", "fontWeight": "600",
+                             "letterSpacing": "0.5px", "marginBottom": "12px",
+                             "textAlign": "center"}),
+                    html.Div([
+                        html.Div([
+                            html.Span("Monday — Friday", style={"color": COLORS["text"],
+                                                                   "fontWeight": "600"}),
+                            html.Span("9:30 AM — 4:00 PM ET",
+                                      style={"color": COLORS["green"], "float": "right",
+                                             "fontFamily": FONT_MONO}),
+                        ], style={"padding": "10px 0",
+                                  "borderBottom": f"1px solid {COLORS['border']}"}),
+                        html.Div([
+                            html.Span("Saturday — Sunday", style={"color": COLORS["text2"]}),
+                            html.Span("Closed", style={"color": COLORS["red"],
+                                                         "float": "right"}),
+                        ], style={"padding": "10px 0"}),
+                    ]),
+                    html.Div("Options flow data shows unusual activity — high volume vs open interest — "                             "which signals institutional positioning before major moves.",
+                             style={"color": COLORS["text3"], "fontSize": "12px",
+                                    "marginTop": "16px", "lineHeight": "1.6",
+                                    "textAlign": "center"}),
+                ], style={"background": COLORS["panel"],
+                          "border": f"1px solid {COLORS['border']}",
+                          "borderRadius": "10px", "padding": "20px",
+                          "maxWidth": "500px", "margin": "0 auto"}),
+            ], style={"padding": "60px 20px"}),
+        ])
+
+    wl_symbols = []
+    import json as _json
+    try:
+        wl_file = os.path.expanduser("~/tradingbot/config/watchlist.json")
+        wl_symbols = _json.load(open(wl_file)) if os.path.exists(wl_file) else []
+    except Exception:
+        pass
+
+    # Default to major stocks if watchlist is all ETFs
+    default_stocks = ["AAPL", "MSFT", "NVDA", "TSLA", "GOOGL", "AMZN", "META", "SPY", "QQQ"]
+    symbols = wl_symbols + [s for s in default_stocks if s not in wl_symbols]
+    symbols = symbols[:12]  # limit to avoid slow loads
+
+    unusual = get_unusual_options(symbols)
+
+    if not unusual:
+        return html.Div([
+            html.Div("No unusual options activity detected for your tickers right now.",
+                     style={"color": COLORS["text2"], "marginBottom": "8px"}),
+            html.Div("Unusual activity = volume > 500 contracts AND volume/open interest ratio > 2x",
+                     style={"color": COLORS["text3"], "fontSize": "12px"}),
+        ])
+
+    rows = []
+    for u in unusual:
+        is_call = u["type"] == "CALL"
+        type_color = COLORS["green"] if is_call else COLORS["red"]
+        type_bg = "#166534" if is_call else "#7f1d1d"
+
+        # Sentiment signal
+        if is_call and u["vol_oi_ratio"] > 5:
+            signal = "🔥 Very Bullish"
+            signal_color = COLORS["green"]
+        elif is_call:
+            signal = "📈 Bullish"
+            signal_color = "#86efac"
+        elif not is_call and u["vol_oi_ratio"] > 5:
+            signal = "🔥 Very Bearish"
+            signal_color = COLORS["red"]
+        else:
+            signal = "📉 Bearish"
+            signal_color = "#fca5a5"
+
+        rows.append(html.Div([
+            html.Div([
+                html.Span(u["symbol"], style={"color": COLORS["text"], "fontWeight": "800",
+                                              "fontSize": "16px", "fontFamily": FONT_MONO,
+                                              "marginRight": "10px"}),
+                html.Span(u["type"], style={"color": type_color, "fontWeight": "700",
+                                            "fontSize": "12px", "background": type_bg,
+                                            "padding": "2px 8px", "borderRadius": "4px",
+                                            "marginRight": "10px"}),
+                html.Span(signal, style={"color": signal_color, "fontSize": "12px",
+                                         "fontWeight": "600"}),
+            ], style={"flex": "1"}),
+            html.Div([
+                html.Span(f"Strike: ${u['strike']:.0f}",
+                          style={"color": COLORS["text2"], "fontSize": "12px",
+                                 "fontFamily": FONT_MONO, "marginRight": "16px"}),
+                html.Span(f"Exp: {u['expiry']}",
+                          style={"color": COLORS["text2"], "fontSize": "12px",
+                                 "marginRight": "16px"}),
+                html.Span(f"Vol: {u['volume']:,}",
+                          style={"color": COLORS["text"], "fontSize": "12px",
+                                 "fontWeight": "700", "fontFamily": FONT_MONO,
+                                 "marginRight": "16px"}),
+                html.Span(f"OI: {u['open_interest']:,}",
+                          style={"color": COLORS["text2"], "fontSize": "12px",
+                                 "fontFamily": FONT_MONO, "marginRight": "16px"}),
+                html.Span(f"Vol/OI: {u['vol_oi_ratio']:.1f}x",
+                          style={"color": type_color, "fontSize": "12px",
+                                 "fontWeight": "700", "fontFamily": FONT_MONO,
+                                 "marginRight": "16px"}),
+                html.Span(f"IV: {u['iv']:.0f}%",
+                          style={"color": COLORS["amber"], "fontSize": "12px",
+                                 "fontFamily": FONT_MONO}),
+            ]),
+        ], style={
+            "background": COLORS["panel"],
+            "border": f"1px solid {COLORS['border']}",
+            "borderLeft": f"3px solid {type_color}",
+            "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "6px",
+            "display": "flex", "alignItems": "center", "flexWrap": "wrap", "gap": "8px",
+        }))
+
+    # Summary
+    calls = sum(1 for u in unusual if u["type"] == "CALL")
+    puts = len(unusual) - calls
+    put_call = puts / calls if calls > 0 else 0
+    pcr_color = COLORS["red"] if put_call > 1 else COLORS["green"]
+    pcr_sentiment = "Bearish" if put_call > 1.2 else "Bullish" if put_call < 0.8 else "Neutral"
+
+    summary = html.Div([
+        html.Div([
+            html.Div("UNUSUAL CALLS", style={"color": COLORS["text3"], "fontSize": "10px",
+                                             "fontWeight": "600"}),
+            html.Div(str(calls), style={"color": COLORS["green"], "fontSize": "22px",
+                                        "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("UNUSUAL PUTS", style={"color": COLORS["text3"], "fontSize": "10px",
+                                            "fontWeight": "600"}),
+            html.Div(str(puts), style={"color": COLORS["red"], "fontSize": "22px",
+                                       "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("PUT/CALL RATIO", style={"color": COLORS["text3"], "fontSize": "10px",
+                                              "fontWeight": "600"}),
+            html.Div(f"{put_call:.2f}", style={"color": pcr_color, "fontSize": "22px",
+                                                "fontWeight": "800", "fontFamily": FONT_MONO}),
+            html.Div(pcr_sentiment, style={"color": pcr_color, "fontSize": "11px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("TOTAL UNUSUAL", style={"color": COLORS["text3"], "fontSize": "10px",
+                                             "fontWeight": "600"}),
+            html.Div(str(len(unusual)), style={"color": COLORS["text"], "fontSize": "22px",
+                                               "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+    ], style={"display": "flex", "gap": "12px", "marginBottom": "20px"})
+
+    return html.Div([
+        html.Div([
+            html.Div("Unusual options activity = volume > 500 contracts AND volume/open interest > 2x. "
+                     "High call volume = bullish bet. High put volume = bearish hedge or bet. "
+                     "Vol/OI > 5x = very strong signal.",
+                     style={"color": COLORS["text3"], "fontSize": "12px"}),
+        ], style={"marginBottom": "16px"}),
+        summary,
+        html.Div(rows),
+    ])

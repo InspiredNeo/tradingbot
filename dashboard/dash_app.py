@@ -28,7 +28,7 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     compare_tab, compare_results, economic_tab, backtest_tab,
     alerts_tab, load_alerts, save_alerts, check_alerts, crypto_tab,
     bot_control_tab, load_bot_config, save_bot_config,
-    analyst_ratings_tab, dividend_tracker_tab)
+    analyst_ratings_tab, dividend_tracker_tab, options_flow_tab)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -426,6 +426,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="🤖 Bot", tab_id="tab-bot"),
             dbc.Tab(label="⭐ Ratings", tab_id="tab-ratings"),
             dbc.Tab(label="💰 Dividends", tab_id="tab-dividends"),
+            dbc.Tab(label="🌊 Flow", tab_id="tab-options"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -488,6 +489,8 @@ def render_tab(active_tab):
         return analyst_ratings_tab()
     if active_tab == "tab-dividends":
         return dividend_tracker_tab()
+    if active_tab == "tab-options":
+        return options_flow_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
