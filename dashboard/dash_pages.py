@@ -1703,3 +1703,234 @@ def economic_tab():
         yield_curve_card,
         charts_grid,
     ])
+
+
+# ---------- Backtesting ----------
+import numpy as np
+import pandas as pd
+
+
+def run_backtest(weights_dict, start_date="2015-01-01", initial_value=10000):
+    """
+    weights_dict: {"VTI": 0.6, "SCHF": 0.3, "BND": 0.1}
+    Returns a dict of results.
+    """
+    symbols = list(weights_dict.keys())
+    weights = np.array([weights_dict[s] for s in symbols])
+
+    # Download historical data
+    price_data = {}
+    for sym in symbols:
+        try:
+            hist = yf.Ticker(sym).history(start=start_date)
+            if not hist.empty:
+                price_data[sym] = hist["Close"]
+        except Exception:
+            continue
+
+    if len(price_data) < 1:
+        return None
+
+    df = pd.DataFrame(price_data).dropna()
+    if df.empty:
+        return None
+
+    # Normalize weights to what we have data for
+    valid_syms = [s for s in symbols if s in df.columns]
+    valid_weights = np.array([weights_dict[s] for s in valid_syms])
+    valid_weights = valid_weights / valid_weights.sum()
+
+    # Daily returns
+    returns = df[valid_syms].pct_change().dropna()
+
+    # Portfolio returns (rebalanced daily for simplicity)
+    port_returns = (returns * valid_weights).sum(axis=1)
+
+    # Cumulative portfolio value
+    port_value = (1 + port_returns).cumprod() * initial_value
+
+    # Benchmark: SPY
+    try:
+        spy_hist = yf.Ticker("SPY").history(start=start_date)
+        spy_close = spy_hist["Close"].reindex(df.index, method="ffill").dropna()
+        spy_returns = spy_close.pct_change().dropna()
+        spy_value = (1 + spy_returns).cumprod() * initial_value
+    except Exception:
+        spy_value = None
+        spy_returns = None
+
+    # Metrics
+    total_return = (port_value.iloc[-1] / initial_value - 1) * 100
+    years = len(port_returns) / 252
+    cagr = ((port_value.iloc[-1] / initial_value) ** (1 / years) - 1) * 100 if years > 0 else 0
+
+    # Sharpe ratio (assumes risk-free rate of 4%)
+    rf_daily = 0.04 / 252
+    excess = port_returns - rf_daily
+    sharpe = (excess.mean() / excess.std()) * np.sqrt(252) if excess.std() > 0 else 0
+
+    # Max drawdown
+    rolling_max = port_value.cummax()
+    drawdown = (port_value - rolling_max) / rolling_max
+    max_drawdown = drawdown.min() * 100
+
+    # Annual returns
+    annual = port_returns.resample("YE").apply(lambda x: (1 + x).prod() - 1) * 100
+
+    return {
+        "port_value": port_value,
+        "spy_value": spy_value,
+        "port_returns": port_returns,
+        "spy_returns": spy_returns,
+        "total_return": total_return,
+        "cagr": cagr,
+        "sharpe": sharpe,
+        "max_drawdown": max_drawdown,
+        "annual_returns": annual,
+        "years": years,
+        "final_value": port_value.iloc[-1],
+    }
+
+
+def backtest_tab(weights_dict=None, start_date="2015-01-01"):
+    weights_dict = weights_dict or {}
+
+    # Allocation input form
+    portfolio_holdings = load_portfolio()
+    portfolio_syms = [h["symbol"] for h in portfolio_holdings]
+
+    form = html.Div([
+        html.Div("BACKTEST ALLOCATION", style={"color": COLORS["text3"], "fontSize": "11px",
+                                               "fontWeight": "600", "letterSpacing": "0.5px",
+                                               "marginBottom": "10px"}),
+        html.Div("Enter allocation weights (must sum to 100%)",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "12px"}),
+        html.Div([
+            dbc.Input(id="bt-allocation", placeholder='e.g. VTI:60,SCHF:30,BND:10',
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Select(id="bt-start", options=[
+                {"label": "5 Years", "value": "2020-01-01"},
+                {"label": "10 Years", "value": "2015-01-01"},
+                {"label": "15 Years", "value": "2010-01-01"},
+                {"label": "20 Years", "value": "2005-01-01"},
+            ], value="2015-01-01",
+            style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                   "color": COLORS["text"], "marginRight": "8px", "width": "140px"}),
+            dbc.Button("Run Backtest", id="bt-run-btn", color="primary", size="sm"),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "8px"}),
+    ])
+
+    # Prefill suggestion from portfolio
+    prefill = ""
+    if portfolio_syms:
+        n = len(portfolio_syms)
+        equal_weight = round(100 / n)
+        prefill = ",".join(f"{s}:{equal_weight}" for s in portfolio_syms)
+        form.children.append(
+            html.Div(f"💡 Your portfolio: {prefill}",
+                     style={"color": COLORS["text3"], "fontSize": "11px", "marginBottom": "16px"})
+        )
+
+    if not weights_dict:
+        return html.Div([form,
+                         html.Div(id="bt-results",
+                                  children=html.Div("Enter an allocation above and click Run Backtest.",
+                                                    style={"color": COLORS["text2"]}))])
+
+    # Run the backtest
+    result = run_backtest(weights_dict, start_date)
+    if not result:
+        return html.Div([form,
+                         html.Div(id="bt-results",
+                                  children=html.Div("Could not fetch data for the selected tickers.",
+                                                    style={"color": COLORS["text2"]}))])
+
+    # Metric cards
+    metrics = [
+        ("TOTAL RETURN", f"{result['total_return']:+.1f}%",
+         COLORS["green"] if result["total_return"] > 0 else COLORS["red"]),
+        ("CAGR", f"{result['cagr']:+.2f}%/yr",
+         COLORS["green"] if result["cagr"] > 0 else COLORS["red"]),
+        ("SHARPE RATIO", f"{result['sharpe']:.2f}",
+         COLORS["green"] if result["sharpe"] > 1 else COLORS["amber"] if result["sharpe"] > 0 else COLORS["red"]),
+        ("MAX DRAWDOWN", f"{result['max_drawdown']:.1f}%", COLORS["red"]),
+        ("FINAL VALUE", f"${result['final_value']:,.0f}", COLORS["text"]),
+        ("YEARS", f"{result['years']:.1f}", COLORS["text2"]),
+    ]
+
+    metric_cards = html.Div([
+        html.Div([
+            html.Div(label, style={"color": COLORS["text3"], "fontSize": "10px",
+                                   "fontWeight": "600", "letterSpacing": "0.5px"}),
+            html.Div(value, style={"color": color, "fontSize": "20px", "fontWeight": "800",
+                                   "fontFamily": FONT_MONO, "marginTop": "4px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"})
+        for label, value, color in metrics
+    ], style={"display": "flex", "gap": "10px", "marginBottom": "20px", "flexWrap": "wrap"})
+
+    # Performance chart vs SPY
+    import plotly.graph_objects as go
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=result["port_value"].index, y=result["port_value"],
+                             mode="lines", name="Portfolio",
+                             line=dict(color=COLORS["blue"], width=2)))
+    if result["spy_value"] is not None:
+        fig.add_trace(go.Scatter(x=result["spy_value"].index, y=result["spy_value"],
+                                 mode="lines", name="SPY (Benchmark)",
+                                 line=dict(color=COLORS["text3"], width=1.5, dash="dot")))
+    fig.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                      font=dict(color=COLORS["text2"]),
+                      xaxis=dict(gridcolor=COLORS["border"]),
+                      yaxis=dict(gridcolor=COLORS["border"], title="Portfolio Value ($)"),
+                      legend=dict(orientation="h"),
+                      margin=dict(l=0, r=0, t=10, b=0), height=350)
+    perf_chart = html.Div([
+        html.Div("PORTFOLIO GROWTH vs SPY", style={"color": COLORS["text3"], "fontSize": "11px",
+                                                    "fontWeight": "600", "marginBottom": "10px"}),
+        dcc.Graph(figure=fig, config={"displayModeBar": False}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "16px"})
+
+    # Drawdown chart
+    rolling_max = result["port_value"].cummax()
+    drawdown_series = (result["port_value"] - rolling_max) / rolling_max * 100
+    fig_dd = go.Figure()
+    fig_dd.add_trace(go.Scatter(x=drawdown_series.index, y=drawdown_series,
+                                mode="lines", fill="tozeroy",
+                                line=dict(color=COLORS["red"], width=1.5),
+                                fillcolor="rgba(248,113,113,0.15)"))
+    fig_dd.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                         font=dict(color=COLORS["text2"]),
+                         xaxis=dict(gridcolor=COLORS["border"]),
+                         yaxis=dict(gridcolor=COLORS["border"], title="Drawdown (%)"),
+                         margin=dict(l=0, r=0, t=10, b=0), height=200)
+    dd_chart = html.Div([
+        html.Div("DRAWDOWN", style={"color": COLORS["text3"], "fontSize": "11px",
+                                    "fontWeight": "600", "marginBottom": "10px"}),
+        dcc.Graph(figure=fig_dd, config={"displayModeBar": False}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "16px"})
+
+    # Annual returns bar chart
+    annual = result["annual_returns"]
+    bar_colors = [COLORS["green"] if v >= 0 else COLORS["red"] for v in annual.values]
+    fig_ann = go.Figure()
+    fig_ann.add_trace(go.Bar(x=[str(d.year) for d in annual.index], y=annual.values,
+                              marker_color=bar_colors, text=[f"{v:.1f}%" for v in annual.values],
+                              textposition="outside", textfont=dict(color=COLORS["text2"], size=11)))
+    fig_ann.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                          font=dict(color=COLORS["text2"]),
+                          xaxis=dict(gridcolor=COLORS["border"]),
+                          yaxis=dict(gridcolor=COLORS["border"], title="Return (%)"),
+                          margin=dict(l=0, r=0, t=10, b=0), height=250)
+    ann_chart = html.Div([
+        html.Div("ANNUAL RETURNS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                          "fontWeight": "600", "marginBottom": "10px"}),
+        dcc.Graph(figure=fig_ann, config={"displayModeBar": False}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "16px 20px"})
+
+    results_div = html.Div([metric_cards, perf_chart, dd_chart, ann_chart])
+    return html.Div([form, html.Div(id="bt-results", children=results_div)])

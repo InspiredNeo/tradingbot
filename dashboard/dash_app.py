@@ -25,7 +25,7 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     category_content, browse_tab_content, portfolio_tab,
     load_portfolio, save_portfolio, breakdown_tab, correlation_tab,
     market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap,
-    compare_tab, compare_results, economic_tab)
+    compare_tab, compare_results, economic_tab, backtest_tab)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -121,6 +121,7 @@ COLORS = {
     "green": "#4ade80",
     "red": "#f87171",
     "blue": "#4b8bf5",
+    "amber": "#f59e0b",
 }
 
 FONT_MONO = "JetBrains Mono, monospace"
@@ -415,6 +416,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="🗺️ Map", tab_id="tab-map"),
             dbc.Tab(label="⚖️ Compare", tab_id="tab-compare"),
             dbc.Tab(label="📈 Economy", tab_id="tab-economy"),
+            dbc.Tab(label="⏱️ Backtest", tab_id="tab-backtest"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -465,6 +467,8 @@ def render_tab(active_tab):
         return compare_tab(_compare_list)
     if active_tab == "tab-economy":
         return economic_tab()
+    if active_tab == "tab-backtest":
+        return backtest_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -1090,6 +1094,119 @@ def compare_clear(n_clicks):
     global _compare_list
     _compare_list = []
     return compare_results(_compare_list)
+
+
+
+@callback(
+    Output("bt-results", "children"),
+    Input("bt-run-btn", "n_clicks"),
+    State("bt-allocation", "value"),
+    State("bt-start", "value"),
+    prevent_initial_call=True,
+)
+def run_bt(n_clicks, allocation_str, start_date):
+    if not allocation_str:
+        return html.Div("Enter an allocation first.", style={"color": COLORS["text2"]})
+    try:
+        weights = {}
+        for part in allocation_str.split(","):
+            sym, w = part.strip().split(":")
+            weights[sym.strip().upper()] = float(w.strip()) / 100
+        total = sum(weights.values())
+        if abs(total - 1.0) > 0.01:
+            return html.Div(f"Weights sum to {total*100:.0f}% — must sum to 100%.",
+                           style={"color": COLORS["red"]})
+        from dash_pages import run_backtest
+        import plotly.graph_objects as go
+        result = run_backtest(weights, start_date or "2015-01-01")
+        if not result:
+            return html.Div("Could not fetch data.", style={"color": COLORS["text2"]})
+        
+        metrics = [
+            ("TOTAL RETURN", f"{result['total_return']:+.1f}%",
+             COLORS["green"] if result["total_return"] > 0 else COLORS["red"]),
+            ("CAGR", f"{result['cagr']:+.2f}%/yr",
+             COLORS["green"] if result["cagr"] > 0 else COLORS["red"]),
+            ("SHARPE RATIO", f"{result['sharpe']:.2f}",
+             COLORS["green"] if result["sharpe"] > 1 else COLORS["amber"] if result["sharpe"] > 0 else COLORS["red"]),
+            ("MAX DRAWDOWN", f"{result['max_drawdown']:.1f}%", COLORS["red"]),
+            ("FINAL VALUE", f"${result['final_value']:,.0f}", COLORS["text"]),
+            ("YEARS", f"{result['years']:.1f}", COLORS["text2"]),
+        ]
+        metric_cards = html.Div([
+            html.Div([
+                html.Div(label, style={"color": COLORS["text3"], "fontSize": "10px",
+                                       "fontWeight": "600", "letterSpacing": "0.5px"}),
+                html.Div(value, style={"color": color, "fontSize": "20px", "fontWeight": "800",
+                                       "fontFamily": FONT_MONO, "marginTop": "4px"}),
+            ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                      "borderRadius": "10px", "padding": "14px 18px", "flex": "1"})
+            for label, value, color in metrics
+        ], style={"display": "flex", "gap": "10px", "marginBottom": "20px", "flexWrap": "wrap"})
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=result["port_value"].index, y=result["port_value"],
+                                 mode="lines", name="Portfolio",
+                                 line=dict(color=COLORS["blue"], width=2)))
+        if result["spy_value"] is not None:
+            fig.add_trace(go.Scatter(x=result["spy_value"].index, y=result["spy_value"],
+                                     mode="lines", name="SPY (Benchmark)",
+                                     line=dict(color=COLORS["text3"], width=1.5, dash="dot")))
+        fig.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                          font=dict(color=COLORS["text2"]),
+                          xaxis=dict(gridcolor=COLORS["border"]),
+                          yaxis=dict(gridcolor=COLORS["border"], title="Value ($)"),
+                          legend=dict(orientation="h"),
+                          margin=dict(l=0, r=0, t=10, b=0), height=350)
+        perf_chart = html.Div([
+            html.Div("PORTFOLIO GROWTH vs SPY", style={"color": COLORS["text3"], "fontSize": "11px",
+                                                        "fontWeight": "600", "marginBottom": "10px"}),
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "16px"})
+
+        rolling_max = result["port_value"].cummax()
+        drawdown_series = (result["port_value"] - rolling_max) / rolling_max * 100
+        fig_dd = go.Figure()
+        fig_dd.add_trace(go.Scatter(x=drawdown_series.index, y=drawdown_series,
+                                    mode="lines", fill="tozeroy",
+                                    line=dict(color=COLORS["red"], width=1.5),
+                                    fillcolor="rgba(248,113,113,0.15)"))
+        fig_dd.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                             font=dict(color=COLORS["text2"]),
+                             xaxis=dict(gridcolor=COLORS["border"]),
+                             yaxis=dict(gridcolor=COLORS["border"], title="Drawdown (%)"),
+                             margin=dict(l=0, r=0, t=10, b=0), height=200)
+        dd_chart = html.Div([
+            html.Div("DRAWDOWN", style={"color": COLORS["text3"], "fontSize": "11px",
+                                        "fontWeight": "600", "marginBottom": "10px"}),
+            dcc.Graph(figure=fig_dd, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "16px"})
+
+        annual = result["annual_returns"]
+        bar_colors = [COLORS["green"] if v >= 0 else COLORS["red"] for v in annual.values]
+        fig_ann = go.Figure()
+        fig_ann.add_trace(go.Bar(x=[str(d.year) for d in annual.index], y=annual.values,
+                                  marker_color=bar_colors,
+                                  text=[f"{v:.1f}%" for v in annual.values],
+                                  textposition="outside",
+                                  textfont=dict(color=COLORS["text2"], size=11)))
+        fig_ann.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                              font=dict(color=COLORS["text2"]),
+                              xaxis=dict(gridcolor=COLORS["border"]),
+                              yaxis=dict(gridcolor=COLORS["border"], title="Return (%)"),
+                              margin=dict(l=0, r=0, t=10, b=0), height=250)
+        ann_chart = html.Div([
+            html.Div("ANNUAL RETURNS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                              "fontWeight": "600", "marginBottom": "10px"}),
+            dcc.Graph(figure=fig_ann, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px"})
+
+        return html.Div([metric_cards, perf_chart, dd_chart, ann_chart])
+    except Exception as e:
+        return html.Div(f"Error: {e}", style={"color": COLORS["red"]})
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
