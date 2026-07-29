@@ -2823,3 +2823,237 @@ def analyst_ratings_tab():
                  style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"}),
         html.Div(rows),
     ])
+
+
+# ---------- Dividend Tracker ----------
+def dividend_tracker_tab(extra_symbols=None):
+    extra_symbols = extra_symbols or []
+    import pandas as pd
+
+    # Load portfolio for real share counts
+    portfolio = load_portfolio()
+    pf_map = {h["symbol"]: h.get("shares", 0) for h in portfolio}
+
+    # Load watchlist
+    import json as _json
+    wl_file = os.path.expanduser("~/tradingbot/config/watchlist.json")
+    try:
+        wl = _json.load(open(wl_file)) if os.path.exists(wl_file) else []
+    except Exception:
+        wl = []
+
+    # Only show portfolio holdings by default + any extras manually added
+    all_symbols = list(dict.fromkeys(list(pf_map.keys()) + extra_symbols))
+    if not all_symbols:
+        all_symbols = []
+
+    # Add ticker form
+    add_form = html.Div([
+        html.Div("ADD TICKER", style={"color": COLORS["text3"], "fontSize": "11px",
+                                      "fontWeight": "600", "letterSpacing": "0.5px",
+                                      "marginBottom": "8px"}),
+        html.Div([
+            dbc.Input(id="div-add-input", placeholder="Add ticker (e.g. SCHD)",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Button("Add", id="div-add-btn", color="primary", size="sm"),
+        ], style={"display": "flex", "marginBottom": "20px"}),
+    ])
+
+    dividend_data = []
+    for sym in all_symbols:
+        try:
+            t = yf.Ticker(sym)
+            info = t.info
+            divs = t.dividends
+            yield_pct = info.get("dividendYield", 0) or 0
+            rate = info.get("dividendRate", 0) or 0
+            ex_date = info.get("exDividendDate")
+            price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+            recent_divs = divs.tail(4) if not divs.empty else None
+            shares = pf_map.get(sym, 0)
+            # Calculate annual income from last 12 months of dividends if rate unavailable
+            if not rate and not divs.empty:
+                one_year_ago = divs.index[-1] - pd.DateOffset(years=1)
+                annual_divs = divs[divs.index >= one_year_ago]
+                rate = float(annual_divs.sum()) if not annual_divs.empty else 0
+            annual_income = rate * shares if rate and shares else 0
+
+            if yield_pct > 0 or (recent_divs is not None and len(recent_divs) > 0):
+                dividend_data.append({
+                    "symbol": sym,
+                    "yield": yield_pct * 100 if yield_pct < 1 else yield_pct,
+                    "rate": rate,
+                    "ex_date": ex_date,
+                    "price": price,
+                    "recent_divs": recent_divs,
+                    "shares": shares,
+                    "annual_income": annual_income,
+                    "in_portfolio": sym in pf_map,
+                })
+        except Exception:
+            continue
+
+    import plotly.graph_objects as go
+    if not dividend_data:
+        return html.Div([add_form,
+                         html.Div("Add holdings in the Portfolio tab to see your dividend income, or add tickers above.",
+                                  style={"color": COLORS["text2"]})])
+    from datetime import datetime
+
+    # Summary cards
+    total_income = sum(d["annual_income"] for d in dividend_data)
+    avg_yield = sum(d["yield"] for d in dividend_data) / len(dividend_data) if dividend_data else 0
+
+    summary = html.Div([
+        html.Div([
+            html.Div("ANNUAL DIVIDEND INCOME", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                       "fontWeight": "600"}),
+            html.Div(f"${total_income:,.2f}", style={"color": COLORS["green"], "fontSize": "22px",
+                                                      "fontWeight": "800", "fontFamily": FONT_MONO}),
+            html.Div("From your actual portfolio holdings",
+                     style={"color": COLORS["text3"], "fontSize": "11px", "marginTop": "4px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("MONTHLY INCOME", style={"color": COLORS["text3"], "fontSize": "10px",
+                                              "fontWeight": "600"}),
+            html.Div(f"${total_income/12:,.2f}", style={"color": COLORS["green"], "fontSize": "22px",
+                                                         "fontWeight": "800", "fontFamily": FONT_MONO}),
+            html.Div("Estimated monthly dividend",
+                     style={"color": COLORS["text3"], "fontSize": "11px", "marginTop": "4px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("AVG PORTFOLIO YIELD", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                   "fontWeight": "600"}),
+            html.Div(f"{avg_yield:.2f}%", style={"color": COLORS["blue"], "fontSize": "22px",
+                                                   "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+        html.Div([
+            html.Div("DIVIDEND PAYERS", style={"color": COLORS["text3"], "fontSize": "10px",
+                                               "fontWeight": "600"}),
+            html.Div(f"{len(dividend_data)}", style={"color": COLORS["text"], "fontSize": "22px",
+                                                      "fontWeight": "800", "fontFamily": FONT_MONO}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "14px 18px", "flex": "1"}),
+    ], style={"display": "flex", "gap": "12px", "marginBottom": "20px"})
+
+    cards = []
+    for d in sorted(dividend_data, key=lambda x: x["yield"], reverse=True):
+        sym = d["symbol"]
+        yld = d["yield"]
+        rate = d["rate"]
+        shares = d["shares"]
+        annual_income = d["annual_income"]
+        recent = d["recent_divs"]
+        in_pf = d["in_portfolio"]
+
+        chart = html.Div()
+        if recent is not None and len(recent) > 1:
+            dates = [str(dt.date()) for dt in recent.index]
+            vals = list(recent.values)
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=dates, y=vals, marker_color=COLORS["blue"],
+                                 text=[f"${v:.3f}" for v in vals],
+                                 textposition="outside",
+                                 textfont=dict(color=COLORS["text2"], size=10)))
+            fig.update_layout(paper_bgcolor=COLORS["panel2"], plot_bgcolor=COLORS["panel2"],
+                              font=dict(color=COLORS["text2"]),
+                              margin=dict(l=0, r=0, t=10, b=0), height=120,
+                              xaxis=dict(showgrid=False),
+                              yaxis=dict(showgrid=False, showticklabels=False),
+                              showlegend=False)
+            chart = dcc.Graph(figure=fig, config={"displayModeBar": False})
+
+        ex_str = "N/A"
+        days_until = None
+        if d["ex_date"]:
+            try:
+                ex_dt = datetime.fromtimestamp(d["ex_date"])
+                ex_str = ex_dt.strftime("%Y-%m-%d")
+                days_until = (ex_dt - datetime.now()).days
+            except Exception:
+                pass
+
+        ex_color = COLORS["green"] if days_until and days_until <= 30 else COLORS["text2"]
+
+        cards.append(html.Div([
+            html.Div([
+                html.Div([
+                    html.Span(sym, style={"color": COLORS["text"], "fontWeight": "800",
+                                          "fontSize": "18px", "fontFamily": FONT_MONO,
+                                          "marginRight": "12px"}),
+                    html.Span(f"{yld:.2f}% yield",
+                              style={"color": COLORS["green"], "fontWeight": "700",
+                                     "fontSize": "13px", "background": "#166534",
+                                     "padding": "3px 10px", "borderRadius": "6px",
+                                     "marginRight": "8px"}),
+                    html.Span("IN PORTFOLIO" if in_pf else "",
+                              style={"color": COLORS["blue"], "fontSize": "11px",
+                                     "fontWeight": "600"}) if in_pf else html.Span(),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div(f"${rate:.3f}/share annually" if rate else "",
+                             style={"color": COLORS["text2"], "fontSize": "12px", "textAlign": "right"}),
+                    html.Div(f"Ex-div: {ex_str}",
+                             style={"color": ex_color, "fontSize": "12px", "textAlign": "right"}),
+                    html.Div(f"In {days_until} days" if days_until and days_until > 0 else
+                             "⚡ Ex-div passed!" if days_until is not None and days_until <= 0 else "",
+                             style={"color": ex_color, "fontSize": "11px", "fontWeight": "700",
+                                    "textAlign": "right"}),
+                ]),
+            ], style={"display": "flex", "alignItems": "flex-start", "marginBottom": "12px"}),
+
+            # Your actual income if in portfolio
+            html.Div([
+                html.Div([
+                    html.Div("YOUR SHARES", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                   "fontWeight": "600"}),
+                    html.Div(f"{shares:g}", style={"color": COLORS["text"], "fontSize": "16px",
+                                                    "fontWeight": "700", "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("ANNUAL INCOME", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                     "fontWeight": "600"}),
+                    html.Div(f"${annual_income:.2f}", style={"color": COLORS["green"],
+                                                              "fontSize": "16px", "fontWeight": "700",
+                                                              "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div("MONTHLY INCOME", style={"color": COLORS["text3"], "fontSize": "10px",
+                                                      "fontWeight": "600"}),
+                    html.Div(f"${annual_income/12:.2f}", style={"color": COLORS["green"],
+                                                                 "fontSize": "16px", "fontWeight": "700",
+                                                                 "fontFamily": FONT_MONO}),
+                ], style={"flex": "1"}),
+            ], style={"display": "flex", "gap": "12px", "background": COLORS["panel2"],
+                      "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "12px"})
+            if in_pf else html.Div(),
+
+            html.Div("RECENT DIVIDEND HISTORY",
+                     style={"color": COLORS["text3"], "fontSize": "10px",
+                            "fontWeight": "600", "letterSpacing": "0.5px", "marginBottom": "6px"}),
+            chart,
+
+            # Remove button
+            html.Div(
+                html.Span(f"✕ Remove {sym}", id={"type": "div-remove", "index": sym},
+                          n_clicks=0,
+                          style={"color": COLORS["text3"], "cursor": "pointer",
+                                 "fontSize": "11px", "marginTop": "8px"}),
+            ) if not in_pf else html.Div(),
+
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderLeft": f"3px solid {COLORS['green']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "12px"}))
+
+    return html.Div([
+        add_form,
+        html.Div("Dividend income calculated from your actual portfolio share counts. Non-portfolio tickers show yield only.",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"}),
+        summary,
+        html.Div(cards, id="div-cards"),
+    ])
+

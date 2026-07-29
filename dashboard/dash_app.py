@@ -28,7 +28,7 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     compare_tab, compare_results, economic_tab, backtest_tab,
     alerts_tab, load_alerts, save_alerts, check_alerts, crypto_tab,
     bot_control_tab, load_bot_config, save_bot_config,
-    analyst_ratings_tab)
+    analyst_ratings_tab, dividend_tracker_tab)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -425,6 +425,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="₿ Crypto", tab_id="tab-crypto"),
             dbc.Tab(label="🤖 Bot", tab_id="tab-bot"),
             dbc.Tab(label="⭐ Ratings", tab_id="tab-ratings"),
+            dbc.Tab(label="💰 Dividends", tab_id="tab-dividends"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -485,6 +486,8 @@ def render_tab(active_tab):
         return bot_control_tab()
     if active_tab == "tab-ratings":
         return analyst_ratings_tab()
+    if active_tab == "tab-dividends":
+        return dividend_tracker_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -1439,6 +1442,44 @@ def phase_back(n_clicks):
     return bot_control_tab()
 
 
+
+
+
+_div_extra_symbols = []
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input("div-add-btn", "n_clicks"),
+    State("div-add-input", "value"),
+    prevent_initial_call=True,
+)
+def div_add(n_clicks, value):
+    global _div_extra_symbols
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    if value:
+        sym = value.strip().upper()
+        if sym and sym not in _div_extra_symbols:
+            _div_extra_symbols.append(sym)
+    return dividend_tracker_tab(_div_extra_symbols)
+
+
+@callback(
+    Output("tab-content", "children", allow_duplicate=True),
+    Input({"type": "div-remove", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def div_remove(n_clicks):
+    global _div_extra_symbols
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if triggered and "index" in triggered:
+        sym = triggered["index"]
+        if sym in _div_extra_symbols:
+            _div_extra_symbols.remove(sym)
+    return dividend_tracker_tab(_div_extra_symbols)
 
 if __name__ == "__main__":
     app.run(debug=False, port=8050)
