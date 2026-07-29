@@ -2619,3 +2619,207 @@ def bot_control_tab():
 
     return html.Div([phase_card, header, regime_card, models_card, settings_card, alloc_card, log_card])
 
+
+
+# ---------- Analyst Ratings ----------
+def get_analyst_ratings(symbols):
+    import requests
+    key = os.getenv("FINNHUB_API_KEY")
+    results = {}
+    for sym in symbols:
+        try:
+            resp = requests.get("https://finnhub.io/api/v1/stock/recommendation",
+                                params={"symbol": sym, "token": key}, timeout=10)
+            data = resp.json()
+            if data:
+                results[sym] = data[0]  # Most recent month
+        except Exception:
+            continue
+    return results
+
+
+def get_price_targets(symbols):
+    import requests
+    key = os.getenv("FINNHUB_API_KEY")
+    results = {}
+    for sym in symbols:
+        try:
+            resp = requests.get("https://finnhub.io/api/v1/stock/price-target",
+                                params={"symbol": sym, "token": key}, timeout=10)
+            data = resp.json()
+            if data.get("targetMean"):
+                results[sym] = data
+        except Exception:
+            continue
+    return results
+
+
+def analyst_ratings_tab():
+    # Use watchlist + portfolio symbols
+    import json as _json
+    def _load_wl():
+        wl_file = os.path.expanduser("~/tradingbot/config/watchlist.json")
+        try:
+            if os.path.exists(wl_file):
+                with open(wl_file) as f:
+                    return _json.load(f)
+        except Exception:
+            pass
+        return []
+    wl_symbols = _load_wl()
+    pf_symbols = [h["symbol"] for h in load_portfolio()]
+    all_symbols = list(dict.fromkeys(wl_symbols + pf_symbols))  # dedupe, preserve order
+
+    # Add default stocks since ETFs don't have analyst ratings
+    default_stocks = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "META", "TSLA", "JPM"]
+    # Filter to stocks only (ETFs don't have ratings) and add defaults
+    etf_keywords = ["VTI", "VOO", "SPY", "QQQ", "VNQ", "BND", "AGG", "GLD", "SLV",
+                    "XL", "ARK", "VGT", "VHT", "SCHF", "VXUS", "EEM", "IWM", "DIA"]
+    stock_symbols = [s for s in all_symbols
+                     if not any(s.startswith(e) or s == e for e in etf_keywords)]
+    # Add defaults if no stocks in watchlist
+    if not stock_symbols:
+        stock_symbols = default_stocks
+    else:
+        # Add any missing defaults
+        for s in default_stocks:
+            if s not in stock_symbols:
+                stock_symbols.append(s)
+    all_symbols = stock_symbols[:15]  # limit to 15 to avoid rate limiting
+
+    ratings = get_analyst_ratings(all_symbols)
+    targets = get_price_targets(all_symbols)
+
+    # Fetch current prices
+    prices = {}
+    for sym in all_symbols:
+        try:
+            hist = yf.Ticker(sym).history(period="5d")
+            if not hist.empty:
+                prices[sym] = float(hist["Close"].dropna().iloc[-1])
+        except Exception:
+            prices[sym] = 0
+
+    import plotly.graph_objects as go
+
+    rows = []
+    for sym in all_symbols:
+        if sym not in ratings:
+            continue
+        r = ratings[sym]
+        strong_buy = r.get("strongBuy", 0)
+        buy = r.get("buy", 0)
+        hold = r.get("hold", 0)
+        sell = r.get("sell", 0)
+        strong_sell = r.get("strongSell", 0)
+        total = strong_buy + buy + hold + sell + strong_sell
+        if total == 0:
+            continue
+
+        # Consensus score (1=strong sell, 5=strong buy)
+        score = (strong_buy * 5 + buy * 4 + hold * 3 + sell * 2 + strong_sell * 1) / total
+        if score >= 4.5:
+            consensus = "Strong Buy"
+            cons_color = "#16a34a"
+        elif score >= 3.5:
+            consensus = "Buy"
+            cons_color = COLORS["green"]
+        elif score >= 2.5:
+            consensus = "Hold"
+            cons_color = COLORS["amber"]
+        elif score >= 1.5:
+            consensus = "Sell"
+            cons_color = COLORS["red"]
+        else:
+            consensus = "Strong Sell"
+            cons_color = "#dc2626"
+
+        # Price target
+        pt = targets.get(sym, {})
+        target_mean = pt.get("targetMean", 0)
+        target_high = pt.get("targetHigh", 0)
+        target_low = pt.get("targetLow", 0)
+        current_price = prices.get(sym, 0)
+        upside = ((target_mean - current_price) / current_price * 100) if current_price and target_mean else None
+
+        # Rating bar
+        bar_fig = go.Figure()
+        categories = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell"]
+        values = [strong_buy, buy, hold, sell, strong_sell]
+        bar_colors = ["#16a34a", "#4ade80", "#f59e0b", "#f87171", "#dc2626"]
+        bar_fig.add_trace(go.Bar(
+            x=values, y=categories, orientation="h",
+            marker_color=bar_colors,
+            text=[f"{v}" for v in values],
+            textposition="inside",
+            textfont=dict(color="#fff", size=11),
+        ))
+        bar_fig.update_layout(
+            paper_bgcolor=COLORS["panel2"], plot_bgcolor=COLORS["panel2"],
+            font=dict(color=COLORS["text2"]),
+            margin=dict(l=0, r=0, t=0, b=0), height=130,
+            xaxis=dict(showgrid=False, showticklabels=False),
+            yaxis=dict(showgrid=False),
+            showlegend=False,
+        )
+
+        rows.append(html.Div([
+            # Header
+            html.Div([
+                html.Div([
+                    html.Span(sym, style={"color": COLORS["text"], "fontWeight": "800",
+                                          "fontSize": "18px", "fontFamily": FONT_MONO,
+                                          "marginRight": "12px"}),
+                    html.Span(consensus, style={"color": cons_color, "fontWeight": "700",
+                                                "fontSize": "14px", "background": f"{cons_color}22",
+                                                "padding": "3px 10px", "borderRadius": "6px"}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div(f"${current_price:.2f}", style={"color": COLORS["text"],
+                                                              "fontSize": "16px", "fontWeight": "700",
+                                                              "fontFamily": FONT_MONO,
+                                                              "textAlign": "right"}),
+                    html.Div(f"Target: ${target_mean:.2f}" if target_mean else "No target",
+                             style={"color": COLORS["text2"], "fontSize": "12px",
+                                    "textAlign": "right"}),
+                    html.Div(f"Upside: {upside:+.1f}%" if upside else "",
+                             style={"color": COLORS["green"] if upside and upside > 0 else COLORS["red"],
+                                    "fontSize": "12px", "fontWeight": "700", "textAlign": "right"}),
+                ]),
+            ], style={"display": "flex", "alignItems": "flex-start", "marginBottom": "12px"}),
+
+            # Rating bar
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=bar_fig, config={"displayModeBar": False}),
+                ], style={"flex": "1"}),
+                html.Div([
+                    html.Div(f"{total} analysts", style={"color": COLORS["text3"],
+                                                          "fontSize": "11px", "marginBottom": "8px"}),
+                    html.Div(f"High: ${target_high:.2f}" if target_high else "",
+                             style={"color": COLORS["green"], "fontSize": "11px",
+                                    "fontFamily": FONT_MONO}),
+                    html.Div(f"Mean: ${target_mean:.2f}" if target_mean else "",
+                             style={"color": COLORS["text2"], "fontSize": "11px",
+                                    "fontFamily": FONT_MONO}),
+                    html.Div(f"Low: ${target_low:.2f}" if target_low else "",
+                             style={"color": COLORS["red"], "fontSize": "11px",
+                                    "fontFamily": FONT_MONO}),
+                ], style={"width": "100px", "paddingLeft": "16px"}),
+            ], style={"display": "flex"}),
+
+            html.Div(f"Period: {r.get('period', 'N/A')}",
+                     style={"color": COLORS["text3"], "fontSize": "11px", "marginTop": "8px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderLeft": f"3px solid {cons_color}",
+                  "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "12px"}))
+
+    if not rows:
+        return html.Div("No analyst ratings available for your tickers.",
+                        style={"color": COLORS["text2"]})
+
+    return html.Div([
+        html.Div("Wall Street analyst consensus ratings and price targets for your watchlist and portfolio tickers. Updated monthly.",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"}),
+        html.Div(rows),
+    ])

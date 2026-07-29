@@ -27,7 +27,8 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap,
     compare_tab, compare_results, economic_tab, backtest_tab,
     alerts_tab, load_alerts, save_alerts, check_alerts, crypto_tab,
-    bot_control_tab, load_bot_config, save_bot_config)
+    bot_control_tab, load_bot_config, save_bot_config,
+    analyst_ratings_tab)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -423,6 +424,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="🔔 Alerts", tab_id="tab-alerts"),
             dbc.Tab(label="₿ Crypto", tab_id="tab-crypto"),
             dbc.Tab(label="🤖 Bot", tab_id="tab-bot"),
+            dbc.Tab(label="⭐ Ratings", tab_id="tab-ratings"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -481,6 +483,8 @@ def render_tab(active_tab):
         return crypto_tab()
     if active_tab == "tab-bot":
         return bot_control_tab()
+    if active_tab == "tab-ratings":
+        return analyst_ratings_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
