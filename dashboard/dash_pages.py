@@ -2617,7 +2617,30 @@ def bot_control_tab():
     ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
               "borderRadius": "10px", "padding": "20px"})
 
-    return html.Div([phase_card, header, regime_card, models_card, settings_card, alloc_card, log_card])
+    # Slack status card
+    slack_card = html.Div([
+        html.Div("SLACK NOTIFICATIONS", style={"color": COLORS["text3"], "fontSize": "11px",
+                                               "fontWeight": "600", "letterSpacing": "0.5px",
+                                               "marginBottom": "12px"}),
+        html.Div([
+            html.Div([
+                html.Div("● #alerts channel connected",
+                         style={"color": COLORS["green"], "fontSize": "13px",
+                                "fontWeight": "600", "marginBottom": "4px"}),
+                html.Div("You will receive Slack messages for price alerts, hard sells, rebalances and paper trading milestones.",
+                         style={"color": COLORS["text3"], "fontSize": "12px"}),
+            ], style={"flex": "1"}),
+            html.Div([
+                dbc.Button("Test Slack", id="slack-test-btn", color="secondary",
+                           size="sm", outline=True),
+                html.Div(id="slack-test-status",
+                         style={"color": COLORS["green"], "fontSize": "12px", "marginTop": "6px"}),
+            ]),
+        ], style={"display": "flex", "alignItems": "center", "gap": "16px"}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    return html.Div([phase_card, header, regime_card, models_card, settings_card, slack_card, alloc_card, log_card])
 
 
 

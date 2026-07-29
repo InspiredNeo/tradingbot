@@ -1287,6 +1287,7 @@ def check_alert_notifications(n):
     triggered = check_alerts()
     if not triggered:
         return []
+    from slack_utils import send_alert_triggered
     notifications = []
     for a in triggered:
         try:
@@ -1296,6 +1297,10 @@ def check_alert_notifications(n):
                 message=f"{a['symbol']} {a['condition']} ${a['target']:.2f} — now at ${a['trigger_price']:.2f}",
                 timeout=10,
             )
+        except Exception:
+            pass
+        try:
+            send_alert_triggered(a["symbol"], a["condition"], a["target"], a["trigger_price"])
         except Exception:
             pass
         notifications.append(html.Div([
@@ -1487,6 +1492,26 @@ def div_remove(n_clicks):
         if sym in _div_extra_symbols:
             _div_extra_symbols.remove(sym)
     return dividend_tracker_tab(_div_extra_symbols)
+
+
+
+
+@callback(
+    Output("slack-test-status", "children"),
+    Input("slack-test-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def test_slack(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    try:
+        from slack_utils import send_slack
+        msg = "Slack notifications working: Price alerts, Hard sells, Rebalances, Paper trading milestones"
+        success = send_slack("Market Terminal Connected - " + msg)
+        return "Test message sent to #alerts" if success else "Failed to send"
+    except Exception as e:
+        return f"Error: {e}"
+
 
 if __name__ == "__main__":
     app.run(debug=False, port=8050)
