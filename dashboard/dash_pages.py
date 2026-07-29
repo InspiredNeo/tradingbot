@@ -1934,3 +1934,117 @@ def backtest_tab(weights_dict=None, start_date="2015-01-01"):
 
     results_div = html.Div([metric_cards, perf_chart, dd_chart, ann_chart])
     return html.Div([form, html.Div(id="bt-results", children=results_div)])
+
+
+# ---------- Alerts ----------
+ALERTS_FILE = os.path.expanduser("~/tradingbot/config/alerts.json")
+
+
+def load_alerts():
+    try:
+        if os.path.exists(ALERTS_FILE):
+            with open(ALERTS_FILE) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return []
+
+
+def save_alerts(alerts):
+    try:
+        with open(ALERTS_FILE, "w") as f:
+            json.dump(alerts, f)
+    except Exception:
+        pass
+
+
+def check_alerts():
+    """Check all alerts against current prices. Returns list of triggered alerts."""
+    alerts = load_alerts()
+    triggered = []
+    for a in alerts:
+        if a.get("triggered"):
+            continue
+        sym = a["symbol"]
+        condition = a["condition"]  # "above" or "below"
+        target = a["target"]
+        try:
+            hist = yf.Ticker(sym).history(period="1d")
+            if hist.empty:
+                continue
+            price = float(hist["Close"].iloc[-1])
+            if condition == "above" and price >= target:
+                a["triggered"] = True
+                a["trigger_price"] = price
+                triggered.append(a)
+            elif condition == "below" and price <= target:
+                a["triggered"] = True
+                a["trigger_price"] = price
+                triggered.append(a)
+        except Exception:
+            continue
+    save_alerts(alerts)
+    return triggered
+
+
+def alerts_tab():
+    alerts = load_alerts()
+
+    form = html.Div([
+        html.Div("ADD ALERT", style={"color": COLORS["text3"], "fontSize": "11px",
+                                     "fontWeight": "600", "letterSpacing": "0.5px",
+                                     "marginBottom": "10px"}),
+        html.Div([
+            dbc.Input(id="alert-symbol", placeholder="Ticker (e.g. AAPL)",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "flex": "1", "marginRight": "8px"}),
+            dbc.Select(id="alert-condition",
+                       options=[{"label": "rises above", "value": "above"},
+                                {"label": "drops below", "value": "below"}],
+                       value="above",
+                       style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                              "color": COLORS["text"], "marginRight": "8px", "width": "160px"}),
+            dbc.Input(id="alert-target", placeholder="Price ($)", type="number",
+                      style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border2']}",
+                             "color": COLORS["text"], "marginRight": "8px", "width": "130px"}),
+            dbc.Button("Add Alert", id="alert-add-btn", color="primary", size="sm"),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "20px"}),
+    ])
+
+    if not alerts:
+        return html.Div([form,
+                         html.Div(id="alerts-list",
+                                  children=html.Div("No alerts set. Add one above.",
+                                                    style={"color": COLORS["text2"]}))])
+
+    rows = []
+    for i, a in enumerate(alerts):
+        triggered = a.get("triggered", False)
+        sym = a["symbol"]
+        condition = a["condition"]
+        target = a["target"]
+        trigger_price = a.get("trigger_price")
+
+        status_color = COLORS["green"] if triggered else COLORS["text3"]
+        status_text = f"✅ TRIGGERED @ ${trigger_price:.2f}" if triggered else "⏳ Watching"
+        border_color = COLORS["green"] if triggered else COLORS["border"]
+
+        rows.append(html.Div([
+            html.Div([
+                html.Span(sym, style={"color": COLORS["text"], "fontWeight": "700",
+                                      "fontSize": "14px", "fontFamily": FONT_MONO,
+                                      "marginRight": "12px"}),
+                html.Span(f"{condition} ${target:,.2f}",
+                          style={"color": COLORS["text2"], "fontSize": "13px"}),
+            ], style={"flex": "1"}),
+            html.Span(status_text, style={"color": status_color, "fontSize": "12px",
+                                          "fontWeight": "600", "marginRight": "16px"}),
+            html.Div("✕", id={"type": "alert-remove", "index": i}, n_clicks=0,
+                     style={"color": COLORS["text3"], "cursor": "pointer",
+                            "fontSize": "14px", "fontWeight": "700", "padding": "2px 8px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {border_color}",
+                  "borderLeft": f"3px solid {border_color}",
+                  "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "8px",
+                  "display": "flex", "alignItems": "center"}))
+
+    return html.Div([form, html.Div(rows, id="alerts-list")])

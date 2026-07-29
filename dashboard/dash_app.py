@@ -25,7 +25,8 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     category_content, browse_tab_content, portfolio_tab,
     load_portfolio, save_portfolio, breakdown_tab, correlation_tab,
     market_map_tab, market_treemap, portfolio_treemap, sector_treemap, etf_treemap,
-    compare_tab, compare_results, economic_tab, backtest_tab)
+    compare_tab, compare_results, economic_tab, backtest_tab,
+    alerts_tab, load_alerts, save_alerts, check_alerts)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -350,6 +351,7 @@ app.layout = html.Div([
     dcc.Store(id="selected-article", data=None),
     dcc.Store(id="chart-period", data="1y"),
     dcc.Store(id="compare-list", data=[]),
+    html.Div(id="alert-notifications", style={"position": "fixed", "top": "10px", "right": "10px", "zIndex": "9999", "maxWidth": "400px"}),
     dcc.Interval(id="refresh-interval", interval=60_000),
     html.Div([
         sidebar(),
@@ -417,6 +419,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="⚖️ Compare", tab_id="tab-compare"),
             dbc.Tab(label="📈 Economy", tab_id="tab-economy"),
             dbc.Tab(label="⏱️ Backtest", tab_id="tab-backtest"),
+            dbc.Tab(label="🔔 Alerts", tab_id="tab-alerts"),
         ], id="main-tabs", active_tab="tab-news"),
         dcc.Loading(html.Div(id="tab-content", style={"marginTop": "20px"}), type="circle", color="#4b8bf5"),
     ])
@@ -469,6 +472,8 @@ def render_tab(active_tab):
         return economic_tab()
     if active_tab == "tab-backtest":
         return backtest_tab()
+    if active_tab == "tab-alerts":
+        return alerts_tab()
     if active_tab == "tab-browse":
         return html.Div([
             dbc.Input(id="browse-search", placeholder="Search any ticker (e.g. AAPL, BTC-USD)...",
@@ -1207,6 +1212,78 @@ def run_bt(n_clicks, allocation_str, start_date):
         return html.Div([metric_cards, perf_chart, dd_chart, ann_chart])
     except Exception as e:
         return html.Div(f"Error: {e}", style={"color": COLORS["red"]})
+
+
+
+@callback(
+    Output("alerts-list", "children"),
+    Input("alert-add-btn", "n_clicks"),
+    State("alert-symbol", "value"),
+    State("alert-condition", "value"),
+    State("alert-target", "value"),
+    prevent_initial_call=True,
+)
+def add_alert(n_clicks, symbol, condition, target):
+    if not symbol or not target:
+        return dash.no_update
+    alerts = load_alerts()
+    alerts.append({
+        "symbol": symbol.strip().upper(),
+        "condition": condition,
+        "target": float(target),
+        "triggered": False,
+    })
+    save_alerts(alerts)
+    from dash_pages import alerts_tab
+    return alerts_tab().children[1].children
+
+
+@callback(
+    Output("alerts-list", "children", allow_duplicate=True),
+    Input({"type": "alert-remove", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def remove_alert(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update
+    idx = triggered["index"]
+    alerts = load_alerts()
+    if idx < len(alerts):
+        alerts.pop(idx)
+        save_alerts(alerts)
+    from dash_pages import alerts_tab
+    return alerts_tab().children[1].children
+
+
+@callback(
+    Output("alert-notifications", "children"),
+    Input("refresh-interval", "n_intervals"),
+)
+def check_alert_notifications(n):
+    triggered = check_alerts()
+    if not triggered:
+        return []
+    notifications = []
+    for a in triggered:
+        try:
+            from plyer import notification
+            notification.notify(
+                title=f"Market Terminal Alert",
+                message=f"{a['symbol']} {a['condition']} ${a['target']:.2f} — now at ${a['trigger_price']:.2f}",
+                timeout=10,
+            )
+        except Exception:
+            pass
+        notifications.append(html.Div([
+            html.Span(f"🔔 {a['symbol']} {a['condition']} ${a['target']:,.2f} — triggered @ ${a['trigger_price']:,.2f}",
+                      style={"flex": "1", "color": "#fff", "fontWeight": "600"}),
+        ], style={"background": "#16a34a", "border": "1px solid #4ade80",
+                  "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "6px",
+                  "display": "flex", "alignItems": "center"}))
+    return notifications
 
 if __name__ == "__main__":
     app.run(debug=True, port=8050)
