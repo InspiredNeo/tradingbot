@@ -1564,3 +1564,142 @@ def compare_tab(symbols=None):
         compare_input_row(),
         html.Div(compare_results(symbols), id="compare-results"),
     ])
+
+
+# ---------- Economic Indicators ----------
+import requests as _req
+
+FRED_SERIES = {
+    "Fed Funds Rate": ("FEDFUNDS", "%", "#4b8bf5"),
+    "CPI Inflation (YoY)": ("CPIAUCSL", "%", "#f59e0b"),
+    "Unemployment Rate": ("UNRATE", "%", "#f87171"),
+    "10Y Treasury Yield": ("DGS10", "%", "#4ade80"),
+    "2Y Treasury Yield": ("DGS2", "%", "#a78bfa"),
+    "GDP Growth (QoQ)": ("A191RL1Q225SBEA", "%", "#38bdf8"),
+}
+
+
+def _fetch_fred(series_id, limit=60):
+    key = os.getenv("FRED_API_KEY")
+    try:
+        resp = _req.get(
+            "https://api.stlouisfed.org/fred/series/observations",
+            params={"series_id": series_id, "api_key": key, "file_type": "json",
+                    "sort_order": "desc", "limit": limit},
+            timeout=15,
+        )
+        data = resp.json()
+        obs = data.get("observations", [])
+        dates, values = [], []
+        for o in reversed(obs):
+            v = o.get("value", ".")
+            if v != ".":
+                dates.append(o["date"])
+                values.append(float(v))
+        return dates, values
+    except Exception:
+        return [], []
+
+
+def economic_tab():
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+
+    # Fetch all series
+    series_data = {}
+    for label, (series_id, unit, color) in FRED_SERIES.items():
+        dates, values = _fetch_fred(series_id)
+        series_data[label] = (dates, values, unit, color)
+
+    # Current values summary cards
+    cards = []
+    for label, (dates, values, unit, color) in series_data.items():
+        if not values:
+            continue
+        current = values[-1]
+        prev = values[-2] if len(values) > 1 else current
+        change = current - prev
+        arrow = "▲" if change >= 0 else "▼"
+        change_color = COLORS["green"] if change >= 0 else COLORS["red"]
+        # Special case: unemployment up = bad
+        if "Unemployment" in label:
+            change_color = COLORS["red"] if change >= 0 else COLORS["green"]
+        cards.append(html.Div([
+            html.Div(label, style={"color": COLORS["text3"], "fontSize": "10px",
+                                   "fontWeight": "600", "letterSpacing": "0.5px"}),
+            html.Div(f"{current:.2f}{unit}", style={"color": color, "fontSize": "22px",
+                                                     "fontWeight": "800", "fontFamily": FONT_MONO,
+                                                     "margin": "4px 0 2px"}),
+            html.Div(f"{arrow} {abs(change):.2f}{unit} vs prior",
+                     style={"color": change_color, "fontSize": "11px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderLeft": f"3px solid {color}", "borderRadius": "10px",
+                  "padding": "14px 18px", "flex": "1"}))
+
+    summary_row = html.Div(cards, style={"display": "flex", "gap": "10px", "marginBottom": "24px",
+                                          "flexWrap": "wrap"})
+
+    # Yield curve (2Y vs 10Y spread)
+    y2_dates, y2_vals = series_data.get("2Y Treasury Yield", ([], [], None, None))[:2]
+    y10_dates, y10_vals = series_data.get("10Y Treasury Yield", ([], [], None, None))[:2]
+
+    yield_curve_card = html.Div()
+    if y2_vals and y10_vals:
+        min_len = min(len(y2_vals), len(y10_vals))
+        spread = [y10_vals[i] - y2_vals[i] for i in range(min_len)]
+        spread_dates = y10_dates[-min_len:]
+        spread_color = COLORS["green"] if spread[-1] > 0 else COLORS["red"]
+        status = "Normal" if spread[-1] > 0 else "⚠️ INVERTED (recession signal)"
+        fig_yc = go.Figure()
+        fig_yc.add_trace(go.Scatter(x=spread_dates, y=spread, mode="lines",
+                                     line=dict(color=spread_color, width=2), fill="tozeroy",
+                                     fillcolor=f"rgba({','.join(str(int(spread_color.lstrip('#')[i:i+2], 16)) for i in (0,2,4))},0.15)"))
+        fig_yc.add_hline(y=0, line_dash="dash", line_color=COLORS["text3"])
+        fig_yc.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                              font=dict(color=COLORS["text2"]),
+                              xaxis=dict(gridcolor=COLORS["border"]),
+                              yaxis=dict(gridcolor=COLORS["border"], title="Spread (%)"),
+                              margin=dict(l=0, r=0, t=10, b=0), height=200)
+        yield_curve_card = html.Div([
+            html.Div([
+                html.Span("YIELD CURVE (10Y - 2Y SPREAD)", style={"color": COLORS["text3"],
+                          "fontSize": "11px", "fontWeight": "600"}),
+                html.Span(f"  {spread[-1]:+.2f}%  {status}",
+                          style={"color": spread_color, "fontSize": "12px", "fontWeight": "700",
+                                 "marginLeft": "12px"}),
+            ], style={"marginBottom": "10px"}),
+            dcc.Graph(figure=fig_yc, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px", "marginBottom": "20px"})
+
+    # Individual indicator charts in a 2-column grid
+    chart_cards = []
+    for label, (dates, values, unit, color) in series_data.items():
+        if not dates:
+            continue
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates, y=values, mode="lines",
+                                  line=dict(color=color, width=2), fill="tozeroy",
+                                  fillcolor=f"rgba({','.join(str(int(color.lstrip('#')[i:i+2], 16)) for i in (0,2,4))},0.1)"))
+        fig.update_layout(paper_bgcolor=COLORS["panel"], plot_bgcolor=COLORS["panel"],
+                          font=dict(color=COLORS["text2"]),
+                          xaxis=dict(gridcolor=COLORS["border"], showgrid=True),
+                          yaxis=dict(gridcolor=COLORS["border"], showgrid=True),
+                          margin=dict(l=0, r=0, t=10, b=0), height=200)
+        chart_cards.append(html.Div([
+            html.Div(label, style={"color": COLORS["text3"], "fontSize": "11px",
+                                   "fontWeight": "600", "marginBottom": "8px"}),
+            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "16px 20px"}))
+
+    charts_grid = html.Div(chart_cards, style={"display": "grid",
+                           "gridTemplateColumns": "repeat(2, 1fr)", "gap": "12px"})
+
+    return html.Div([
+        html.Div("Key economic indicators from the Federal Reserve (FRED). Updated monthly.",
+                 style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "16px"}),
+        summary_row,
+        yield_curve_card,
+        charts_grid,
+    ])
