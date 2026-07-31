@@ -464,9 +464,13 @@ def render_tab(active_tab):
         cat_map = {"tab-stocks": "Stocks", "tab-etfs": "ETFs", "tab-world": "World"}
         category = cat_map[active_tab]
         articles = _get_category_articles(category)
-        summary = _get_category_summary(category, articles)
+        _get_category_summary(category, articles)  # start background generation
         active_filter = _category_filters.get(category, "All")
-        return category_content(category, articles, active_filter, summary)
+        return html.Div([
+            category_content(category, articles, active_filter, None),
+            dcc.Interval(id={"type": "summary-poll", "cat": category},
+                        interval=2000, max_intervals=30),
+        ])
     if active_tab == "tab-portfolio":
         return portfolio_tab()
     if active_tab == "tab-breakdown":
@@ -521,20 +525,34 @@ def _get_category_articles(category):
 
 
 def _get_category_summary(category, articles):
+    """Returns current summary state - generates in background if not ready."""
     if category not in _category_summaries and articles:
-        headline_block = "\n".join(
-            f"- {a['title']} (sentiment: {a['sentiment_label']})" for a in articles)
-        prompt = (
-            f"You are a senior financial analyst at a top investment bank. Analyze these headlines and provide a deep, professional market briefing.\n\n"
-            f"**MARKET OVERVIEW**\n2-3 sentences on overall market mood.\n\n"
-            f"**KEY THEMES**\n4-6 themes, each with detailed explanation.\n\n"
-            f"**RISKS TO WATCH**\n2-3 specific risks or catalysts.\n\n"
-            f"**BOTTOM LINE**\n1-2 sentences on what to pay attention to.\n\n"
-            f"Only reference companies directly mentioned. Be specific and factual.\n\n"
-            f"HEADLINES:\n{headline_block}"
-        )
-        _category_summaries[category] = generate_ai_text(prompt)
+        if category not in _summary_generating:
+            _summary_generating.add(category)
+            import threading
+            def _generate():
+                try:
+                    headline_block = "\n".join(
+                        f"- {a['title']} (sentiment: {a['sentiment_label']})" for a in articles)
+                    prompt = (
+                        f"You are a senior financial analyst. Analyze these headlines and provide a professional market briefing.\n\n"
+                        f"**MARKET OVERVIEW**\n2-3 sentences on overall market mood.\n\n"
+                        f"**KEY THEMES**\n4-6 key themes with brief explanations.\n\n"
+                        f"**RISKS TO WATCH**\n2-3 specific risks or catalysts.\n\n"
+                        f"**BOTTOM LINE**\n1-2 sentences summary.\n\n"
+                        f"HEADLINES:\n{headline_block}"
+                    )
+                    result = generate_ai_text(prompt)
+                    _category_summaries[category] = result
+                    _summary_generating.discard(category)
+                except Exception:
+                    _summary_generating.discard(category)
+            threading.Thread(target=_generate, daemon=True).start()
+        return None  # Still generating
     return _category_summaries.get(category)
+
+
+_summary_generating = set()
 
 
 @callback(
@@ -564,6 +582,7 @@ _cat_article_insights = {}
     prevent_initial_call=True,
 )
 def cat_article_insight(active_items):
+    import threading
     outputs = [dash.no_update] * len(ctx.outputs_list)
     for accordion_idx, active_item in enumerate(active_items):
         if not active_item:
@@ -592,25 +611,68 @@ def cat_article_insight(active_items):
             continue
         a = filtered[idx]
         url = a.get("url", "")
-        if url not in _cat_article_insights:
-            prompt = (
-                f"You are a financial analyst. Give a sharp 3-4 sentence take on why this article matters "
-                f"for investors, the market implication, and any risk or opportunity.\n"
-                f"Title: {a.get('title', '')}\n"
-                f"Summary: {a.get('summary', 'N/A')}\n"
-                f"Sentiment: {a.get('sentiment_label', '')}"
-            )
-            _cat_article_insights[url] = generate_ai_text(prompt)
-        insight = _cat_article_insights.get(url, "")
-        # Find matching output
+        if url not in _cat_article_insights and url not in _article_generating:
+            _article_generating.add(url)
+            def _gen(article=a, article_url=url):
+                try:
+                    prompt = (
+                        f"You are a financial analyst. Give a sharp 3-4 sentence take on why this "
+                        f"article matters for investors, the market implication, and any risk or "
+                        f"opportunity it signals. Be direct and specific, no filler.\n"
+                        f"Title: {article.get('title', '')}\n"
+                        f"Summary: {article.get('summary', 'N/A')}\n"
+                        f"Sentiment: {article.get('sentiment_label', '')}"
+                    )
+                    _cat_article_insights[article_url] = generate_ai_text(prompt)
+                    _article_generating.discard(article_url)
+                except Exception:
+                    _article_generating.discard(article_url)
+            threading.Thread(target=_gen, daemon=True).start()
+        insight = _cat_article_insights.get(url)
         for out_idx, out in enumerate(ctx.outputs_list):
             if out["id"].get("cat") == category and out["id"].get("index") == idx:
-                outputs[out_idx] = html.Div(dcc.Markdown(insight), style={
-                    "background": "#0d1a13", "border": "1px solid #1a3d2a",
-                    "borderLeft": "3px solid #4ade80", "borderRadius": "8px",
-                    "padding": "14px 18px", "marginTop": "12px", "color": "#d1d5db"})
+                if insight:
+                    outputs[out_idx] = html.Div(dcc.Markdown(insight), style={
+                        "background": "#0d1a13", "border": "1px solid #1a3d2a",
+                        "borderLeft": "3px solid #4ade80", "borderRadius": "8px",
+                        "padding": "14px 18px", "marginTop": "12px", "color": "#d1d5db"})
+                else:
+                    outputs[out_idx] = html.Div([
+                        html.Span("⟳ ", style={"color": COLORS["blue"]}),
+                        html.Span("Generating AI analysis...",
+                                  style={"color": COLORS["text3"], "fontSize": "13px"}),
+                        dcc.Interval(
+                            id={"type": "article-insight-poll", "url": url,
+                                "cat": category, "idx": idx},
+                            interval=2000, max_intervals=15),
+                    ], style={"marginTop": "12px"})
                 break
     return outputs
+
+
+_article_generating = set()
+
+
+@callback(
+    Output({"type": "cat-article-insight", "cat": dash.MATCH, "index": dash.MATCH},
+           "children", allow_duplicate=True),
+    Input({"type": "article-insight-poll", "url": dash.MATCH, "cat": dash.MATCH,
+           "idx": dash.MATCH}, "n_intervals"),
+    prevent_initial_call=True,
+)
+def poll_article_insight(n_intervals):
+    triggered = ctx.triggered_id
+    if not triggered:
+        return dash.no_update
+    url = triggered["url"]
+    insight = _cat_article_insights.get(url)
+    if not insight:
+        return dash.no_update
+    return html.Div(dcc.Markdown(insight), style={
+        "background": "#0d1a13", "border": "1px solid #1a3d2a",
+        "borderLeft": "3px solid #4ade80", "borderRadius": "8px",
+        "padding": "14px 18px", "marginTop": "12px", "color": "#d1d5db"})
+
 
 @callback(
     Output("browse-content", "children"),
@@ -1284,6 +1346,13 @@ def remove_alert(n_clicks):
     Input("refresh-interval", "n_intervals"),
 )
 def check_alert_notifications(n):
+    # Clean expired cache files periodically
+    try:
+        from cache_utils import cache_clean
+        if n and n % 10 == 0:  # every 10 intervals (10 minutes)
+            cache_clean()
+    except Exception:
+        pass
     triggered = check_alerts()
     if not triggered:
         return []
@@ -1512,6 +1581,109 @@ def test_slack(n_clicks):
     except Exception as e:
         return f"Error: {e}"
 
+
+
+# Pre-fetch heavy data on startup
+print("Pre-fetching data...")
+try:
+    fetch_news_dash()
+    print("  News fetched")
+except Exception as e:
+    print(f"  News failed: {e}")
+try:
+    from dash_pages import MAP_STOCKS
+    from fetch_utils import fetch_many_info
+    from cache_utils import cache_set
+    all_map_syms = [s for syms in MAP_STOCKS.values() for s in syms]
+    all_info = fetch_many_info(all_map_syms, max_workers=15)
+    caps = {sym: (all_info.get(sym, {}).get("marketCap", 0) or 0) for sym in all_map_syms}
+    cache_set("market_caps", caps, ttl=1800)
+    print("  Market caps pre-fetched")
+except Exception as e:
+    print(f"  Map caps failed: {e}")
+print("Pre-fetch complete")
+
+
+
+@callback(
+    Output({"type": "cat-summary-div", "cat": ALL}, "children"),
+    Output({"type": "summary-poll", "cat": ALL}, "disabled"),
+    Input({"type": "summary-poll", "cat": ALL}, "n_intervals"),
+    prevent_initial_call=True,
+)
+def poll_summary(n_intervals):
+    summary_outputs = [dash.no_update] * len(ctx.outputs_list[0])
+    disabled_outputs = [dash.no_update] * len(ctx.outputs_list[1])
+    if not ctx.triggered:
+        return summary_outputs, disabled_outputs
+    triggered = ctx.triggered_id
+    if not triggered or not isinstance(triggered, dict):
+        return summary_outputs, disabled_outputs
+    category = triggered["cat"]
+    summary = _category_summaries.get(category)
+    if not summary:
+        return summary_outputs, disabled_outputs
+    # Find the matching output index
+    for i, out in enumerate(ctx.outputs_list[0]):
+        if out["id"].get("cat") == category:
+            summary_outputs[i] = html.Div(dcc.Markdown(summary), style={
+                "background": "#0d1a13", "border": "1px solid #1a3d2a",
+                "borderLeft": f"3px solid {COLORS['green']}", "borderRadius": "8px",
+                "padding": "16px 20px", "marginBottom": "20px", "color": "#d1d5db",
+            })
+            break
+    for i, out in enumerate(ctx.outputs_list[1]):
+        if out["id"].get("cat") == category:
+            disabled_outputs[i] = True
+            break
+    return summary_outputs, disabled_outputs
+
+
+
+@callback(
+    Output("schwab-status-msg", "children"),
+    Input("schwab-connect-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def schwab_connect(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    try:
+        import sys
+        sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+        from schwab_client import get_schwab_client
+        client = get_schwab_client()
+        success = client.connect()
+        if success:
+            return "✓ Schwab connected successfully! Portfolio syncing..."
+        else:
+            return "✗ Connection failed — check your credentials in .env"
+    except Exception as e:
+        return f"✗ Error: {e}"
+
+
+@callback(
+    Output("schwab-status-msg", "children", allow_duplicate=True),
+    Input("schwab-sync-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def schwab_sync(n_clicks):
+    if not ctx.triggered or not ctx.triggered[0]["value"]:
+        return dash.no_update
+    try:
+        import sys
+        sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+        from schwab_client import get_schwab_client
+        client = get_schwab_client()
+        if not client.connected:
+            return "✗ Not connected to Schwab"
+        success = client.sync_to_portfolio_file()
+        if success:
+            return "✓ Portfolio synced from Schwab account"
+        else:
+            return "✗ Sync failed — no positions found"
+    except Exception as e:
+        return f"✗ Error: {e}"
 
 if __name__ == "__main__":
     app.run(debug=False, port=8050)

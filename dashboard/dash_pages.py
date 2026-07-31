@@ -636,12 +636,19 @@ def category_content(category, articles, active_filter="All", summary_text=None)
         filter_btn("⚪ NEUTRAL", neutral, "Neutral", COLORS["text2"]),
     ], style={"display": "flex", "gap": "12px", "marginBottom": "16px"})
 
-    summary_box = html.Div(dcc.Markdown(summary_text), style={
-        "background": "#0d1a13", "border": "1px solid #1a3d2a",
-        "borderLeft": f"3px solid {COLORS['green']}", "borderRadius": "8px",
-        "padding": "16px 20px", "marginBottom": "20px", "color": "#d1d5db",
-    }) if summary_text else html.Div("Generating market summary...",
-                                      style={"color": COLORS["text2"], "marginBottom": "20px"})
+    summary_box = html.Div(
+        html.Div(dcc.Markdown(summary_text), style={
+            "background": "#0d1a13", "border": "1px solid #1a3d2a",
+            "borderLeft": f"3px solid {COLORS['green']}", "borderRadius": "8px",
+            "padding": "16px 20px", "color": "#d1d5db",
+        }) if summary_text else html.Div([
+            html.Span("⟳ ", style={"color": COLORS["blue"]}),
+            html.Span("Generating AI market analysis...",
+                      style={"color": COLORS["text3"], "fontSize": "13px"}),
+        ]),
+        id={"type": "cat-summary-div", "cat": category},
+        style={"marginBottom": "20px"}
+    )
 
     # Filter articles
     if active_filter == "Bullish":
@@ -846,18 +853,24 @@ def portfolio_tab():
                          html.Div("No holdings yet. Add your positions above to track them.",
                                   style={"color": COLORS["text2"]})])
 
-    # Fetch current prices
+    # Fetch current prices - parallel
     symbols = [h["symbol"] for h in holdings]
-    prices = {}
-    for sym in symbols:
-        try:
-            hist = yf.Ticker(sym).history(period="5d")
-            if not hist.empty:
-                prices[sym] = float(hist["Close"].dropna().iloc[-1])
-            else:
+    if _FAST_FETCH:
+        prices = fetch_current_prices(symbols)
+        for sym in symbols:
+            if sym not in prices:
                 prices[sym] = 0
-        except Exception:
-            prices[sym] = 0
+    else:
+        prices = {}
+        for sym in symbols:
+            try:
+                hist = yf.Ticker(sym).history(period="5d")
+                if not hist.empty:
+                    prices[sym] = float(hist["Close"].dropna().iloc[-1])
+                else:
+                    prices[sym] = 0
+            except Exception:
+                prices[sym] = 0
 
     # Calculate totals
     total_value = 0
@@ -1253,15 +1266,21 @@ def _make_treemap(labels, parents, values, colors, title=""):
 def market_treemap():
     all_syms = [s for syms in MAP_STOCKS.values() for s in syms]
     changes = _treemap_data(all_syms)
-    caps = {}
-    try:
-        for sym in all_syms:
-            try:
-                caps[sym] = yf.Ticker(sym).info.get("marketCap", 0) or 0
-            except Exception:
-                caps[sym] = 0
-    except Exception:
-        pass
+    # Parallel market cap fetch with cache
+    from cache_utils import cache_get, cache_set
+    caps = cache_get("market_caps", ttl=1800)
+    if not caps:
+        if _FAST_FETCH:
+            all_info = fetch_many_info(all_syms, max_workers=15)
+            caps = {sym: (all_info.get(sym, {}).get("marketCap", 0) or 0) for sym in all_syms}
+        else:
+            caps = {}
+            for sym in all_syms:
+                try:
+                    caps[sym] = yf.Ticker(sym).info.get("marketCap", 0) or 0
+                except Exception:
+                    caps[sym] = 0
+        cache_set("market_caps", caps, ttl=1800)
 
     labels, parents, values, colors, texts = ["Market"], [""], [0], [0], [""]
     for sector, syms in MAP_STOCKS.items():
@@ -1333,12 +1352,18 @@ def portfolio_treemap():
 def sector_treemap():
     all_syms = [s for syms in MAP_STOCKS.values() for s in syms]
     changes = _treemap_data(all_syms)
-    caps = {}
-    for sym in all_syms:
-        try:
-            caps[sym] = yf.Ticker(sym).info.get("marketCap", 0) or 0
-        except Exception:
-            caps[sym] = 0
+    from cache_utils import cache_get
+    caps = cache_get("market_caps", ttl=1800) or {}
+    if not caps:
+        if _FAST_FETCH:
+            all_info = fetch_many_info(all_syms, max_workers=15)
+            caps = {sym: (all_info.get(sym, {}).get("marketCap", 0) or 0) for sym in all_syms}
+        else:
+            for sym in all_syms:
+                try:
+                    caps[sym] = yf.Ticker(sym).info.get("marketCap", 0) or 0
+                except Exception:
+                    caps[sym] = 0
 
     # Aggregate by sector - avg change weighted by cap
     labels, parents, values, colors, texts = ["Sectors"], [""], [0], [0], [""]
@@ -1410,12 +1435,22 @@ MAP_ETFS = {
 def etf_treemap():
     all_syms = [s for syms in MAP_ETFS.values() for s in syms]
     changes = _treemap_data(all_syms)
-    caps = {}
-    for sym in all_syms:
-        try:
-            caps[sym] = yf.Ticker(sym).info.get("totalAssets", 0) or yf.Ticker(sym).info.get("marketCap", 1e9) or 1e9
-        except Exception:
-            caps[sym] = 1e9
+    cache_key = "etf_caps"
+    from cache_utils import cache_get, cache_set
+    caps = cache_get(cache_key, ttl=1800) or {}
+    if not caps:
+        if _FAST_FETCH:
+            all_info = fetch_many_info(all_syms, max_workers=10)
+            caps = {sym: (all_info.get(sym, {}).get("totalAssets") or
+                          all_info.get(sym, {}).get("marketCap") or 1e9)
+                    for sym in all_syms}
+        else:
+            for sym in all_syms:
+                try:
+                    caps[sym] = yf.Ticker(sym).info.get("totalAssets", 0) or 1e9
+                except Exception:
+                    caps[sym] = 1e9
+        cache_set(cache_key, caps, ttl=1800)
 
     labels, parents, values, colors, texts = ["ETFs"], [""], [0], [0], [""]
     for group, syms in MAP_ETFS.items():
@@ -1447,6 +1482,14 @@ def etf_treemap():
                       height=680, font=dict(family=FONT_MONO))
     return dcc.Graph(figure=fig, id="etf-treemap-graph", config={"displayModeBar": False})
 
+
+# ---------- Performance imports ----------
+try:
+    from fetch_utils import fetch_many_info, fetch_many_history, fetch_current_prices
+    from cache_utils import mem_get, mem_set, cache_get, cache_set, cache_clean
+    _FAST_FETCH = True
+except ImportError:
+    _FAST_FETCH = False
 
 # ---------- Compare Mode ----------
 def compare_input_row():
@@ -1605,11 +1648,18 @@ def economic_tab():
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
 
-    # Fetch all series
+    # Fetch all FRED series in parallel
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     series_data = {}
-    for label, (series_id, unit, color) in FRED_SERIES.items():
+    def _fetch_one(item):
+        label, (series_id, unit, color) = item
         dates, values = _fetch_fred(series_id)
-        series_data[label] = (dates, values, unit, color)
+        return label, (dates, values, unit, color)
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_fetch_one, item): item for item in FRED_SERIES.items()}
+        for future in as_completed(futures):
+            label, data = future.result()
+            series_data[label] = data
 
     # Current values summary cards
     cards = []
@@ -2116,10 +2166,16 @@ def crypto_tab():
 
     # Treemap
     import plotly.graph_objects as go
+    # Parallel crypto market cap
+    crypto_syms = list(prices.keys())
+    if _FAST_FETCH:
+        crypto_info = fetch_many_info([v[0] for v in prices.values()], max_workers=8)
+    else:
+        crypto_info = {}
     labels, parents, values, colors, texts = ["Crypto"], [""], [0], [0], [""]
     for name, (sym, price, pct) in prices.items():
         try:
-            market_cap = yf.Ticker(sym).info.get("marketCap", 0) or 1e9
+            market_cap = crypto_info.get(sym, {}).get("marketCap", 0) or 1e9
         except Exception:
             market_cap = 1e9
         labels.append(name)
@@ -2617,6 +2673,62 @@ def bot_control_tab():
     ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
               "borderRadius": "10px", "padding": "20px"})
 
+    # Schwab connection card
+    schwab_status = {}
+    schwab_status_file = os.path.expanduser("~/tradingbot/config/schwab_status.json")
+    try:
+        if os.path.exists(schwab_status_file):
+            with open(schwab_status_file) as f:
+                schwab_status = json.load(f)
+    except Exception:
+        pass
+
+    schwab_connected = schwab_status.get("connected", False)
+    schwab_color = COLORS["green"] if schwab_connected else COLORS["red"]
+    schwab_text = "● Connected" if schwab_connected else "● Not Connected"
+    last_refresh = schwab_status.get("last_refresh", "Never")
+
+    schwab_card = html.Div([
+        html.Div("SCHWAB CONNECTION", style={"color": COLORS["text3"], "fontSize": "11px",
+                                             "fontWeight": "600", "letterSpacing": "0.5px",
+                                             "marginBottom": "16px"}),
+        html.Div([
+            html.Div([
+                html.Div(schwab_text, style={"color": schwab_color, "fontSize": "16px",
+                                             "fontWeight": "700", "marginBottom": "4px"}),
+                html.Div(f"Account: {schwab_status.get('account_hash', 'N/A')}",
+                         style={"color": COLORS["text2"], "fontSize": "12px"}),
+                html.Div(f"Last refresh: {last_refresh[:19] if last_refresh != 'Never' else 'Never'}",
+                         style={"color": COLORS["text3"], "fontSize": "12px"}),
+            ], style={"flex": "1"}),
+            html.Div([
+                dbc.Button("Connect Schwab", id="schwab-connect-btn", color="primary",
+                           size="sm", className="me-2", disabled=schwab_connected),
+                dbc.Button("Sync Portfolio", id="schwab-sync-btn", color="secondary",
+                           size="sm", outline=True, disabled=not schwab_connected),
+            ]),
+        ], style={"display": "flex", "alignItems": "center"}),
+        html.Div(id="schwab-status-msg",
+                 style={"color": COLORS["green"], "fontSize": "12px", "marginTop": "8px"}),
+        html.Div([
+            html.Hr(style={"borderColor": COLORS["border"]}),
+            html.Div("Once connected, the bot can:", style={"color": COLORS["text2"],
+                                                             "fontSize": "12px",
+                                                             "marginBottom": "8px"}),
+            html.Div([
+                html.Div("✓ Auto-populate your Portfolio tab with real holdings",
+                         style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "4px"}),
+                html.Div("✓ Read account balance and buying power",
+                         style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "4px"}),
+                html.Div("✓ Execute rebalance trades automatically (Phase 3 only)",
+                         style={"color": COLORS["text3"], "fontSize": "12px", "marginBottom": "4px"}),
+                html.Div("✓ Send hard sell alerts to Slack and lock for your authorization",
+                         style={"color": COLORS["text3"], "fontSize": "12px"}),
+            ]),
+        ]) if not schwab_connected else html.Div(),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
     # Slack status card
     slack_card = html.Div([
         html.Div("SLACK NOTIFICATIONS", style={"color": COLORS["text3"], "fontSize": "11px",
@@ -2640,24 +2752,38 @@ def bot_control_tab():
     ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
               "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
 
-    return html.Div([phase_card, header, regime_card, models_card, settings_card, slack_card, alloc_card, log_card])
+    return html.Div([phase_card, header, regime_card, models_card, settings_card, schwab_card, slack_card, alloc_card, log_card])
 
 
 
 # ---------- Analyst Ratings ----------
 def get_analyst_ratings(symbols):
     import requests
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     key = os.getenv("FINNHUB_API_KEY")
     results = {}
-    for sym in symbols:
+
+    def fetch_one(sym):
+        cached = mem_get(f"rating:{sym}", ttl=3600) if _FAST_FETCH else None
+        if cached:
+            return sym, cached
         try:
             resp = requests.get("https://finnhub.io/api/v1/stock/recommendation",
                                 params={"symbol": sym, "token": key}, timeout=10)
             data = resp.json()
-            if data:
-                results[sym] = data[0]  # Most recent month
+            result = data[0] if data else None
+            if result and _FAST_FETCH:
+                mem_set(f"rating:{sym}", result)
+            return sym, result
         except Exception:
-            continue
+            return sym, None
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(fetch_one, sym): sym for sym in symbols}
+        for future in as_completed(futures):
+            sym, data = future.result()
+            if data:
+                results[sym] = data
     return results
 
 
@@ -3348,9 +3474,14 @@ def short_interest_tab():
     symbols = list(dict.fromkeys(wl + default_stocks))[:50]
 
     data = []
+    if _FAST_FETCH:
+        all_info = fetch_many_info(symbols, max_workers=12)
+    else:
+        all_info = {sym: yf.Ticker(sym).info for sym in symbols}
+
     for sym in symbols:
         try:
-            info = yf.Ticker(sym).info
+            info = all_info.get(sym, {})
             short_pct = info.get("shortPercentOfFloat", 0) or 0
             short_ratio = info.get("shortRatio", 0) or 0
             shares_short = info.get("sharesShort", 0) or 0
