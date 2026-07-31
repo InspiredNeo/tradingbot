@@ -1,0 +1,12 @@
+{
+  "optimal_mcmc_samples": 5000,
+  "optimal_parallel_models": 6,
+  "optimal_fetch_threads": 12,
+  "estimated_cycle_time_sec": 35,
+  "mcmc_times": {
+    "1000": 5.1,
+    "5000": 25.3,
+    "10000": 53.3
+  },
+  "notes": "Diminishing returns at 10k samples, using 5k for balance of speed and quality"
+}
