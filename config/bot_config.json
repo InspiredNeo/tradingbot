@@ -6,9 +6,10 @@
   "max_position_size": 40.0,
   "target_allocation": {},
   "universe": [],
-  "schwab_connected": false,
+  "schwab_connected": true,
   "phase": 1,
   "mode": "backtest",
   "paper_start_date": "2026-07-29T13:47:30.735907",
-  "last_updated": "2026-07-29T13:47:30.924223"
+  "last_updated": "2026-07-29T13:47:30.924223",
+  "schwab_account_hash": "AB8EBEB8321560E2E175C0B8DDA467A6C1C05354386EE38DB62342A06A2D11C1"
 }

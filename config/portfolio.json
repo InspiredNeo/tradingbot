@@ -1,1 +1,14 @@
-[{"symbol": "VTI", "shares": 0.1617, "cost_basis": 365.85}, {"symbol": "SCHF", "shares": 0.7288, "cost_basis": 19.66}]
+[
+  {
+    "symbol": "VTI",
+    "shares": 0.1617,
+    "cost_basis": 370.995671,
+    "source": "schwab"
+  },
+  {
+    "symbol": "SCHF",
+    "shares": 0.7288,
+    "cost_basis": 27.442371,
+    "source": "schwab"
+  }
+]

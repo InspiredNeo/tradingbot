@@ -13,7 +13,7 @@ load_dotenv(os.path.expanduser("~/tradingbot/config/.env"))
 
 SCHWAB_CLIENT_ID = os.getenv("SCHWAB_CLIENT_ID")
 SCHWAB_CLIENT_SECRET = os.getenv("SCHWAB_CLIENT_SECRET")
-SCHWAB_CALLBACK_URL = "https://127.0.0.1"
+SCHWAB_CALLBACK_URL = "https://127.0.0.1:8182"
 TOKEN_FILE = os.path.expanduser("~/tradingbot/config/schwab_tokens.json")
 STATUS_FILE = os.path.expanduser("~/tradingbot/config/schwab_status.json")
 
