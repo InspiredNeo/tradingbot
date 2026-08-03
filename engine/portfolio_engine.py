@@ -262,6 +262,26 @@ def compute_allocation(dial_value=None, n_cov_draws=400, verbose=True):
     w = sum(per_model[m] * MODEL_BLEND[m] for m in MODEL_BLEND)
     w = _project_simplex_capped(w)
 
+    # -- risk tolerance: baseline sleeve split (WHO YOU ARE) --
+    # Applied before the dial (HOW DANGEROUS NOW IS). Tolerance sets
+    # the calm-market portfolio; the dial scales away from it.
+    RISK_TARGETS = {1: 0.35, 2: 0.50, 3: 0.62, 4: 0.75, 5: 0.88}
+    try:
+        bot_cfg = json.load(open(os.path.join(CONFIG, "bot_config.json")))
+        tolerance = int(bot_cfg.get("risk_tolerance", 3))
+    except Exception:
+        tolerance = 3
+    tolerance = max(1, min(5, tolerance))
+    target_risk = RISK_TARGETS[tolerance]
+
+    risk_ix_ = [UNIVERSE.index(t) for t in RISK_ASSETS]
+    def_ix_ = [UNIVERSE.index(t) for t in DEFENSIVE]
+    cur_risk = w[risk_ix_].sum()
+    if cur_risk > 0 and cur_risk < 1:
+        w[risk_ix_] *= target_risk / cur_risk
+        w[def_ix_] *= (1 - target_risk) / (1 - cur_risk)
+        w = w / w.sum()
+
     # -- dial scaling --
     if dial_value is None:
         stab = pd.read_parquet(os.path.join(DATA_DIR, "stability.parquet"))
@@ -285,6 +305,8 @@ def compute_allocation(dial_value=None, n_cov_draws=400, verbose=True):
         "per_model": {m: {t: round(float(x), 4)
                           for t, x in zip(UNIVERSE, v)}
                       for m, v in per_model.items()},
+        "risk_tolerance": tolerance,
+        "baseline_risk_target": target_risk,
         "dial": round(dial_value, 3),
         "risk_multiplier": round(mult, 3),
         "risk_sleeve": round(float(w_final[risk_ix].sum()), 3),
@@ -296,7 +318,9 @@ def compute_allocation(dial_value=None, n_cov_draws=400, verbose=True):
         json.dump(result, f, indent=2)
 
     if verbose:
-        print(f"\n  Dial: {dial_value:.2f} -> risk multiplier {mult:.2f}")
+        print(f"\n  Risk tolerance: {tolerance}/5 -> baseline risk "
+              f"sleeve {target_risk:.0%}")
+        print(f"  Dial: {dial_value:.2f} -> risk multiplier {mult:.2f}")
         print(f"  Sleeves: risk {result['risk_sleeve']:.0%} / "
               f"defensive {result['defensive_sleeve']:.0%}")
         print(f"\n  {'ETF':<6} {'final':>8} {'pre-dial':>9}   role")

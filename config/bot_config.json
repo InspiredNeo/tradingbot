@@ -11,5 +11,6 @@
   "mode": "backtest",
   "paper_start_date": "2026-07-29T13:47:30.735907",
   "last_updated": "2026-07-29T13:47:30.924223",
-  "schwab_account_hash": "AB8EBEB8321560E2E175C0B8DDA467A6C1C05354386EE38DB62342A06A2D11C1"
+  "schwab_account_hash": "AB8EBEB8321560E2E175C0B8DDA467A6C1C05354386EE38DB62342A06A2D11C1",
+  "risk_tolerance": 4
 }
