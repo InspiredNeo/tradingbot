@@ -1,0 +1,8 @@
+{
+  "pass": true,
+  "mean_gap_max": 0.022694945335388184,
+  "std_ratio_median": 0.9796156883239746,
+  "std_ratio_min": 0.897692859172821,
+  "svi_fit_time": 67.35834407806396,
+  "converged": true
+}

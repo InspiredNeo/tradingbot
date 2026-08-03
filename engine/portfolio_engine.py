@@ -216,7 +216,8 @@ MODEL_BLEND = {
 # ENGINE
 # ══════════════════════════════════════════════════════════════
 
-def compute_allocation(dial_value=None, n_cov_draws=400, verbose=True):
+def compute_allocation(dial_value=None, n_cov_draws=400, verbose=True,
+                       n_samples=MCMC_SAMPLES, method="svi"):
     """
     Full pipeline:
       1. Posterior covariance draws (subsample for the optimizer loop)
@@ -237,7 +238,11 @@ def compute_allocation(dial_value=None, n_cov_draws=400, verbose=True):
         print(f"  Sampling covariance posterior "
               f"({MCMC_SAMPLES} draws on {device})...")
 
-    covs = sample_covariance_posterior(rets)
+    if method == "svi":
+        from svi_covariance import fit_svi
+        covs, _ = fit_svi(rets, n_draws=n_samples, verbose=verbose)
+    else:
+        covs = sample_covariance_posterior(rets, n_samples=n_samples)
     # Optimizing against all 5k draws is wasteful; a spread of 400
     # captures the posterior. Thin evenly.
     idx = np.linspace(0, covs.shape[0] - 1, n_cov_draws).astype(int)
