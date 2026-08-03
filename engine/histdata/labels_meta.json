@@ -1,5 +1,5 @@
 {
-  "n_samples": 251,
+  "n_samples": 299,
   "n_features": 33,
   "regime_names": [
     "Expansion",
@@ -11,10 +11,10 @@
   "backward_days": 21,
   "embargo_days": 68,
   "class_counts": {
-    "Expansion": 72,
-    "Neutral": 136,
-    "Stress": 31,
-    "Crisis": 12
+    "Expansion": 81,
+    "Neutral": 161,
+    "Stress": 44,
+    "Crisis": 13
   },
   "warning": "Labels encode data through D+63 trading days. Validation splits MUST embargo at least EMBARGO_DAYS between train and test or results are leakage-inflated."
 }

@@ -63,9 +63,13 @@ PRICE_SERIES = {
     # Alternatives
     "GLD":       ("gold_etf",     "2004-12-01"),
     "VNQ":       ("reits",        "2004-10-01"),
-    # Style
+    # Style -- IWD/IWF (Russell 1000 Value/Growth, inception 2000-05)
+    # backfill the pre-2004 era; VTV/VUG take over when available.
+    # Spliced in compute via _styled() below.
     "VTV":       ("value",        "2004-02-01"),
     "VUG":       ("growth",       "2004-02-01"),
+    "IWD":       ("value_early",  "2000-06-01"),
+    "IWF":       ("growth_early", "2000-06-01"),
     # Sectors (SPDR, all launched Dec 1998)
     "XLK":       ("tech",         "1999-01-04"),
     "XLV":       ("health",       "1999-01-04"),
@@ -412,10 +416,14 @@ def compute_signals_asof(prices, fred, date):
 
     # --- Cross-asset (3) ---
     bond_mom = _mom(px["bonds_agg"], 63) if "bonds_agg" in px else np.nan
+    if np.isnan(bond_mom) and "bonds_long" in px:
+        bond_mom = _mom(px["bonds_long"], 63)   # pre-AGG era (TLT)
     spy_63 = _mom(spy, 63)
     put(spy_63 - bond_mom if not (np.isnan(spy_63) or np.isnan(bond_mom))
         else np.nan)
     gold_mom = _mom(px["gold_etf"], 63) if "gold_etf" in px else np.nan
+    if np.isnan(gold_mom) and "gold_fut" in px:
+        gold_mom = _mom(px["gold_fut"], 63)   # pre-GLD era
     put(spy_63 - gold_mom if not (np.isnan(spy_63) or np.isnan(gold_mom))
         else np.nan)
     reit_mom = _mom(px["reits"], 63) if "reits" in px else np.nan
@@ -433,8 +441,15 @@ def compute_signals_asof(prices, fred, date):
     put(float(np.std(allsec)) if len(allsec) >= 5 else np.nan)
 
     # --- Style & breadth (2) ---
+    # Prefer VTV/VUG; fall back to IWD/IWF for pre-2004 dates. The two
+    # pairs track the same style factor (Russell vs CRSP construction);
+    # momentum DIFFERENCES are comparable across the splice.
     g = _mom(px["growth"], 63) if "growth" in px else np.nan
     v = _mom(px["value"], 63)  if "value" in px else np.nan
+    if np.isnan(g) and "growth_early" in px:
+        g = _mom(px["growth_early"], 63)
+    if np.isnan(v) and "value_early" in px:
+        v = _mom(px["value_early"], 63)
     put(g - v if not (np.isnan(g) or np.isnan(v)) else np.nan)
     sc = _mom(px["small_cap"], 63) if "small_cap" in px else np.nan
     put(sc - spy_63 if not (np.isnan(sc) or np.isnan(spy_63)) else np.nan)
@@ -460,8 +475,8 @@ def compute_signals_asof(prices, fred, date):
 # DATASET BUILD
 # ══════════════════════════════════════════════════════════════
 
-def build_dataset(start="2005-06-30", end=None, freq="ME",
-                  max_nan_frac=0.10, force_download=False):
+def build_dataset(start="2001-06-29", end=None, freq="ME",
+                  max_nan_frac=0.16, force_download=False):
     """
     Build the point-in-time feature matrix.
 

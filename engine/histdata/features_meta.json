@@ -1,7 +1,7 @@
 {
-  "n_samples": 254,
+  "n_samples": 302,
   "n_features": 33,
-  "start": "2005-06-30",
+  "start": "2001-06-29",
   "end": "2026-07-31",
   "freq": "ME",
   "feature_names": [
@@ -60,5 +60,5 @@
     "Sentiment features (news, insider, analyst, options) are not reconstructable and are absent from this feature set.",
     "Live signal code and historical signal code are separate implementations -- they must be checked for agreement."
   ],
-  "built": "2026-08-03 15:13:22"
+  "built": "2026-08-03 15:33:47"
 }
