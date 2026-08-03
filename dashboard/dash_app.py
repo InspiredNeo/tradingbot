@@ -1353,6 +1353,40 @@ def check_alert_notifications(n):
             cache_clean()
     except Exception:
         pass
+
+    # Auto-sync Schwab every 30 minutes (30 x 60s intervals)
+    if n and n % 30 == 0:
+        try:
+            import sys
+            sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+            import schwab
+            token_path = os.path.expanduser("~/tradingbot/config/schwab_tokens.json")
+            if os.path.exists(token_path):
+                schwab_client = schwab.auth.client_from_token_file(
+                    token_path=token_path,
+                    api_key=os.getenv("SCHWAB_CLIENT_ID"),
+                    app_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+                )
+                bot_config = json.load(open(os.path.expanduser(
+                    "~/tradingbot/config/bot_config.json")))
+                hash_value = bot_config.get("schwab_account_hash", "")
+                if hash_value:
+                    resp = schwab_client.get_account(
+                        hash_value,
+                        fields=[schwab_client.Account.Fields.POSITIONS]
+                    )
+                    data = resp.json()
+                    positions = data.get("securitiesAccount", {}).get("positions", [])
+                    portfolio = [{"symbol": p["instrument"]["symbol"],
+                                 "shares": p["longQuantity"],
+                                 "cost_basis": p["averagePrice"],
+                                 "source": "schwab"}
+                                for p in positions if p.get("longQuantity", 0) > 0]
+                    with open(os.path.expanduser(
+                            "~/tradingbot/config/portfolio.json"), "w") as f:
+                        json.dump(portfolio, f, indent=2)
+        except Exception:
+            pass
     triggered = check_alerts()
     if not triggered:
         return []
@@ -1584,6 +1618,40 @@ def test_slack(n_clicks):
 
 
 # Pre-fetch heavy data on startup
+# Auto-sync Schwab positions on startup
+try:
+    import sys
+    sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+    import schwab
+    from dotenv import load_dotenv
+    load_dotenv(os.path.expanduser("~/tradingbot/config/.env"))
+    token_path = os.path.expanduser("~/tradingbot/config/schwab_tokens.json")
+    if os.path.exists(token_path):
+        schwab_client = schwab.auth.client_from_token_file(
+            token_path=token_path,
+            api_key=os.getenv("SCHWAB_CLIENT_ID"),
+            app_secret=os.getenv("SCHWAB_CLIENT_SECRET"),
+        )
+        hash_value = json.load(open(os.path.expanduser(
+            "~/tradingbot/config/bot_config.json"))).get("schwab_account_hash", "")
+        if hash_value:
+            resp = schwab_client.get_account(
+                hash_value,
+                fields=[schwab_client.Account.Fields.POSITIONS]
+            )
+            data = resp.json()
+            positions = data.get("securitiesAccount", {}).get("positions", [])
+            portfolio = [{"symbol": p["instrument"]["symbol"],
+                         "shares": p["longQuantity"],
+                         "cost_basis": p["averagePrice"],
+                         "source": "schwab"}
+                        for p in positions if p.get("longQuantity", 0) > 0]
+            with open(os.path.expanduser("~/tradingbot/config/portfolio.json"), "w") as f:
+                json.dump(portfolio, f, indent=2)
+            print(f"  ✓ Schwab synced: {len(portfolio)} positions")
+except Exception as e:
+    print(f"  ✗ Schwab sync: {e}")
+
 print("Pre-fetching data...")
 try:
     fetch_news_dash()
