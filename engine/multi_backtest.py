@@ -74,11 +74,7 @@ BLENDS = {
 
 # ── Configurations to test ────────────────────────────────────
 CONFIGS = [
-    # name              risk   floor  blend              universe
-    ("Growth",          0.90,  0.70, "current",          "full"),
-    ("Gold+Equity",     0.85,  0.60, "current",          "equity"),
-    ("Aggressive",      0.90,  0.70, "momentum_heavy",   "equity"),
-    ("Pure Momentum",   0.95,  0.80, "momentum_heavy",   "equity"),
+    ("Pure Momentum", 0.95, 0.80, "momentum_heavy", "equity"),
 ]
 
 TCOST = 0.0005
