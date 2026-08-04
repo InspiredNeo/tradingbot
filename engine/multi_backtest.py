@@ -77,6 +77,19 @@ CONFIGS = [
     ("Pure Momentum", 0.95, 0.80, "momentum_heavy", "equity"),
 ]
 
+def annualized_sharpe(series, freq="monthly"):
+    """
+    Correct Sharpe ratio annualization.
+    freq: 'daily' uses sqrt(252), 'monthly' uses sqrt(12), 'weekly' uses sqrt(52)
+    """
+    import numpy as np
+    rets = series.pct_change().dropna()
+    if rets.std() == 0:
+        return 0.0
+    factors = {"daily": 252, "monthly": 12, "weekly": 52}
+    factor = factors.get(freq, 12)
+    return float((rets.mean() / rets.std()) * np.sqrt(factor))
+
 TCOST = 0.0005
 SVI_STEPS = 1000    # faster than production for backtesting
 SVI_DRAWS  = 1000
