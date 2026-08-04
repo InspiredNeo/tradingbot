@@ -16,14 +16,114 @@ DATA_DIR = os.path.expanduser("~/tradingbot/engine/histdata")
 CONFIG   = os.path.expanduser("~/tradingbot/config")
 
 SESSIONS = {
-    "Asia":    {"open": 20, "close": 6,
-                "tickers": ["EWJ","FXI","EWH","EWT","EWY","ES=F","NQ=F"]},
-    "Europe":  {"open": 3,  "close": 12,
-                "tickers": ["VGK","EWG","EWU","EUFN","ES=F"]},
-    "US":      {"open": 9,  "close": 16,
-                "tickers": ["SPY","QQQ","EEM","SCHF","^VIX","HYG","LQD"]},
+    # Futures 24/7 (nearly) -- always the baseline
     "Futures": {"open": 18, "close": 17,
-                "tickers": ["ES=F","NQ=F","GC=F","CL=F","ZB=F","DX-Y.NYB"]},
+                "tickers": [
+                    "ES=F",      # S&P 500
+                    "NQ=F",      # Nasdaq
+                    "YM=F",      # Dow
+                    "GC=F",      # Gold
+                    "SI=F",      # Silver
+                    "CL=F",      # Crude oil
+                    "NG=F",      # Natural gas
+                    "ZB=F",      # 30yr Treasury
+                    "ZN=F",      # 10yr Treasury
+                    "DX-Y.NYB",  # Dollar index
+                    "6E=F",      # Euro futures
+                    "6J=F",      # Yen futures
+                    "6B=F",      # GBP futures
+                    "BTC-USD",   # Bitcoin (24/7 stress proxy)
+                ]},
+
+    # Asia: 8pm - 6am ET
+    "Asia": {"open": 20, "close": 6,
+             "tickers": [
+                 # East Asia
+                 "EWJ",   # Japan (Nikkei)
+                 "FXI",   # China large cap
+                 "ASHR",  # China A-shares
+                 "EWH",   # Hong Kong
+                 "EWT",   # Taiwan (TSMC proxy)
+                 "EWY",   # South Korea (Samsung proxy)
+                 # Southeast Asia
+                 "VNM",   # Vietnam (manufacturing)
+                 "EIDO",  # Indonesia (commodities)
+                 "THD",   # Thailand
+                 "EWS",   # Singapore (regional hub)
+                 "EWM",   # Malaysia
+                 # South Asia
+                 "INDA",  # India
+                 "PAK",   # Pakistan
+                 # Oceania
+                 "EWA",   # Australia (commodities)
+                 "ENZL",  # New Zealand
+                 # Our actual holdings
+                 "EEM",   # Emerging markets
+                 "SCHF",  # Developed international
+             ]},
+
+    # Middle East / Africa: 3am - 10am ET
+    "MENA": {"open": 3, "close": 10,
+             "tickers": [
+                 "EIS",   # Israel (tech heavy)
+                 "KSA",   # Saudi Arabia (oil)
+                 "UAE",   # UAE
+                 "EZA",   # South Africa (gold/mining)
+                 "AFK",   # Africa broad
+                 "NGE",   # Nigeria (oil)
+             ]},
+
+    # Europe: 3am - 12pm ET
+    "Europe": {"open": 3, "close": 12,
+               "tickers": [
+                   # Broad
+                   "VGK",   # Europe broad
+                   "IEV",   # Europe 350
+                   # Major countries
+                   "EWG",   # Germany (DAX)
+                   "EWU",   # UK (FTSE)
+                   "EWQ",   # France (CAC)
+                   "EWI",   # Italy
+                   "EWP",   # Spain
+                   "EWN",   # Netherlands
+                   "EWD",   # Sweden
+                   "EWK",   # Belgium
+                   "EWO",   # Austria
+                   # Stress indicators
+                   "EUFN",  # European banks
+                   "ITLY",  # Italy bonds proxy
+                   # Eastern Europe / emerging
+                   "EPOL",  # Poland
+                   "ERUS",  # Russia (suspended, proxy only)
+                   "GUR",   # Eastern Europe
+               ]},
+
+    # Americas: 9am - 5pm ET
+    "Americas": {"open": 9, "close": 17,
+                 "tickers": [
+                     # US
+                     "SPY",   # S&P 500
+                     "QQQ",   # Nasdaq
+                     "IWM",   # Russell 2000
+                     "^VIX",  # Volatility
+                     "HYG",   # High yield
+                     "LQD",   # Investment grade
+                     "TLT",   # Long treasuries
+                     "AGG",   # Aggregate bonds
+                     # Canada
+                     "EWC",   # Canada (commodities)
+                     # Latin America
+                     "EWZ",   # Brazil (largest SA)
+                     "ECH",   # Chile (copper)
+                     "EWW",   # Mexico
+                     "EPU",   # Peru (mining)
+                     "GXG",   # Colombia (oil)
+                     "ILF",   # Latin America 40
+                     # Our holdings
+                     "VTI",   # Total US market
+                     "SCHF",  # Developed intl
+                     "EEM",   # Emerging markets
+                 ]},
 }
 
 THRESHOLDS = {
