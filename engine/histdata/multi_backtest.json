@@ -1,0 +1,14 @@
+{
+  "configs": [
+    {
+      "name": "Pure Momentum",
+      "final": 92981.0,
+      "total": 829.8,
+      "ann_ret": 10.7,
+      "sharpe": 0.75,
+      "max_dd": -56.1,
+      "calmar": 0.19
+    }
+  ],
+  "total_time": 6458.269072294235
+}
