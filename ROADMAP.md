@@ -754,3 +754,465 @@ Detection system status:
     (free tier includes real-time WebSocket data)
   Confirm reserve separation approach
 
+
+
+---
+
+## RISK REGISTER, FAILSAFES, AND DEVELOPMENT LAYER 3
+
+---
+
+### IDENTIFIED RISKS AND FIXES
+
+#### Risk 1: Dial Lag (CRITICAL)
+Observed: October 2018 -- dial=0.21 while market crashed -8%
+          September 2008 -- dial missed Lehman for one week
+          2012 -- European credit contaminated US dial for months
+Root cause: Monthly FRED data, weekly SVI, no real-time input
+
+Failsafes:
+  Hard VIX override: VIX > 25 AND rising >20% in one day
+    -> force dial minimum 0.55 regardless of FRED data
+    -> cannot be overridden by any other signal
+  HYG hard override: HYG drops >2% in one day
+    -> force dial minimum 0.60
+    -> credit market is more real-time than FRED
+  SPY hard override: SPY drops >3% in one day
+    -> force dial minimum 0.52 (stress zone)
+    -> prevents bull_calm during obvious selloffs
+
+Fix: 4-tier dial system (Phase 6)
+  Real-time Alpaca WebSocket replaces monthly FRED lag
+  Estimated lag reduction: from 1-4 weeks to 3 days
+  Estimated annual return improvement: +1.7% to +3.7%
+
+#### Risk 2: Overfitting to Historical Crisis Patterns (HIGH)
+Description: v2 parameters optimized for 2004-2026 data
+             Future crises may have different signatures
+             Crisis threshold 0.72 chosen because 0.75 missed 2008
+             This is hindsight optimization
+
+Failsafe:
+  Out-of-sample validation required:
+    Train: 2004-2018 (14 years)
+    Validate: 2019-2026 (7 years, includes COVID + 2022)
+    If validate Sharpe < train Sharpe by >0.20: reject parameters
+    
+  Walk-forward validation:
+    Test 20 different parameter combinations
+    Use only parameters that work across ALL sub-periods
+    Not just the ones that look best in aggregate
+    
+  Parameter bounds:
+    Crisis threshold: must stay 0.65-0.80 (not tuned below 0.65)
+    Leverage: must stay 1.0-1.2x (not tuned above 1.2x)
+    Short sizing: must stay 5-15% max (not tuned higher)
+
+Fix: Phase 6 online learning with strict bounds
+  Parameters drift slowly toward optimal
+  Hard bounds prevent runaway overfitting
+  Reversion force pulls back toward baseline
+
+#### Risk 3: Execution Slippage (MEDIUM)
+Description: Backtest assumes perfect execution at close price
+             Live orders execute at bid-ask spread
+             During crisis: spreads widen dramatically
+             ETF bid-ask in normal markets: 0.01-0.05%
+             ETF bid-ask in crisis: 0.10-0.50%
+
+Failsafe:
+  Limit orders only (never market orders):
+    Normal rebalance: limit at mid-price
+    If not filled in 30 min: move to ask (buy) or bid (sell)
+    Never chase with market orders
+    
+  Crisis execution rules:
+    During high volatility (VIX > 30):
+      Reduce trade size by 50%
+      Use VWAP algorithm (11am-2pm only)
+      Split large orders into 3 tranches
+      
+  Slippage budget:
+    Model 0.15% slippage per trade in backtest
+    Flag if live slippage exceeds 0.25% consistently
+    Reduce trade frequency if slippage too high
+
+Fix: Smart order routing
+  Check bid-ask before placing order
+  Only trade when spread < 0.10%
+  Queue trades for liquid hours (11am-2pm ET)
+
+#### Risk 4: API/Data Feed Failure (MEDIUM)
+Description: Alpaca WebSocket can disconnect
+             Yahoo Finance rate limits or goes down
+             FRED can delay publications
+             System blind during outages
+
+Failsafes:
+  Alpaca WebSocket disconnect:
+    Automatic reconnect within 30 seconds
+    If reconnect fails: fall back to Yahoo Finance polling
+    If Yahoo fails: use last known dial reading
+    Slack alert: "WebSocket disconnected, using fallback"
+    
+  Yahoo Finance failure:
+    Primary: Yahoo Finance
+    Backup 1: yfinance with different endpoint
+    Backup 2: Alpha Vantage (already have API key)
+    Backup 3: Finnhub (already have API key)
+    If all fail: freeze positions, no rebalance
+    Slack alert: "All data feeds down, positions frozen"
+    
+  FRED failure:
+    Cache last 30 days of FRED data locally
+    Use cached data if live fetch fails
+    Flag if cache older than 7 days
+    
+  Full system failure:
+    Watchdog process monitors main bot
+    If bot crashes: restart automatically
+    If restart fails 3 times: Slack alert + freeze positions
+    Emergency contact: your phone via Slack
+
+#### Risk 5: Margin Call Risk (MEDIUM)
+Description: 1.15x leverage means borrowed capital
+             If portfolio drops >15% rapidly:
+             Schwab can issue margin call
+             Forced liquidation at worst possible time
+
+Failsafes:
+  Margin buffer monitoring:
+    Check margin utilization every 5 minutes
+    If utilization > 70% of limit: reduce leverage immediately
+    If utilization > 85%: emergency de-lever to 1.0x
+    If utilization > 95%: Slack alert + manual intervention
+    
+  Leverage lockout:
+    Leverage above 1.0x ONLY allowed when:
+      Dial < 0.30 (very calm markets)
+      Portfolio drawdown < 5% from peak
+      VIX < 20
+    If ANY condition fails: back to 1.0x immediately
+    
+  Margin call prevention:
+    Keep 10% cash buffer when using leverage
+    Never lever beyond 1.15x (hard coded)
+    Automatic de-lever if margin warning received
+
+#### Risk 6: Single Point of Failure (MEDIUM)
+Description: Everything runs on one Ubuntu machine
+             Power outage, hardware failure, kernel update
+             Could stop the bot at critical moment
+
+Failsafes:
+  Local redundancy:
+    Watchdog process (separate Python process)
+    Monitors main bot every 60 seconds
+    Automatic restart on crash
+    
+  Cloud backup (Phase 8):
+    Mirror critical components to AWS/GCP free tier
+    If local machine unreachable for >15 minutes:
+      Cloud instance takes over monitoring
+      No trading (safety) but Slack alerts continue
+      
+  UPS (Uninterruptible Power Supply):
+    Hardware recommendation: APC BE600M1 (~$80)
+    Gives 15-30 minutes on battery
+    Enough time for graceful shutdown
+    
+  Position snapshot:
+    Save full position state every 5 minutes
+    If system restarts: loads last known state
+    No position confusion after restart
+
+#### Risk 7: Model Degradation Over Time (LOW-MEDIUM)
+Description: Markets change structure over time
+             Correlations that worked in 2004-2026
+             may not hold in 2027-2030
+             2010s: low vol, QE-driven bull market
+             2020s: higher vol, AI-driven, rate-sensitive
+             Model trained on past may not fit future
+
+Failsafes:
+  Performance monitoring:
+    Track rolling 6-month Sharpe vs baseline
+    If rolling Sharpe drops below 0.70: alert
+    If rolling Sharpe drops below 0.50: pause trading
+    
+  Quarterly retraining:
+    Retrain SVI on last 3 years of data
+    Update signal percentile normalization
+    Compare new vs old parameters
+    Only deploy if new parameters pass gate
+    
+  Regime change detector:
+    Monitor: correlation structure changes
+    Monitor: volatility regime shifts
+    Monitor: factor return reversals
+    If structural break detected: pause + review
+    
+  Human review trigger:
+    Any month with return < -8%: mandatory review
+    Any 3-month period with Sharpe < 0.5: review
+    Any parameter drift > 15% from baseline: review
+
+#### Risk 8: Regulatory/Tax Risk (LOW)
+Description: Frequent rebalancing creates short-term gains
+             Taxed at ordinary income rate (higher)
+             Wash sale rules can invalidate losses
+             SEC pattern day trader rules if too active
+
+Failsafes:
+  Tax optimization:
+    Track all lots with purchase date
+    Prefer selling lots held >365 days
+    December: harvest losses before year end
+    Wash sale prevention: no rebuy within 30 days
+    
+  Regulatory compliance:
+    Weekly rebalance: far below pattern day trader threshold
+    ETFs only: highly regulated, liquid instruments
+    No naked shorts: only inverse ETFs (regulated products)
+    
+  Tax reporting:
+    Export all trades to CSV monthly
+    Generate Schedule D report annually
+    Flag all wash sales automatically
+
+---
+
+### FAILSAFE HIERARCHY
+
+When multiple failsafes conflict, priority order:
+---
+
+### DEVELOPMENT LAYER 3 (after Phase 6)
+
+#### Layer 3A: Predictive Dial (not reactive)
+Current: dial reads current stress (reactive)
+Layer 3A: dial predicts stress 1-2 weeks forward
+
+How:
+  Leading indicators added to signal vector:
+    Fed funds futures (market pricing future rates)
+    Options skew (put/call ratio, VIX term structure)
+    Credit default swap spreads (where available)
+    Insider trading activity (SEC Form 4 filings)
+    Earnings revision breadth (analyst upgrades/downgrades)
+    
+  Machine learning on top of dial:
+    Input: current 58 features
+    Output: predicted dial 1-week forward
+    Model: LSTM (Long Short-Term Memory)
+           Trained on 2004-2023 data
+           Validated on 2024-2026
+    
+  Combined predictive dial:
+    current_dial × 0.60 + predicted_dial × 0.40
+    
+  Benefit:
+    Position for crisis BEFORE it appears in dial
+    Position for recovery BEFORE dial falls
+    Estimated improvement: +0.5-1.0% annual
+    Estimated Sharpe boost: +0.10-0.15
+
+#### Layer 3B: Multi-Asset Expansion
+Current: ETFs only (13 instruments)
+Layer 3B: expand to include:
+
+  Futures (direct, not ETF proxies):
+    ES futures: more efficient than SPY
+    NQ futures: more efficient than QQQ
+    GC futures: more efficient than GLD
+    ZB futures: more efficient than TLT
+    Lower cost, better liquidity, tax advantages
+    Requires futures account (separate from equity)
+    
+  Options overlay (Phase 9+):
+    Buy put options as tail hedge in stress config
+    Sell covered calls in bull_calm (income generation)
+    Cost: ~0.5% annual premium
+    Benefit: asymmetric downside protection
+    Estimated Sharpe boost: +0.15-0.25
+    
+  International bonds:
+    EMB (EM bonds): diversification
+    BNDX (international bonds): low correlation
+    Adds genuine diversification beyond equity
+    
+  Real assets:
+    PDBC (commodities): inflation hedge
+    VNQ (REITs): real estate exposure
+    WOOD (timber): uncorrelated to financial assets
+
+#### Layer 3C: Sentiment Intelligence
+Current: Alpha Vantage news sentiment (basic)
+Layer 3C: advanced sentiment layer
+
+  Social media sentiment:
+    Reddit WallStreetBets (retail sentiment)
+    Twitter/X financial accounts
+    StockTwits momentum
+    Contrarian signal: extreme retail bullishness = top
+    
+  Options market intelligence:
+    Unusual options activity detection
+    Large put buying = smart money hedging
+    Dark pool activity (estimated from volume)
+    
+  Earnings call NLP:
+    Process earnings call transcripts
+    Management tone analysis
+    Forward guidance sentiment
+    Compare to previous quarters
+    
+  Patent/regulatory filings:
+    SEC 8-K filings for material events
+    FDA approvals/rejections for XLV holdings
+    FTC antitrust filings for tech holdings
+    
+  Weight in dial: 8% (from current 0%)
+  Estimated improvement: +0.3-0.8% annual
+
+#### Layer 3D: Cross-Asset Regime Detection
+Current: single stability dial
+Layer 3D: identify which REGIME we're in
+
+  8 identified market regimes:
+    1. Goldilocks (low inflation, low rates, high growth)
+    2. Reflation (rising inflation, rising growth)
+    3. Stagflation (high inflation, low growth)
+    4. Deflation (falling prices, falling growth)
+    5. Rate crisis (rapid rate hikes, bond selloff)
+    6. Credit crisis (spread blowout, liquidity freeze)
+    7. Equity bubble (high valuations, low vol)
+    8. Recovery (post-crisis normalization)
+    
+  Each regime has optimal asset allocation:
+    Goldilocks: 90% equity, momentum, 1.15x leverage
+    Stagflation: 30% equity, commodities, TIPS, gold
+    Rate crisis: TBF heavy, short duration, no bonds
+    Credit crisis: cash, GLD, SH, crisis config
+    
+  Regime detector:
+    Neural network trained on 1970-2026 data
+    Inputs: 58 current signals + dial reading
+    Output: probability distribution over 8 regimes
+    
+  Portfolio selection:
+    Blend allocations weighted by regime probabilities
+    If 60% Goldilocks + 40% Rate crisis:
+      Blend Goldilocks and rate crisis portfolios
+      
+  Benefit:
+    2022 rate crisis: regime detector flags EARLY
+    Shifts to TBF-heavy, short duration immediately
+    Not waiting for credit spreads to widen
+    Estimated improvement in 2022: +5-8%
+    
+  Overall estimated boost: +0.5-1.0% annual
+
+#### Layer 3E: Portfolio Insurance Module
+Current: inverse ETFs as reactive hedge
+Layer 3E: proactive insurance structure
+
+  Permanent tail hedge (0.5-1% of portfolio):
+    Buy SPY put options 10% out of money
+    3-month expiry, roll monthly
+    Cost: ~0.5% annual premium
+    Payoff: 10x+ in 2008/2020-style crashes
+    
+  Variance swap exposure (via DBMF):
+    DBMF already provides some variance exposure
+    Increase to 10% permanent allocation
+    
+  Correlation hedge:
+    When portfolio correlation spikes (crisis):
+      All positions move together = diversification fails
+      Add BTAL (market neutral, anti-beta)
+      BTAL goes UP when correlations spike
+      Natural hedge for correlation breakdown
+      
+  Dynamic hedge ratio:
+    Hedge size scales with dial reading
+    dial < 0.35: 0.5% hedge (cheap insurance)
+    dial 0.35-0.55: 1.0% hedge
+    dial 0.55-0.75: 2.0% hedge
+    dial > 0.75: 3.0% + inverse ETFs
+    
+  Estimated annual cost: 0.5-1.0%
+  Estimated crisis protection value: 3-8%
+  Net benefit: positive in volatile regimes
+
+---
+
+### COMPLETE DEVELOPMENT TIMELINE
+
+Phase 5.5 (current):
+  Adaptive backtest v1 (running now)
+  Build v2 with all brain improvements
+  Run v2 overnight
+  
+Phase 6 (after v2 passes gate):
+  4-tier dial system
+  Constituent monitoring
+  Online learning (thresholds + weights)
+  Autonomous ETF universe
+  Regional credit signals
+  Equity risk premium signal
+  
+Phase 7 (paper trading):
+  30-day minimum
+  All Phase 6 systems running
+  Calibrate vs backtest predictions
+  Validate 4-tier dial improvement
+  
+Phase 8 (live trading):
+  Real money, Schwab margin account
+  All failsafes active
+  Reserve A + B live
+  Full sell architecture
+  
+Phase 9 (Layer 3 enhancements):
+  Predictive dial (LSTM)
+  Multi-asset expansion (futures)
+  Sentiment intelligence
+  Cross-asset regime detection
+  Portfolio insurance module
+  
+Phase 10 (export ready):
+  Docker containerization
+  Multi-account support
+  FastAPI wrapper
+  Audit trail
+  
+---
+
+### PERFORMANCE TARGETS BY PHASE
+
+Phase 5.5 v2 backtest:
+  Sharpe: 1.1 - 1.2
+  Max DD: -16% to -20%
+  Final:  $92,000 - $108,000
+  Calmar: 0.45 - 0.60
+
+Phase 6 (live, 4-tier dial):
+  Sharpe: 1.2 - 1.4
+  Max DD: -14% to -18%
+  Annual: 11% - 13%
+
+Phase 7 (paper trading target):
+  Sharpe: 1.2 - 1.5
+  +5% in 30 days to unlock Phase 8
+
+Phase 8 (live trading):
+  Sharpe: 1.3 - 1.5
+  Max DD: -12% to -16%
+  Annual: 12% - 14%
+
+Phase 9 (full system):
+  Sharpe: 1.4 - 1.7
+  Max DD: -10% to -14%
+  Annual: 13% - 16%
+  $10,000 → $140,000-$185,000 over 21 years
