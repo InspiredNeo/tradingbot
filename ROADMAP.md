@@ -477,3 +477,280 @@ Slack approval flow:
   Flags earnings dates for constituent stocks
   Proposes adjusted position size
   Waits for APPROVE or SKIP
+
+
+---
+
+## FULL SESSION ADDITIONS (August 5 2026)
+
+### ADAPTIVE DIAL — Complete Architecture
+
+6-Decimal Precision Dial:
+- Replace 2-decimal with 6-decimal (0.000001 precision)
+- Matches precision of market price data
+- Enables truly continuous position sizing
+- No more hard cliffs between scenarios
+- Every 0.000001 change = proportional position adjustment
+
+Continuous Position Sizing Formula (replaces scenario math):
+  equity_pct = max(0.18, 0.90 - dial x 0.714)
+  leverage   = max(0.20, 1.20 - dial x 0.986)
+  dbmf_pct   = min(0.15, 0.05 + dial x 0.10)
+  sh_pct     = max(0, (dial - 0.52) x 0.185)
+  psq_pct    = max(0, (dial - 0.72) x 0.093)
+  tbf_pct    = max(0, (dial - 0.52) x 0.092)
+  defensive  = max(0.05, 1.0 - equity - dbmf - shorts)
+
+No scenarios driving math -- bull_calm/stress/crisis become display labels only.
+Smooth continuous response. Eliminates oscillation completely.
+
+Scenario Names as Display Zones Only:
+  0.000000 - 0.320000: Bull Calm
+  0.320000 - 0.520000: Bull Late
+  0.520000 - 0.720000: Stress
+  0.720000 - 0.850000: Crisis
+  0.850000 - 1.000000: Extreme Crisis
+
+Hard Overrides (never adaptive):
+  VIX > 40: force dial = max(dial, 0.90)
+  Dial > 0.92: force crisis floor
+  Equity never below 18%
+  Leverage never above 1.25x
+
+---
+
+### MULTI-RESOLUTION DIAL SYSTEM
+
+Four tiers combined into 6-decimal dial:
+
+Tier 1: Alpaca WebSocket (0 API calls, weight 20%)
+  Real-time stream, 10 key stress tickers
+  SPY, QQQ, HYG, GLD, TLT, IEF, VXX, ZB=F, ES=F, BTC-USD
+  Updates every 60 seconds
+  Purpose: flash crashes, immediate shocks
+  Cost: free (Alpaca free tier)
+  No 15-minute delay
+
+Tier 2: Yahoo 5-min batch (288 calls/day, weight 30%)
+  80 tickers in ONE batch call every 5 minutes
+  Derived signals, not raw prices:
+    Country breadth (percent Asia/Europe ETFs falling)
+    Sector rotation (defensive vs offensive leadership)
+    VIX term structure (VIX vs VIX3M)
+    Credit ratio (HYG/LQD spread)
+    Currency stress (Yen strengthening)
+  Purpose: broader market picture
+
+Tier 3: Daily close (1 call/day, weight 30%)
+  Full 58-feature signal vector at 4:05pm ET
+  All FRED data, SVI covariance
+  Purpose: fundamental stress assessment
+
+Tier 4: Weekly SVI (0 extra calls, weight 20%)
+  Sunday 8pm ET, uses cached data
+  Purpose: strategic positioning anchor
+
+Combined = tier1x0.20 + tier2x0.30 + tier3x0.30 + tier4x0.20
+Updates every 60 seconds, 6 decimal places
+
+---
+
+### 5-LAYER ADAPTIVE DIAL
+
+Layer 1: Raw Signal Computation (fixed, never changes)
+  VIX percentile, credit spread, trajectory, dispersion
+  Just measuring reality
+
+Layer 2: Component Weights (slowly adaptive) -- KEY FIX FOR 2010/2012
+  Problem: credit lags post-crisis, European credit contaminated US dial
+  Solution: weights adapt based on predictive accuracy
+  Learning rate: 0.003/week maximum
+  Bounds: vol 0.25-0.55, credit 0.15-0.45, traj 0.05-0.25, divers 0.05-0.25
+  Sum always = 1.00
+  Slack notification on any weight change
+
+  Regional credit additions to fix contamination:
+    EUFN trend (European bank stress): 5% weight
+    EM spread proxy (EEM vs SPY divergence): 5% weight
+    HYG/LQD ratio (US high yield specific): 10% weight
+    Reduces single BAA10Y dependency
+
+Layer 3: Threshold Adjustment (slowly adaptive)
+  Zone boundaries adjust based on alpha vs SPY
+  Learning rate: 0.002/week maximum
+  Crisis: never above 0.82, never below 0.60
+
+Layer 4: Constituent Nudge (real-time, temporary)
+  Breadth/momentum divergence nudges dial +/-0.05
+  Resets every Sunday at rebalance
+  Does NOT permanently change dial
+
+Layer 5: Hard Overrides (never adaptive)
+  VIX > 40, dial > 0.92: absolute overrides
+  Cannot be learned away
+
+---
+
+### COMPLETE DETECTION AND SCANNING SYSTEM
+
+API Call Budget (daily):
+  Alpaca WebSocket:     0 calls  (persistent connection)
+  Yahoo 1-min batch:  390 calls  (10 tickers per call)
+  Yahoo 5-min batch:  288 calls  (80 tickers per call)
+  Constituent scan:    48 calls  (3 ETFs per batch)
+  Event scans avg:    150 calls  (3 calls max per event)
+  Daily close:          1 call   (166 tickers)
+  Normal day total:   877 calls  (limit: 2,000)
+  Flash crash total:  937 calls  (still within limit)
+  Cost: $0
+
+Universe Scan -- Relevance Map System:
+  Pre-built map: ticker -> list of related ETFs
+  When anything moves >0.5%: check map, scan related only
+  NOT scanning all 800 ETFs on every move
+  Max 3 cascade levels, max 3 API calls per event
+  Scan cooldowns: 5-min between full scans, 10-min per ticker
+
+Key relevance chains:
+  SPY moves    -> US sectors + size ETFs
+  QQQ moves    -> tech sub-sectors (SOXX, SMH, IGV)
+  HYG moves    -> credit ETFs + financials
+  EWJ moves    -> Asian country ETFs
+  GLD moves    -> commodities + safe havens
+  VIX spikes   -> volatility products
+  NVDA drops   -> SOXX, SMH, QQQ, XLK, VGT
+  JPM drops    -> XLF, KBE, KRE, EUFN (bank contagion)
+  TSM drops    -> SOXX, EWT, EEM, SCHF (global tech bellwether)
+
+Inner ETF Constituent Scanning:
+  Pre-built CONSTITUENT_PEERS map per stock:
+    parent ETFs + peer stocks + sector + special flags
+
+  Trigger thresholds:
+    Normal stocks:  >3% move
+    Bank stocks:    >2% move (systemic risk)
+    China tech:     >1% move (regulatory gaps)
+    TSM:            >2% move (global bellwether)
+
+  5 contagion signals per constituent:
+    1. Sector breadth (percent peers falling)
+    2. Peer magnitude (average peer decline)
+    3. ETF weight impact (stock weight x move)
+    4. Fundamental divergence (vs sector health)
+    5. Special flag check
+
+  Contagion score -> action:
+    < 0.40: isolated, minor ETF microadjustment
+    0.40-0.70: sector stress, reduce ETF weight 15-30%
+    > 0.70: high contagion, escalate to dial system
+    > 0.85: systemic, force crisis dial floor
+
+  Special constituent flags:
+    contagion_risk HIGH (JPM, BAC, WFC):
+      Lower trigger threshold, no scan cooldown
+      Check KRE vs XLF divergence
+      SOFR proxy for interbank stress
+
+    global_tech_bellwether (TSM):
+      Every >2% move triggers global scan
+      Affects EEM, EWT, SOXX simultaneously
+      TSM guidance = 6-12 month forward tech demand signal
+
+    regulatory_risk HIGH (BABA, TCEHY, JD):
+      1% trigger (gaps happen instantly)
+      Check FXI, KWEB, MCHI simultaneously
+
+---
+
+### ETF DUE DILIGENCE BEFORE ADDING TO PORTFOLIO
+
+Full constituent risk evaluation before any new ETF added:
+
+5 risk dimensions per constituent stock:
+  1. Volatility risk (30-day realized vol)
+  2. Momentum quality (Sharpe of 20-day returns, smooth vs spike)
+  3. Fundamental health (P/E, revenue growth, debt ratio)
+  4. Contagion risk (correlation to VIX)
+  5. ETF weight (concentration flag if >8%)
+
+Output: all constituents ranked LOW to HIGH risk
+Composite score: 0.0 (safest) to 1.0 (riskiest)
+
+Go/no-go criteria (ALL required to add ETF):
+  Weighted avg risk < 0.65
+  No single stock > 12% weight
+  High-risk stocks < 40% of ETF weight
+  Fundamental health > 60% of stocks healthy
+  Momentum quality > 0.40 weighted average
+  No constituent earnings this week
+
+Position sizing from risk profile:
+  base_size = 5%
+  adjusted = base_size x (1 - weighted_risk x 0.5)
+  Further penalties for concentration and risk weight
+  Result: riskier constituent profile = smaller position
+
+Ongoing monitoring after adding:
+  Weekly: full constituent re-scan at Sunday rebalance
+  Daily: top 5 constituents quick check at close
+  Real-time: peer scan on any constituent event
+
+Slack approval flow:
+  Bot presents full risk-ordered analysis
+  Highlights 3 safest and 3 riskiest constituents
+  Flags any earnings dates in next 5 days
+  Proposes adjusted position size with reasoning
+  Waits for APPROVE or SKIP (never auto-adds)
+
+---
+
+### DASHBOARD ADDITIONS (to build after backtest)
+
+New panels in Bot tab:
+
+6-decimal dial panel:
+  Shows tier1/tier2/tier3/tier4 component readings
+  Combined dial with zone label
+  1-min, 1-hr, 24-hr dial history
+  Trend direction and rate of change
+
+Component weights panel (Layer 2):
+  Current vol/credit/traj/divers weights
+  Baseline original weights
+  Drift from baseline
+  Weight evolution chart
+
+Threshold display (Layer 3):
+  Current zone boundaries vs baseline
+  Learning mode toggle on/off
+  Last adjustment date and reason
+
+Constituent stress panel:
+  Active ETF scans in progress
+  Last 5 constituent alerts
+  Current sector contagion map
+
+Reserve dashboard:
+  Reserve A: balance, last addition, yield earned
+  Reserve B: balance, conditions met/not met,
+             days until eligible, last deployment
+  Total liquid across both reserves
+
+Detection system status:
+  WebSocket: connected/disconnected/latency
+  Last 1-min update: time + dial reading
+  Last 5-min update: tickers scanned
+  Event log: last 10 triggered events
+  API calls today: used vs 2000 limit
+
+---
+
+### PENDING MANUAL ACTIONS (Dan):
+  Open Schwab margin account (for variable leverage)
+  Open Schwab SWVXX money market (Reserve A storage)
+  Set dividend split percentage (default 80/20)
+  Set Reserve B deployment threshold (default $500)
+  Sign up Alpaca free account at alpaca.markets
+    (free tier includes real-time WebSocket data)
+  Confirm reserve separation approach
+
