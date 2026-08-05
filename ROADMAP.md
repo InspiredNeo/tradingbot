@@ -319,3 +319,70 @@ RAM: 8-10GB target, 20GB ceiling
 - Adaptive backtest v1: RUNNING (~21%, results tonight)
 - Next: v2 backtest with all improvements
 - Then: paper trading if gate passed
+
+---
+
+## ADDENDUM — Adaptive Dial System (added Aug 2026)
+
+### Full 5-Layer Adaptive Dial Architecture:
+
+#### Layer 1: Raw Signal Computation (fixed, never changes)
+- VIX percentile, credit spread percentile, trajectory, dispersion
+- Just measuring reality -- no adaptation here
+- stability_index.py
+
+#### Layer 2: Component Weights (slowly adaptive) NEW
+- Current fixed weights: vol 0.40, credit 0.30, traj 0.15, divers 0.15
+- Problem: credit lags in post-crisis recovery (2010 issue)
+  Credit stays elevated long after VIX normalizes
+  Keeps dial artificially high, bot stuck in bull_late/stress
+- Solution: weights adapt based on which component
+  predicted drawdowns most accurately recently
+- Learning rate: 0.003/week maximum
+- Bounds:
+    vol:    never below 0.25, never above 0.55
+    credit: never below 0.15, never above 0.45
+    traj:   never below 0.05, never above 0.25
+    divers: never below 0.05, never above 0.25
+    sum always = 1.00
+- Example adaptation:
+    2010 post-crisis: credit lagging → reduce credit weight
+    vol already normalized → increase vol weight
+    Dial drops from 0.43 → 0.38 → triggers bull_calm earlier
+    2008 crisis: credit most predictive → increase credit weight
+- Slack notification on weight changes:
+    "Dial weights updated:
+     vol: 0.40→0.43, credit: 0.30→0.27
+     Reason: credit component lagging vol by 3+ weeks"
+
+#### Layer 3: Threshold Adjustment (slowly adaptive)
+- Where are the scenario cutoffs?
+- Learned from which switches added alpha vs SPY
+- Learning rate: 0.002/week maximum
+- Bounds:
+    bull_calm: never above 0.45, never below 0.20
+    crisis:    never above 0.82, never below 0.60
+- Slack notifications on all threshold changes
+
+#### Layer 4: Constituent Nudge (real-time, temporary)
+- Breadth/momentum divergence adjusts effective dial ±0.05
+- Resets each week at Sunday rebalance
+- Fast and responsive to intra-week market internals
+- Does NOT permanently change the dial
+
+#### Layer 5: Hard Overrides (never adaptive, cannot be learned away)
+- VIX > 40 → force crisis regardless
+- Dial > 0.92 → force crisis regardless
+- These are absolute safety rules
+
+### Dashboard additions (to build after backtest):
+- 📋 Bot tab: show all 5 dial layers live
+- 📋 Current component weights (vol/credit/traj/divers)
+- 📋 Baseline weights vs current weights
+- 📋 Current thresholds vs baseline thresholds
+- 📋 Active constituent nudge (if any)
+- 📋 Which hard overrides are armed
+- 📋 Weight/threshold change history chart
+- 📋 "Learning mode" toggle (on/off for paper trading)
+
+### Why this fixes the 2010 problem:
