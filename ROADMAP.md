@@ -435,3 +435,45 @@ API calls for inner scans:
 Total daily budget including inner scans: ~550 calls
 Yahoo Finance limit: 2,000 calls
 Comfortable headroom maintained
+
+### ETF Due Diligence — Constituent Risk Evaluation:
+
+Before adding ANY new ETF to active universe:
+  Run full constituent risk scan
+  Order all stocks by composite risk score
+  Go/no-go decision based on portfolio rules
+
+5 risk dimensions per constituent:
+  1. Volatility (30-day realized vol)
+  2. Momentum quality (Sharpe of 20-day returns)
+  3. Fundamental health (P/E, growth, debt)
+  4. Contagion risk (VIX correlation)
+  5. ETF weight (concentration flag >8%)
+
+Composite risk score: 0.0 (safest) to 1.0 (riskiest)
+
+Go/no-go criteria (ALL required):
+  Weighted avg risk < 0.65
+  No single stock > 12% weight
+  High-risk weight < 40% of ETF
+  Fundamental health > 60% of stocks
+  Momentum quality > 0.40 weighted avg
+  No constituent earnings this week
+
+Position sizing from risk analysis:
+  base_size = 5%
+  adjusted = base_size × (1 - weighted_risk × 0.5)
+  further adjusted for concentration and risk weight
+  Result: smaller positions in riskier ETFs
+
+Ongoing monitoring after adding:
+  Weekly: full constituent re-scan
+  Daily: top 5 constituents quick check
+  Real-time: constituent event peer scan
+
+Slack approval flow:
+  Bot presents full analysis
+  Highlights safest and riskiest constituents
+  Flags earnings dates for constituent stocks
+  Proposes adjusted position size
+  Waits for APPROVE or SKIP
