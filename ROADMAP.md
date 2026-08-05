@@ -386,3 +386,52 @@ RAM: 8-10GB target, 20GB ceiling
 - 📋 "Learning mode" toggle (on/off for paper trading)
 
 ### Why this fixes the 2010 problem:
+
+### Inner ETF Constituent Scanning:
+
+Pre-built CONSTITUENT_PEERS map:
+  Each stock → parent ETFs + peer stocks + sector + flags
+
+Scan triggers:
+  Normal stocks:     >3% move
+  Bank stocks:       >2% move (higher contagion risk)
+  China tech:        >1% move (regulatory gap risk)
+  TSM:               >2% move (global tech bellwether)
+
+Inner scan cascade (max 3 calls per event):
+  1. Peer scan: fetch all sector peers (1 batch call)
+  2. Compute sector contagion score (0-1)
+  3. If banks involved: check KRE vs XLF divergence
+  4. If TSM: trigger global tech scan
+
+Contagion scoring:
+  sector_breadth × peer_magnitude × 10
+  < 0.40: isolated event, minor ETF adjustment
+  0.40-0.70: sector stress, reduce ETF weight
+  > 0.70: high contagion, escalate to dial system
+  > 0.85: systemic risk, force crisis check
+
+Special flags:
+  contagion_risk HIGH (banks):
+    - Auto-check all bank peers
+    - Lower trigger threshold
+    - No cooldown on re-scan
+    
+  global_tech_bellwether (TSM):
+    - Triggers global tech ETF scan
+    - Affects EEM, EWT, SOXX simultaneously
+    - Slack note on every significant move
+    
+  regulatory_risk HIGH (China tech):
+    - 1% trigger threshold (gaps happen fast)
+    - Check FXI, KWEB, MCHI simultaneously
+
+API calls for inner scans:
+  Normal event:  1 call (peer batch)
+  Bank event:    3 calls (peers + KRE + rates)
+  TSM event:     3 calls (peers + global tech + Asian ETFs)
+  Worst case day (20 events): 60 calls
+  
+Total daily budget including inner scans: ~550 calls
+Yahoo Finance limit: 2,000 calls
+Comfortable headroom maintained
