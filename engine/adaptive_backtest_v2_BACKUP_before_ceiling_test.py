@@ -334,30 +334,7 @@ def continuous_allocation(dial):
     d = float(dial)
 
     # Core equity target (continuous, no cliffs)
-    # v3: raised calm-zone equity ceiling from 0.90 to 1.00.
-    #
-    # Evidence this addresses (all three point the same direction):
-    #   1. Real v2 scenario breakdown (this file's own output, full
-    #      22-year run): bull_calm was the largest single regime by
-    #      time (494/1152 weeks, 43%) but returned only 17.4% ann,
-    #      vs 91.2% ann in crisis and 50.2% ann in stress. The
-    #      system's edge is concentrated in regimes it spends the
-    #      LEAST time in, while capped near 90% equity for nearly
-    #      half of history.
-    #   2. Pure Momentum comparison (no ceiling at all, same 22yr
-    #      window): ~$17,000 ahead of the capped system by 2021.
-    #   3. Isolated dry-run test (dryrun_v2.py, equal-weight proxy,
-    #      no SVI): +$3,178 (+4.8%) final value from this exact
-    #      change, with crisis-zone allocations barely affected
-    #      (dial=0.68 eq moved 41.4%->44.2%, dial=0.90 eq moved
-    #      25.7%->26.2% -- protection intact, only the calm end
-    #      changed meaningfully).
-    #
-    # Crisis-side behavior is deliberately preserved: the new slope
-    # (0.820 vs old 0.714) converges back toward the same floor by
-    # dial=1.0, so this is a change to the CALM end of the curve
-    # specifically, not a general loosening of risk controls.
-    equity_target = max(0.18, 1.00 - d * 0.820)
+    equity_target = max(0.18, 0.90 - d * 0.714)
 
     # No leverage in v2 -- wait for live 4-tier dial
     leverage = 1.00
