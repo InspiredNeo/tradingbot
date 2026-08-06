@@ -1651,3 +1651,27 @@ cycle. Build only after:
      Tantrum instance) -- same evidence-first bar as every other
      item on this list
   3. Layer 1 is fully stable and well-understood on its own
+
+### Family rule (added after discussion)
+
+Every Layer 2+ watcher, no matter how narrow or small its scope
+feels, must pass the SAME three validation steps used on the main
+dial tonight before integration -- no exceptions for watchers that
+seem low-stakes because they only touch one small slice:
+
+  1. Isolated pure-function test: feed it a long synthetic
+     sequence, confirm it converges to target, confirm nothing
+     repeats/latches for more than ~2-3 consecutive periods
+     (same latch check used in dryrun_v2.py tonight)
+  2. Real historical date sanity check: run it against several
+     known real events in its domain, confirm output direction
+     and magnitude make sense (same method as the 10-date market
+     dial validation)
+  3. Full dry-run pass (no SVI, cheap, ~20s) before any real
+     backtest commitment
+
+A watcher that seems small is EASIER to miss a latch bug in, not
+safer -- it only affects one slice, so nobody notices as fast as
+they'd notice the main dial breaking. Smallness is not a reason
+to skip validation; if anything it's a reason to be more careful,
+since bugs there are quieter.
