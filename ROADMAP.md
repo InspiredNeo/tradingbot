@@ -1478,3 +1478,79 @@ Do not build any of these mid-run. After full run completes:
   3. Choose ONE candidate fix per failure mode based on that
      evidence, not on tonight's guesses
   4. Test via dryrun_v2.py before any real backtest commitment
+
+---
+
+## STANDING INSTRUCTION FOR WHEN v2 FULL RUN COMPLETES
+
+When the current overnight run (started 2004-06-30, tracked in
+adaptive_backtest_v2_log.txt) finishes and produces the full
+results block (final value, Sharpe, OOS split, scenario
+breakdown, drawdown), synthesize ALL of the following into ONE
+recommended path forward -- not a list of options, an actual
+recommendation for each open question, using the full 22-year
+evidence rather than the single 2008 instance each was spotted in.
+
+### Open questions to resolve with full evidence:
+
+1. Lehman-week lag (weekly dial check too slow for violent
+   single-week shocks). Check whether the same lag pattern
+   appears at other fast shocks -- 2018 Feb Volmageddon, 2020
+   COVID March, 2015 Aug China deval. The 2010 Flash Crash was
+   NOT a good test of this (it reversed same day, weekly rebalance
+   never saw it).
+
+2. Flat-dial grinding decline (Dec 2008-Feb 2009, dial stuck
+   0.61-0.67 while market kept falling). Check whether this
+   recurs in 2011 European debt crisis, 2015-16 China slowdown,
+   2022 rate-driven grind. Build the duration/persistence signal
+   ONLY if it repeats. If 2008-specific, don't build it.
+
+3. Rate-limiter recovery drag (flat 6%/week re-risk cap, ~19
+   months to reclaim 2008 peak -- though that beat SPY's own ~5
+   year recovery on calendar time). Check 2011, 2020 (COVID
+   snap-back, best stress test -- even faster than 2009), 2022
+   recoveries. Recommend magnitude/duration-scaled re-risk rate
+   ONLY if cost shows up repeatedly, not just in 2009.
+
+4. 2010-style dial chop / component disagreement (May-Aug 2010,
+   dial oscillating 0.20-0.53, no clear trend). Four fixes were
+   proposed with zero evidence: collapse to single number,
+   reweight components, add new components (news sentiment),
+   require persistence/consensus. REQUIRED FIRST: pull individual
+   component scores (credit/vol/rate/intl/gold separately, not
+   blended dial) for that period plus any other chop periods
+   found in the full run (check 2015-16, 2018 Q4). Determine:
+   noisy signal (fix it) vs accurate reflection of genuinely mixed
+   conditions (leave it alone). Recommend ONE approach only if
+   diagnostic shows a real recurring defect.
+
+5. Piecewise continuous allocation curve (steeper/gentler slopes
+   by dial zone). Test via dryrun_v2.py: does raising the
+   calm-zone equity ceiling close any real gap vs SPY, based on
+   full-run calm-period returns vs actual SPY returns over the
+   same calendar windows.
+
+6. Overall verdict vs SPY and vs the stated gates. Full final
+   value, Sharpe (weekly and corrected daily), Calmar, max
+   drawdown, OOS Sharpe (train 2004-2018 vs validate 2019-2026).
+   State plainly whether it beat SPY on both return AND Sharpe --
+   the standard set as the actual goal -- not just whether it
+   cleared the original four-gate checklist (separately
+   acknowledged as somewhat arbitrary).
+
+### Required output format:
+
+For items 1-5: state what the full-run evidence actually shows
+(repeated pattern vs one-off single instance), then give ONE
+clear recommendation -- build it, don't build it, or build a
+specific named alternative -- reasoned from evidence across
+multiple periods in the completed run, not the single instance
+each was originally spotted in during tonight's live commentary.
+
+Then ONE overall recommended next step, not a menu. Decision, not
+another list of tradeoffs.
+
+Do not recommend building anything based on single-instance
+evidence from tonight alone -- cross-check against the full run
+first.
