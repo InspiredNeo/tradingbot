@@ -1744,3 +1744,77 @@ gate as everything else -- confirm via post-run review whether
 the calm-zone equity ceiling should actually be raised (this
 reserve redesign is part of the justification for doing so), then
 build both together rather than in isolation.
+
+---
+
+## DE-ESCALATION TIMING: STOPGAP FIX + WHY SPLIT-MIND SUPERSEDES IT
+
+### Evidence (two confirmed instances, different years, different causes)
+
+1. Dec 2008-Feb 2009: dial sat 0.61-0.67 (flat, not de-escalating
+   fast enough) while market kept making new lows. Severe cost
+   (~-12% over 8 weeks).
+
+2. Nov 23-30, 2018: dial hit crisis (0.70), then dropped to
+   bull_late (0.48) just ONE WEEK later -- de-escalated too fast.
+   Market made a new low the following week (Dec 7), proving the
+   de-escalation premature. Milder cost, but same mechanism: the
+   decision to step back down from defense is being made too
+   easily, on too little confirmation, relative to how hard the
+   decision to step INTO defense is required to be.
+
+Two instances, one on each side of "how fast should de-escalation
+happen" -- together they show the actual problem isn't sensitivity
+in general, it's a specific asymmetry: entering defense works
+well (confirmed clean across 2011, 2014, Volmageddon, this same
+Q4 2018 section's initial escalation), exiting defense is too
+easy relative to entering it.
+
+### Stopgap fix (buildable now, testable via dryrun_v2.py)
+
+Require sustained improvement, scaled to how severe the peak was,
+before the rate limiter is allowed to start re-risking at all --
+not a fixed wait for every case, proportional to peak severity:
+
+    peak >= 0.70 (crisis):   require 2-3 consecutive weeks of
+                              improvement before re-risking starts
+    peak 0.50-0.68 (stress): require 1-2 consecutive weeks
+    peak 0.35-0.50 (mild):   require ~1 week
+
+Implementation must stay stateless in the same sense as the rate
+limiter -- a simple consecutive-weeks-improving counter that
+resets the instant the dial ticks back up, not a discrete state
+with its own hysteresis rules (the exact pattern that caused three
+separate latch bugs earlier tonight). This is a counter gating
+WHEN the existing rate limiter is allowed to act, not a new
+state machine.
+
+Validate against: Nov 2018 (should have prevented the premature
+Nov 30 step-down), AND the 2011 debt ceiling / 2014 ruble
+recoveries specifically (confirm the delay doesn't cost meaningful
+ground in cases where danger genuinely passed fast -- both of
+those resolved within 1-2 weeks in the real data, so a
+1-2-week-for-moderate-stress rule should mostly not have
+penalized them).
+
+### Why split-mind architecture (logged earlier) is the better
+### long-term answer, and this is explicitly a STOPGAP
+
+The stopgap only asks "has the ONE blended number held steady/
+improved for N weeks." That can't distinguish a genuine, broad
+improvement (credit, vol, and rate all easing together) from a
+narrow, temporary one (one noisy component swinging back down
+while others stay elevated, blend just follows the swing). A
+split-mind system could require genuine AGREEMENT across
+independent watchers before de-escalating -- a fundamentally
+stronger and harder-to-fake confirmation than one number sitting
+still, which is a real limitation of the stopgap, not a small
+detail.
+
+Sequencing: build and test the stopgap now, since it's small,
+fast, and directly evidenced. Do NOT treat it as the permanent
+answer -- it is explicitly superseded by the split-mind
+architecture once that gets built. When split-mind work begins,
+the stopgap's confirmation-by-consecutive-weeks logic should be
+replaced by confirmation-by-cross-watcher-agreement, not kept
+alongside it.
