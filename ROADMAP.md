@@ -1246,3 +1246,65 @@ Apply only if v2 log shows slow recovery off the 2009 bottom
 Alternative considered: price confirmation (SPY +12% off 60-day
 low bypasses hysteresis). Independent signal, but adds a
 dependency and may fire on bear market rallies. Lower priority.
+
+---
+
+## V3 PLAN (after v2 results)
+
+### 1. Magnitude-Scaled Hysteresis
+
+Problem: fixed 2-3 week exit delay treats a 0.05 whipsaw and a
+0.45 regime collapse identically. Costs re-risking speed at
+V-shaped bottoms (March 2009 scenario).
+
+Fix: scale required wait by how far the dial fell from peak.
+
+    drop = peak_dial - current_dial
+    weeks_needed = max(1, round(base_weeks - drop / 0.12))
+
+Validated behavior:
+  From peak 0.90 (crisis unwind):
+    drop 0.05 -> 3 weeks   (noise, hold position)
+    drop 0.15 -> 2 weeks
+    drop 0.25 -> 1 week    (real move, act fast)
+    drop 0.45 -> 1 week
+  From peak 0.54 (2004 whipsaw):
+    drop 0.04 -> 3 weeks   (protection intact)
+    drop 0.11 -> 3 weeks
+    drop 0.16 -> 2 weeks
+
+Use round() not int() to avoid a cliff at drop=0.25 where
+2009-style moves land.
+
+Trigger condition: apply if v2 log shows slow recovery off the
+2009 bottom. Compare ~21% mark against v1 trough of $11,325
+(Feb 2009) and v1 recovery to $13,927 by Aug 2009.
+
+### 2. Price Confirmation Override (lower priority)
+
+If SPY is up >12% off its 60-day low, bypass hysteresis entirely
+and allow immediate downgrade. Independent signal from the dial,
+so it catches recoveries the dial is slow to register.
+
+Risk: may fire on bear market rallies (Nov 2008 had a +19% bounce
+mid-crisis). Would need a second condition -- perhaps requiring
+the dial to also be falling -- before this is safe.
+
+### 3. Stress Exit Timing Review
+
+v2 exits stress after 2 weeks (stress_exit_weeks=2). Whether this
+is right is untested. Check the 2011 US downgrade and 2015-2016
+China selloff sections of the v2 log for evidence of exiting too
+early (portfolio drops right after downgrade) or too late
+(sitting defensive through a recovery).
+
+### 4. Open Questions for v3
+
+- Does bootstrap dial (300 samples) meaningfully smooth threshold
+  crossings vs point estimate? Compare scenario switch counts
+  between v1 and v2 logs.
+- Is DBMF 8% minimum the right floor? Test 6% and 10% variants.
+- Should GLD minimum scale with dial rather than fixed 4%?
+- Market dial weights (credit 0.35 / vol 0.30 / rate 0.18 /
+  intl 0.10 / gold 0.07) were set by hand. Worth a sensitivity
+  sweep once v2 baseline exists.
