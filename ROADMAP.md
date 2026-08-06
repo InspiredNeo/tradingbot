@@ -1554,3 +1554,100 @@ another list of tradeoffs.
 Do not recommend building anything based on single-instance
 evidence from tonight alone -- cross-check against the full run
 first.
+
+---
+
+## ARCHITECTURAL DIRECTION: HIERARCHICAL "SPLIT MIND" DESIGN
+
+Distinct from the reactive patch list above. This is a structural
+direction for the whole project, not a fix for a specific bug
+observed tonight. Proposed during live discussion while watching
+the Taper Tantrum section (2013) expose that international/EM
+stress gets blended into the single main dial rather than being
+seen and reacted to on its own terms.
+
+### The core idea
+
+Right now: ONE dial, ONE decision. All signals (credit, vol, rate,
+intl, gold) blend into a single number that drives the single
+biggest lever (overall equity vs defensive split). This is
+deliberately simple -- validated hard tonight, stateless, provably
+non-latching via the rate limiter. That simplicity is why it was
+debuggable at all after three earlier state-machine failures.
+
+Proposed next layer: multiple SMALL, NARROW-SCOPE watchers, each
+fully aware of its own domain, each empowered to act ONLY within
+its own slice -- feeding up to, but not overriding, the main
+decision-making dial.
+
+    Layer 1 (exists, validated tonight):
+      Main dial -> overall equity vs defensive split
+      US-centric signals, deliberately filters foreign noise
+      (this is WHY the 2012 European-contamination problem
+      was fixed -- do not lose this property)
+
+    Layer 2 (proposed, not yet built):
+      Narrow watchers, each with full visibility into their
+      own domain, each acting ONLY on their own allocation
+      slice, never touching the main equity/defensive split:
+        - EM/international watcher -> adjusts EEM/SCHF weight
+          within the equity sleeve only
+        - Sector watchers (eventually) -> adjust XLF/XLV weight
+          within the equity sleeve only
+      Full visibility, CONTAINED reaction. A regional or sector
+      problem should size its own position down, not force the
+      whole portfolio defensive.
+
+    Layer 3 (already logged earlier, further out, live-only):
+      Individual stock/constituent-level awareness inside ETFs,
+      event-driven, cannot be backtested historically, requires
+      live data feeds.
+
+### Why this over "add more inputs to the one dial"
+
+Most of tonight's brainstorming (reweighting, adding signals,
+persistence requirements) was about improving ONE dial's
+accuracy. This is different: it's about NOT forcing every kind of
+stress through one blunt global lever in the first place. A
+contained regional problem should get a contained regional
+response. Blending it into the main number either drowns it out
+(current state -- Taper Tantrum only nudged the dial 0.27->0.56
+despite EEM itself dropping ~15%) or, if overweighted, risks
+recreating the exact 2012 contamination problem this whole
+redesign was built to fix.
+
+### Why this matters more for live trading than backtesting
+
+In a backtest, a blunt whole-portfolio overreaction to a contained
+problem just shows up as a worse number at the end. Live, with
+real capital, an unnecessary whole-portfolio de-risk over a
+contained regional issue has a real cost (transaction costs,
+lost upside) that compounds every time it happens. Getting
+proportional response right before live capital is involved is
+worth doing properly.
+
+### Guardrails for whenever this is built (learned hard tonight)
+
+- Each new watcher must be STATELESS or use the same
+  rate-limiter pattern already validated (no discrete
+  states/labels with hysteresis -- that pattern failed three
+  times tonight before being replaced).
+- Each watcher must be independently testable via a dryrun-style
+  script BEFORE integration, same as continuous_allocation was
+  validated in isolation before the full backtest ran.
+- Layer 2 watchers must be provably unable to override Layer 1's
+  main equity/defensive decision -- only adjust weights WITHIN
+  the equity sleeve. This containment is the entire point; if a
+  regional watcher can force the whole portfolio defensive, it
+  has recreated the single-dial problem with extra steps.
+
+### Status
+
+Architectural direction only. NOT scheduled for this backtest
+cycle. Build only after:
+  1. Full v2 run completes and single-dial baseline is understood
+  2. Post-run review confirms international/regional blindness is
+     a real, recurring, costly gap (not just the one Taper
+     Tantrum instance) -- same evidence-first bar as every other
+     item on this list
+  3. Layer 1 is fully stable and well-understood on its own
