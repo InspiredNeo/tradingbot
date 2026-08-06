@@ -928,11 +928,17 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
     total  = series.iloc[-1]/10000-1
     ann    = (1+total)**(1/max(years,1))-1
     wrets  = series.pct_change().dropna()
-    drets  = series.resample("D").last().pct_change().dropna()
     sharpe_weekly = float(wrets.mean()/wrets.std()*np.sqrt(52)) \
                     if wrets.std() > 0 else 0
-    sharpe_daily  = float(drets.mean()/drets.std()*np.sqrt(252)) \
-                    if drets.std() > 0 else 0
+    # "Daily Sharpe" removed: the underlying series is weekly
+    # (one value per rebalance), so resampling onto a daily grid
+    # produces nothing but NaN gaps between real observations.
+    # resample("D").last().pct_change().dropna() silently returned
+    # an EMPTY series, whose .std() is nan, which fails the
+    # "> 0" guard and fell through to a hardcoded 0 -- printing a
+    # clean-looking but meaningless 0.00 in both v1 and v2 output.
+    # There is no real daily Sharpe to compute from weekly data.
+    sharpe_daily = None
     roll_max = series.cummax()
     dd       = (series - roll_max)/roll_max
     max_dd   = float(dd.min())
@@ -958,7 +964,7 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
     print(f"    Total return:     {total:>10.1%}")
     print(f"    Ann return:       {ann:>10.1%}")
     print(f"    Sharpe (weekly):  {sharpe_weekly:>10.2f}")
-    print(f"    Sharpe (daily):   {sharpe_daily:>10.2f}")
+    print(f"    Sharpe (daily):   {'n/a -- weekly data only':>10}")
     print(f"    Max drawdown:     {max_dd:>10.1%}")
     print(f"    Calmar:           {calmar:>10.2f}")
     print(f"\n  OUT-OF-SAMPLE (2019-2026):")
@@ -971,7 +977,6 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
     print("  PAPER TRADING GATE CHECK:")
     gates = {
         "Sharpe (weekly) >= 1.1": sharpe_weekly >= 1.1,
-        "Sharpe (daily)  >= 1.1": sharpe_daily  >= 1.1,
         "Max DD <= 30%":          max_dd >= -0.30,
         "Calmar >= 0.35":         calmar >= 0.35,
         "Final >= $70,000":       series.iloc[-1] >= 70000,
@@ -1010,7 +1015,7 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
         "total": float(total),
         "ann_ret": float(ann),
         "sharpe_weekly": float(sharpe_weekly),
-        "sharpe_daily": float(sharpe_daily),
+        "sharpe_daily": None,  # not computable from weekly-only series
         "max_dd": float(max_dd),
         "calmar": float(calmar),
         "years": float(years),
