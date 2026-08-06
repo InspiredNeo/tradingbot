@@ -2383,16 +2383,15 @@ def live_allocation_card():
               "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
 
 
-def backtest_viewer_tab():
+def _build_liveruns_log_content():
     """
-    Live-updating view of backtest progress, plus a picker for
-    saved/completed backtest results. Read-only -- never touches
-    the running backtest process itself.
+    Shared logic for building the log panel + status text.
+    Used both on initial tab render and on the 60s refresh
+    callback, so the two never drift out of sync with each other.
     """
     import sys
     sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
-    from backtest_reader import (list_available_backtests, parse_live_log,
-                                  is_backtest_running)
+    from backtest_reader import list_available_backtests, parse_live_log
 
     available = list_available_backtests()
     running_logs = [b for b in available if b["type"] == "running"]
@@ -2403,7 +2402,6 @@ def backtest_viewer_tab():
         status_text = f"● LIVE -- {active_log}"
         status_color = COLORS["green"]
     elif available:
-        # Fall back to most recently modified log
         logs_only = [b for b in available if b["type"] in ("log", "running")]
         if logs_only:
             active_log = sorted(logs_only, key=lambda x: x["modified"])[-1]["name"]
@@ -2412,19 +2410,27 @@ def backtest_viewer_tab():
             status_color = COLORS["text3"]
         else:
             records = []
-            status_text = "No backtest logs found"
-            status_color = COLORS["text3"]
+            status_text, status_color = "No backtest logs found", COLORS["text3"]
     else:
         records = []
-        status_text = "No backtest data found"
-        status_color = COLORS["text3"]
+        status_text, status_color = "No backtest data found", COLORS["text3"]
 
-    # Build chart if we have records
+    log_children = [
+        html.Div(
+            f"{r['date']}  ${r['value']:>10,.0f}  dial={r['dial']:.3f}  [{r['scenario']}]",
+            style={"color": COLORS["text3"], "fontSize": "11px",
+                   "fontFamily": FONT_MONO, "padding": "2px 0", "whiteSpace": "pre"})
+        for r in reversed(records[-100:])
+    ] if records else [
+        html.Div("No log data yet.", style={"color": COLORS["text3"],
+                 "fontSize": "11px", "fontStyle": "italic"})
+    ]
+
+
     if records:
         dates = [r["date"] for r in records]
         values = [r["value"] for r in records]
         dials = [r["dial"] for r in records]
-
         chart = dcc.Graph(
             figure={
                 "data": [
@@ -2449,15 +2455,16 @@ def backtest_viewer_tab():
                 },
             },
             config={"displayModeBar": False},
+            id="liveruns-chart",
         )
         latest = records[-1]
         latest_summary = html.Div([
-            html.Span(f"Latest: {latest['date']}  ", style={"color": COLORS["text2"]}),
+            html.Span("Latest: " + latest["date"] + "  ", style={"color": COLORS["text2"]}),
             html.Span(f"${latest['value']:,.0f}  ", style={"color": COLORS["text"],
                      "fontWeight": "700", "fontFamily": FONT_MONO}),
             html.Span(f"dial={latest['dial']:.3f}  ", style={"color": "#f59e0b",
                      "fontFamily": FONT_MONO}),
-            html.Span(f"[{latest['scenario']}]", style={"color": COLORS["text2"]}),
+            html.Span("[" + latest["scenario"] + "]", style={"color": COLORS["text2"]}),
         ], style={"fontSize": "13px", "marginBottom": "12px"})
     else:
         chart = html.Div("No data to chart yet.",
@@ -2465,7 +2472,29 @@ def backtest_viewer_tab():
                                 "textAlign": "center"})
         latest_summary = html.Div()
 
-    # Picker for available saved backtests
+    return records, log_children, status_text, status_color, chart, latest_summary
+
+
+def backtest_viewer_tab():
+    """
+    Live-updating view of backtest progress, plus a picker for
+    saved/completed backtest results. Read-only -- never touches
+    the running backtest process itself.
+
+    Delegates all data-building to _build_liveruns_log_content()
+    so the initial render and the 60s refresh callback always
+    produce identical chart/log/status content -- no duplicate
+    logic to drift out of sync.
+    """
+    import sys
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from backtest_reader import list_available_backtests
+
+    records, log_children, status_text, status_color, chart, latest_summary = \
+        _build_liveruns_log_content()
+
+    available = list_available_backtests()
+
     picker_rows = []
     for bt in sorted(available, key=lambda x: x["modified"], reverse=True):
         final_str = f"${bt['final']:,.0f}" if bt.get("final") else "--"
@@ -2488,12 +2517,21 @@ def backtest_viewer_tab():
         html.Div([
             html.Div("BACKTEST VIEWER", style={"color": COLORS["text3"], "fontSize": "11px",
                      "fontWeight": "600", "letterSpacing": "0.5px"}),
-            html.Div(status_text, style={"color": status_color, "fontSize": "12px",
-                     "fontWeight": "700"}),
+            html.Div(status_text, id="liveruns-status", style={"color": status_color,
+                     "fontSize": "12px", "fontWeight": "700"}),
         ], style={"display": "flex", "justifyContent": "space-between",
                   "marginBottom": "12px"}),
-        latest_summary,
-        chart,
+        html.Div(latest_summary, id="liveruns-latest-wrapper"),
+        html.Div(chart, id="liveruns-chart-wrapper"),
+
+        html.Div(style={"height": "20px"}),
+        html.Div("LIVE LOG", style={"color": COLORS["text3"], "fontSize": "10px",
+                 "fontWeight": "600", "letterSpacing": "0.5px", "marginBottom": "8px",
+                 "borderTop": f"1px solid {COLORS['border']}", "paddingTop": "12px"}),
+        html.Div(log_children, id="liveruns-log-panel",
+                 style={"maxHeight": "320px", "overflowY": "auto",
+                        "background": COLORS["panel2"], "borderRadius": "6px",
+                        "padding": "10px"}),
 
         html.Div(style={"height": "20px"}),
         html.Div("SAVED / AVAILABLE BACKTESTS", style={"color": COLORS["text3"],

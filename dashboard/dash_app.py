@@ -1347,6 +1347,29 @@ def remove_alert(n_clicks):
 
 
 @callback(
+    Output("liveruns-log-panel", "children"),
+    Output("liveruns-status", "children"),
+    Output("liveruns-status", "style"),
+    Output("liveruns-chart-wrapper", "children"),
+    Output("liveruns-latest-wrapper", "children"),
+    Input("refresh-interval", "n_intervals"),
+    prevent_initial_call=True,
+)
+def refresh_liveruns_log(n):
+    from dash_pages import _build_liveruns_log_content, COLORS
+    try:
+        records, log_children, status_text, status_color, chart, latest_summary = \
+            _build_liveruns_log_content()
+        status_style = {"color": status_color, "fontSize": "12px", "fontWeight": "700"}
+        return log_children, status_text, status_style, chart, latest_summary
+    except Exception as e:
+        import dash
+        err_style = {"color": COLORS["red"], "fontSize": "12px", "fontWeight": "700"}
+        return (dash.no_update, f"Refresh error: {e}", err_style,
+                dash.no_update, dash.no_update)
+
+
+@callback(
     Output("alert-notifications", "children"),
     Input("refresh-interval", "n_intervals"),
 )
