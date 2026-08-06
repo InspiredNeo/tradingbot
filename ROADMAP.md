@@ -1216,3 +1216,33 @@ Phase 9 (full system):
   Max DD: -10% to -14%
   Annual: 13% - 16%
   $10,000 → $140,000-$185,000 over 21 years
+
+### v3 Candidate: Magnitude-Scaled Hysteresis
+
+Problem: fixed 2-3 week exit delay treats a 0.05 whipsaw and a
+0.45 regime collapse identically. Costs re-risking speed at
+V-shaped bottoms (March 2009 scenario).
+
+Fix: scale the required wait by how far the dial fell from peak.
+
+    drop = peak_dial - current_dial
+    weeks_needed = max(1, round(base_weeks - drop / 0.12))
+
+Validated behavior:
+  From peak 0.90 (crisis unwind):
+    drop 0.05 -> 3 weeks   (noise, hold)
+    drop 0.15 -> 2 weeks
+    drop 0.25 -> 1 week    (real move, act)
+    drop 0.45 -> 1 week
+  From peak 0.54 (2004 whipsaw):
+    drop 0.04 -> 3 weeks   (protection intact)
+    drop 0.11 -> 3 weeks
+    drop 0.16 -> 2 weeks
+
+Status: designed and behavior-tested, NOT applied to v2.
+Apply only if v2 log shows slow recovery off the 2009 bottom
+(check ~21% mark vs v1 trough of $11,325 in Feb 2009).
+
+Alternative considered: price confirmation (SPY +12% off 60-day
+low bypasses hysteresis). Independent signal, but adds a
+dependency and may fire on bear market rallies. Lower priority.
