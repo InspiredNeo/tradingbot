@@ -2752,7 +2752,143 @@ def bot_control_tab():
     ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
               "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
 
-    return html.Div([phase_card, header, regime_card, models_card, settings_card, schwab_card, slack_card, alloc_card, log_card])
+    # ---- Global Monitor Panel ----
+    import pytz
+    from datetime import datetime
+    ET = pytz.timezone("America/New_York")
+    now_et = datetime.now(ET)
+    hour = now_et.hour
+
+    monitor_baseline = 0.41
+    monitor_last_check = "Not started"
+    monitor_status = "STOPPED"
+    monitor_dial = 0.41
+    risk_mult = 0.93
+
+    try:
+        mb = json.load(open(os.path.expanduser(
+            "~/tradingbot/config/monitor_baseline.json")))
+        monitor_baseline = mb.get("baseline", 0.41)
+        ts = mb.get("timestamp", "")
+        if ts:
+            monitor_last_check = ts[:16].replace("T", " ")
+        monitor_status = "RUNNING"
+    except Exception:
+        pass
+
+    try:
+        import pandas as pd
+        stab = pd.read_parquet(os.path.expanduser(
+            "~/tradingbot/engine/histdata/stability.parquet"))
+        monitor_dial = float(stab["stability_risk"].dropna().iloc[-1])
+        risk_mult = max(0.25, 1.0/(1.0 + max(monitor_dial-0.5,0)*8))
+    except Exception:
+        pass
+
+    dial_color = (COLORS["green"] if monitor_dial < 0.40 else
+                  "#f59e0b" if monitor_dial < 0.60 else
+                  "#f97316" if monitor_dial < 0.75 else
+                  COLORS["red"])
+    status_color = COLORS["green"] if monitor_status == "RUNNING" else COLORS["text3"]
+
+    all_sessions = [
+        ("Futures",  18, 17),
+        ("Asia",     20,  6),
+        ("MENA",      3, 10),
+        ("Europe",    3, 12),
+        ("Americas",  9, 17),
+    ]
+    session_rows = []
+    for sname, sopen, sclose in all_sessions:
+        if sopen > sclose:
+            is_open = hour >= sopen or hour < sclose
+        else:
+            is_open = sopen <= hour < sclose
+        dot = "🟢" if is_open else "⚫"
+        label = "OPEN" if is_open else f"opens {sopen}:00 ET"
+        label_color = COLORS["green"] if is_open else COLORS["text3"]
+        session_rows.append(html.Div([
+            html.Span(dot, style={"marginRight": "8px"}),
+            html.Span(sname, style={"fontWeight": "600", "width": "90px",
+                                    "display": "inline-block", "fontSize": "13px"}),
+            html.Span(label, style={"color": label_color, "fontSize": "12px"}),
+        ], style={"padding": "3px 0"}))
+
+    monitor_card = html.Div([
+        html.Div("🌍  Global Market Monitor",
+                 style={"fontWeight": "600", "fontSize": "15px", "marginBottom": "16px"}),
+
+        html.Div([
+            html.Div([
+                html.Div("Status", style={"fontSize": "11px", "color": COLORS["text3"], "marginBottom": "4px"}),
+                html.Div([
+                    html.Span("● ", style={"color": status_color}),
+                    html.Span(monitor_status, style={"fontWeight": "600"}),
+                ]),
+            ], style={"flex": "1"}),
+            html.Div([
+                html.Div("Dial", style={"fontSize": "11px", "color": COLORS["text3"], "marginBottom": "4px"}),
+                html.Div(f"{monitor_dial:.2f}",
+                         style={"fontWeight": "700", "fontSize": "24px", "color": dial_color}),
+            ], style={"flex": "1"}),
+            html.Div([
+                html.Div("Risk Mult", style={"fontSize": "11px", "color": COLORS["text3"], "marginBottom": "4px"}),
+                html.Div(f"{risk_mult:.2f}",
+                         style={"fontWeight": "700", "fontSize": "24px"}),
+            ], style={"flex": "1"}),
+            html.Div([
+                html.Div("Baseline", style={"fontSize": "11px", "color": COLORS["text3"], "marginBottom": "4px"}),
+                html.Div(f"{monitor_baseline:.2f}",
+                         style={"fontWeight": "700", "fontSize": "24px"}),
+            ], style={"flex": "1"}),
+        ], style={"display": "flex", "gap": "16px", "marginBottom": "16px"}),
+
+        html.Div([
+            html.Div(style={
+                "height": "6px", "borderRadius": "3px",
+                "background": "linear-gradient(to right, #22c55e 0%, #f59e0b 50%, #ef4444 100%)",
+                "marginBottom": "2px",
+            }),
+            html.Div([
+                html.Span("▲", style={
+                    "position": "relative",
+                    "left": f"calc({monitor_dial*100:.0f}% - 6px)",
+                    "color": dial_color, "fontSize": "10px",
+                }),
+            ]),
+        ], style={"marginBottom": "16px"}),
+
+        html.Div("Market Sessions",
+                 style={"fontSize": "12px", "color": COLORS["text3"],
+                        "fontWeight": "600", "marginBottom": "8px"}),
+        html.Div(session_rows, style={"marginBottom": "16px"}),
+
+        html.Div([
+            html.Span("Last check: ", style={"color": COLORS["text3"], "fontSize": "12px"}),
+            html.Span(monitor_last_check, style={"fontSize": "12px", "marginRight": "16px"}),
+            html.Span("Next rebalance: ", style={"color": COLORS["text3"], "fontSize": "12px"}),
+            html.Span("Sunday 8:00pm ET", style={"fontSize": "12px"}),
+        ], style={"marginBottom": "16px"}),
+
+        html.Div([
+            dbc.Button("▶ Start Monitor", id="btn-start-monitor",
+                       color="success", size="sm", className="me-2"),
+            dbc.Button("⏹ Stop", id="btn-stop-monitor",
+                       color="secondary", size="sm", outline=True, className="me-2"),
+            dbc.Button("🔔 Test Alert", id="btn-test-alert",
+                       color="warning", size="sm", outline=True, className="me-2"),
+            dbc.Button("📋 View Log", id="btn-monitor-log",
+                       color="primary", size="sm", outline=True),
+        ]),
+        html.Div(id="monitor-status-msg",
+                 style={"marginTop": "8px", "fontSize": "12px", "color": COLORS["text3"]}),
+
+    ], style={"background": COLORS["panel"],
+              "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    return html.Div([phase_card, header, regime_card, models_card, settings_card,
+                     schwab_card, slack_card, alloc_card, log_card, monitor_card])
 
 
 

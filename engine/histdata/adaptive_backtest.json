@@ -1,0 +1,6930 @@
+{
+  "final": 51172.461291685235,
+  "total": 4.117246129168524,
+  "ann_ret": 0.0767700956750057,
+  "sharpe": 0.755557806235565,
+  "max_dd": -0.21871452382306047,
+  "calmar": 0.3510059338222665,
+  "years": 22.072553045859,
+  "gates": {
+    "Sharpe >= 1.1": false,
+    "Max DD <= 30%": true,
+    "Calmar >= 0.35": "True",
+    "Final >= $70,000": "False"
+  },
+  "all_pass": false,
+  "records": [
+    {
+      "date": "2004-07-09",
+      "portfolio": 9818.936556828718,
+      "dial": 0.22972972972972974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-07-16",
+      "portfolio": 9716.654319465097,
+      "dial": 0.22972972972972974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-07-23",
+      "portfolio": 9548.463125273725,
+      "dial": 0.22972972972972974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-07-30",
+      "portfolio": 9673.471046340666,
+      "dial": 0.22972972972972974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-08-06",
+      "portfolio": 9430.357774135835,
+      "dial": 0.3638157894736842,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-08-13",
+      "portfolio": 9459.454344303474,
+      "dial": 0.3638157894736842,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-08-20",
+      "portfolio": 9748.756593322729,
+      "dial": 0.3638157894736842,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-08-27",
+      "portfolio": 9853.908884790073,
+      "dial": 0.3638157894736842,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-09-03",
+      "portfolio": 9875.912965967544,
+      "dial": 0.3638157894736842,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-09-10",
+      "portfolio": 9986.495963704625,
+      "dial": 0.3903846153846154,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-09-17",
+      "portfolio": 10066.827625435584,
+      "dial": 0.3903846153846154,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-09-24",
+      "portfolio": 9947.831767746504,
+      "dial": 0.3903846153846154,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-10-01",
+      "portfolio": 10090.045912021858,
+      "dial": 0.3903846153846154,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-10-08",
+      "portfolio": 9989.266048623833,
+      "dial": 0.28,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-10-15",
+      "portfolio": 9840.168209945296,
+      "dial": 0.28,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-10-22",
+      "portfolio": 9749.332315281905,
+      "dial": 0.28,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-10-29",
+      "portfolio": 10058.271109610998,
+      "dial": 0.28,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-11-05",
+      "portfolio": 10279.873195031063,
+      "dial": 0.4329268292682927,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-11-12",
+      "portfolio": 10403.740135720534,
+      "dial": 0.4329268292682927,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-11-19",
+      "portfolio": 10332.495749412183,
+      "dial": 0.4329268292682927,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-11-26",
+      "portfolio": 10457.789709951718,
+      "dial": 0.4329268292682927,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-12-03",
+      "portfolio": 10581.66488515168,
+      "dial": 0.4329268292682927,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2004-12-10",
+      "portfolio": 10447.882752984002,
+      "dial": 0.11845238095238095,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-12-17",
+      "portfolio": 10594.077265888918,
+      "dial": 0.11845238095238095,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-12-23",
+      "portfolio": 10797.268617064392,
+      "dial": 0.11845238095238095,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2004-12-31",
+      "portfolio": 10869.927513941395,
+      "dial": 0.11845238095238095,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-01-07",
+      "portfolio": 10501.859128811764,
+      "dial": 0.2441860465116279,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-01-14",
+      "portfolio": 10550.583695980782,
+      "dial": 0.2441860465116279,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-01-21",
+      "portfolio": 10381.760274049284,
+      "dial": 0.2441860465116279,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-01-28",
+      "portfolio": 10445.037455402247,
+      "dial": 0.2441860465116279,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-02-04",
+      "portfolio": 10800.124245627174,
+      "dial": 0.2441860465116279,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-02-11",
+      "portfolio": 10872.760485362682,
+      "dial": 0.22386363636363638,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-02-18",
+      "portfolio": 10847.640073979686,
+      "dial": 0.22386363636363638,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-02-25",
+      "portfolio": 11056.95970282483,
+      "dial": 0.22386363636363638,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-03-04",
+      "portfolio": 11088.73087463328,
+      "dial": 0.22386363636363638,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-03-11",
+      "portfolio": 10874.68679418079,
+      "dial": 0.1761111111111111,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-03-18",
+      "portfolio": 10630.335046291464,
+      "dial": 0.1761111111111111,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-03-24",
+      "portfolio": 10355.0527441512,
+      "dial": 0.1761111111111111,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-04-01",
+      "portfolio": 10407.325875548186,
+      "dial": 0.1761111111111111,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-04-08",
+      "portfolio": 10641.585409996354,
+      "dial": 0.29728260869565215,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-04-15",
+      "portfolio": 10331.970878230648,
+      "dial": 0.29728260869565215,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-04-22",
+      "portfolio": 10377.467242725512,
+      "dial": 0.29728260869565215,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-04-29",
+      "portfolio": 10476.822840831332,
+      "dial": 0.29728260869565215,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-05-06",
+      "portfolio": 10611.213159911116,
+      "dial": 0.4425531914893617,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-05-13",
+      "portfolio": 10529.43052445179,
+      "dial": 0.4425531914893617,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-05-20",
+      "portfolio": 10776.570544344071,
+      "dial": 0.4425531914893617,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-05-27",
+      "portfolio": 10844.420851474139,
+      "dial": 0.4425531914893617,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-06-03",
+      "portfolio": 10854.408469072612,
+      "dial": 0.4425531914893617,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-06-10",
+      "portfolio": 10836.615358357145,
+      "dial": 0.4125,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-06-17",
+      "portfolio": 11010.945984025433,
+      "dial": 0.4125,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-06-24",
+      "portfolio": 10858.550428915374,
+      "dial": 0.4125,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-07-01",
+      "portfolio": 10845.099026700815,
+      "dial": 0.4125,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-07-08",
+      "portfolio": 10969.920405549328,
+      "dial": 0.38622448979591834,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-07-15",
+      "portfolio": 11112.863572626304,
+      "dial": 0.38622448979591834,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-07-22",
+      "portfolio": 11155.495261126003,
+      "dial": 0.38622448979591834,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-07-29",
+      "portfolio": 11207.684416057746,
+      "dial": 0.38622448979591834,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2005-08-05",
+      "portfolio": 11151.604762685723,
+      "dial": 0.22099999999999997,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-08-12",
+      "portfolio": 11249.15509424295,
+      "dial": 0.22099999999999997,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-08-19",
+      "portfolio": 11060.796829634655,
+      "dial": 0.22099999999999997,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-08-26",
+      "portfolio": 10948.426026010764,
+      "dial": 0.22099999999999997,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-09-02",
+      "portfolio": 11200.546381622587,
+      "dial": 0.22099999999999997,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-09-09",
+      "portfolio": 11480.100197855361,
+      "dial": 0.23774509803921567,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-09-16",
+      "portfolio": 11451.544599522642,
+      "dial": 0.23774509803921567,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-09-23",
+      "portfolio": 11292.643539917433,
+      "dial": 0.23774509803921567,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-09-30",
+      "portfolio": 11470.510636516568,
+      "dial": 0.23774509803921567,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-10-07",
+      "portfolio": 11121.127424801836,
+      "dial": 0.2394230769230769,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-10-14",
+      "portfolio": 10915.452902972651,
+      "dial": 0.2394230769230769,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-10-21",
+      "portfolio": 10913.426724196132,
+      "dial": 0.2394230769230769,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-10-28",
+      "portfolio": 11031.074113143228,
+      "dial": 0.2394230769230769,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-11-04",
+      "portfolio": 11395.54089411196,
+      "dial": 0.2394230769230769,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-11-11",
+      "portfolio": 11534.20587505257,
+      "dial": 0.5542452830188679,
+      "scenario": "stress"
+    },
+    {
+      "date": "2005-11-18",
+      "portfolio": 11645.807558067916,
+      "dial": 0.5542452830188679,
+      "scenario": "stress"
+    },
+    {
+      "date": "2005-11-25",
+      "portfolio": 11749.871246592227,
+      "dial": 0.5542452830188679,
+      "scenario": "stress"
+    },
+    {
+      "date": "2005-12-02",
+      "portfolio": 11757.413619912828,
+      "dial": 0.5542452830188679,
+      "scenario": "stress"
+    },
+    {
+      "date": "2005-12-09",
+      "portfolio": 11748.142271717175,
+      "dial": 0.3212962962962963,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-12-16",
+      "portfolio": 11809.973364714686,
+      "dial": 0.3212962962962963,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-12-23",
+      "portfolio": 11942.38648782799,
+      "dial": 0.3212962962962963,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2005-12-30",
+      "portfolio": 11744.511984496907,
+      "dial": 0.3212962962962963,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-01-06",
+      "portfolio": 12166.082227790717,
+      "dial": 0.3586363636363636,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-01-13",
+      "portfolio": 12209.39329743305,
+      "dial": 0.3586363636363636,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-01-20",
+      "portfolio": 11948.218361033094,
+      "dial": 0.3586363636363636,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-01-27",
+      "portfolio": 12201.250614749244,
+      "dial": 0.3586363636363636,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-02-03",
+      "portfolio": 12010.626759235598,
+      "dial": 0.3586363636363636,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-02-10",
+      "portfolio": 12029.595729320376,
+      "dial": 0.2727678571428571,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-02-17",
+      "portfolio": 12237.210161803821,
+      "dial": 0.2727678571428571,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-02-24",
+      "portfolio": 12287.649240833145,
+      "dial": 0.2727678571428571,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-03-03",
+      "portfolio": 12218.789777251177,
+      "dial": 0.2727678571428571,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-03-10",
+      "portfolio": 12025.929133139693,
+      "dial": 0.3206140350877193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-03-17",
+      "portfolio": 12358.541703803885,
+      "dial": 0.3206140350877193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-03-24",
+      "portfolio": 12313.45574501924,
+      "dial": 0.3206140350877193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-03-31",
+      "portfolio": 12309.15037097714,
+      "dial": 0.3206140350877193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-04-07",
+      "portfolio": 12353.667860464984,
+      "dial": 0.29094827586206895,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-04-13",
+      "portfolio": 12296.71058320966,
+      "dial": 0.29094827586206895,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-04-21",
+      "portfolio": 12605.633545190734,
+      "dial": 0.29094827586206895,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-04-28",
+      "portfolio": 12622.779302798095,
+      "dial": 0.29094827586206895,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-05-05",
+      "portfolio": 12846.64139820996,
+      "dial": 0.2771186440677966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-05-12",
+      "portfolio": 12355.325952906695,
+      "dial": 0.2771186440677966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-05-19",
+      "portfolio": 11961.856534599545,
+      "dial": 0.2771186440677966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-05-26",
+      "portfolio": 11906.899798153423,
+      "dial": 0.2771186440677966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-06-02",
+      "portfolio": 11983.340649727328,
+      "dial": 0.2771186440677966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-06-09",
+      "portfolio": 11620.648987784753,
+      "dial": 0.47291666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-06-16",
+      "portfolio": 11581.610094600792,
+      "dial": 0.47291666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-06-23",
+      "portfolio": 11505.88059936168,
+      "dial": 0.47291666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-06-30",
+      "portfolio": 11739.518761554938,
+      "dial": 0.47291666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-07-07",
+      "portfolio": 11684.219579917071,
+      "dial": 0.4668032786885246,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-07-14",
+      "portfolio": 11467.85765182043,
+      "dial": 0.4668032786885246,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-07-21",
+      "portfolio": 11532.837335895822,
+      "dial": 0.4668032786885246,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-07-28",
+      "portfolio": 11875.016194631658,
+      "dial": 0.4668032786885246,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-08-04",
+      "portfolio": 11875.488436226085,
+      "dial": 0.4668032786885246,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-08-11",
+      "portfolio": 11760.231314921528,
+      "dial": 0.5415322580645161,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-08-18",
+      "portfolio": 12075.440064362245,
+      "dial": 0.5415322580645161,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-08-25",
+      "portfolio": 12022.6774280965,
+      "dial": 0.5415322580645161,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-09-01",
+      "portfolio": 12177.61631364894,
+      "dial": 0.5415322580645161,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-09-08",
+      "portfolio": 12078.032238048385,
+      "dial": 0.42976190476190473,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-09-15",
+      "portfolio": 12248.737447998612,
+      "dial": 0.42976190476190473,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-09-22",
+      "portfolio": 12225.623013859418,
+      "dial": 0.42976190476190473,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-09-29",
+      "portfolio": 12361.815056850546,
+      "dial": 0.42976190476190473,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2006-10-06",
+      "portfolio": 12494.567487012338,
+      "dial": 0.334375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-10-13",
+      "portfolio": 12613.65335994663,
+      "dial": 0.334375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-10-20",
+      "portfolio": 12647.291694583231,
+      "dial": 0.334375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-10-27",
+      "portfolio": 12693.89169423633,
+      "dial": 0.334375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-11-03",
+      "portfolio": 12559.907435437131,
+      "dial": 0.334375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-11-10",
+      "portfolio": 12625.550401208997,
+      "dial": 0.15615384615384614,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-11-17",
+      "portfolio": 12852.683357627719,
+      "dial": 0.15615384615384614,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-11-24",
+      "portfolio": 12918.197045566701,
+      "dial": 0.15615384615384614,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-12-01",
+      "portfolio": 12833.791371726855,
+      "dial": 0.15615384615384614,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-12-08",
+      "portfolio": 12967.426098397082,
+      "dial": 0.22007575757575756,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-12-15",
+      "portfolio": 13138.622531246046,
+      "dial": 0.22007575757575756,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-12-22",
+      "portfolio": 13000.439326532225,
+      "dial": 0.22007575757575756,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2006-12-29",
+      "portfolio": 13107.448264054998,
+      "dial": 0.22007575757575756,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-01-05",
+      "portfolio": 13035.219859736872,
+      "dial": 0.28059701492537314,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-01-12",
+      "portfolio": 13323.975571842362,
+      "dial": 0.28059701492537314,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-01-19",
+      "portfolio": 13283.20202224947,
+      "dial": 0.28059701492537314,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-01-26",
+      "portfolio": 13184.79675884181,
+      "dial": 0.28059701492537314,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-02-02",
+      "portfolio": 13427.171520190856,
+      "dial": 0.28059701492537314,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-02-09",
+      "portfolio": 13351.963416068633,
+      "dial": 0.2485294117647059,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-02-16",
+      "portfolio": 13595.150142223196,
+      "dial": 0.2485294117647059,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-02-23",
+      "portfolio": 13568.513620057727,
+      "dial": 0.2485294117647059,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-03-02",
+      "portfolio": 12782.47821535506,
+      "dial": 0.2485294117647059,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-03-09",
+      "portfolio": 12905.600396703918,
+      "dial": 0.5068840579710145,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-03-16",
+      "portfolio": 12822.299863711427,
+      "dial": 0.5068840579710145,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-03-23",
+      "portfolio": 13128.097089237068,
+      "dial": 0.5068840579710145,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-03-30",
+      "portfolio": 13032.334286806039,
+      "dial": 0.5068840579710145,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-04-05",
+      "portfolio": 13225.459482009535,
+      "dial": 0.5389285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-04-13",
+      "portfolio": 13320.812216826029,
+      "dial": 0.5389285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-04-20",
+      "portfolio": 13540.328461968216,
+      "dial": 0.5389285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-04-27",
+      "portfolio": 13610.291903857265,
+      "dial": 0.5389285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-05-04",
+      "portfolio": 13716.443091680525,
+      "dial": 0.5389285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-05-11",
+      "portfolio": 13690.284812108775,
+      "dial": 0.5095070422535212,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-05-18",
+      "portfolio": 13717.332307062186,
+      "dial": 0.5095070422535212,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-05-25",
+      "portfolio": 13670.3383540809,
+      "dial": 0.5095070422535212,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-06-01",
+      "portfolio": 13832.241335863813,
+      "dial": 0.5095070422535212,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-06-08",
+      "portfolio": 13476.355129801032,
+      "dial": 0.3215277777777778,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-06-15",
+      "portfolio": 13776.996114584776,
+      "dial": 0.3215277777777778,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-06-22",
+      "portfolio": 13514.733281388751,
+      "dial": 0.3215277777777778,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-06-29",
+      "portfolio": 13552.803028737304,
+      "dial": 0.3215277777777778,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2007-07-06",
+      "portfolio": 13749.017052917892,
+      "dial": 0.37226027397260275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-07-13",
+      "portfolio": 13898.70895428914,
+      "dial": 0.37226027397260275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-07-20",
+      "portfolio": 13790.045074119344,
+      "dial": 0.37226027397260275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-07-27",
+      "portfolio": 13281.662594141892,
+      "dial": 0.37226027397260275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-08-03",
+      "portfolio": 13163.22809735583,
+      "dial": 0.37226027397260275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2007-08-10",
+      "portfolio": 13193.103734800186,
+      "dial": 0.6611486486486488,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-08-17",
+      "portfolio": 13171.977682573517,
+      "dial": 0.6611486486486488,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-08-24",
+      "portfolio": 13351.221220279816,
+      "dial": 0.6611486486486488,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-08-31",
+      "portfolio": 13373.708236842705,
+      "dial": 0.6611486486486488,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-09-07",
+      "portfolio": 13427.485611548622,
+      "dial": 0.7686666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-09-14",
+      "portfolio": 13448.961375077783,
+      "dial": 0.7686666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-09-21",
+      "portfolio": 13488.874958041395,
+      "dial": 0.7686666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-09-28",
+      "portfolio": 13518.774881894322,
+      "dial": 0.7686666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-10-05",
+      "portfolio": 13791.752895205842,
+      "dial": 0.6203947368421052,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2007-10-12",
+      "portfolio": 13827.996514602952,
+      "dial": 0.6203947368421052,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-10-19",
+      "portfolio": 13668.65729910817,
+      "dial": 0.6203947368421052,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-10-26",
+      "portfolio": 13835.670917943291,
+      "dial": 0.6203947368421052,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-11-02",
+      "portfolio": 13782.849493205287,
+      "dial": 0.6203947368421052,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-11-09",
+      "portfolio": 13589.745094044489,
+      "dial": 0.6311688311688312,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-11-16",
+      "portfolio": 13617.076981827246,
+      "dial": 0.6311688311688312,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-11-23",
+      "portfolio": 13561.086770496777,
+      "dial": 0.6311688311688312,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-11-30",
+      "portfolio": 13764.312438554116,
+      "dial": 0.6311688311688312,
+      "scenario": "stress"
+    },
+    {
+      "date": "2007-12-07",
+      "portfolio": 13757.510497776057,
+      "dial": 0.7650641025641025,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-12-14",
+      "portfolio": 13681.063663145613,
+      "dial": 0.7650641025641025,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-12-21",
+      "portfolio": 13728.021129141413,
+      "dial": 0.7650641025641025,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2007-12-28",
+      "portfolio": 13771.226720577512,
+      "dial": 0.7650641025641025,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-01-04",
+      "portfolio": 13793.486382197463,
+      "dial": 0.7650641025641025,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-01-11",
+      "portfolio": 13912.89099264062,
+      "dial": 0.6882911392405063,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2008-01-18",
+      "portfolio": 13617.884988127564,
+      "dial": 0.6882911392405063,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-01-25",
+      "portfolio": 13569.269496003102,
+      "dial": 0.6882911392405063,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-02-01",
+      "portfolio": 13847.374699554844,
+      "dial": 0.6882911392405063,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-02-08",
+      "portfolio": 13777.75665873512,
+      "dial": 0.8675,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-02-15",
+      "portfolio": 13740.888855355168,
+      "dial": 0.8675,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-02-22",
+      "portfolio": 13773.441952297553,
+      "dial": 0.8675,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-02-29",
+      "portfolio": 13817.400349342968,
+      "dial": 0.8675,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-03-07",
+      "portfolio": 13427.205417960287,
+      "dial": 0.7351851851851853,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2008-03-14",
+      "portfolio": 13406.127723839056,
+      "dial": 0.7351851851851853,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-03-20",
+      "portfolio": 13531.204359401507,
+      "dial": 0.7351851851851853,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-03-28",
+      "portfolio": 13513.954421464647,
+      "dial": 0.7351851851851853,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-04-04",
+      "portfolio": 13715.289454612157,
+      "dial": 0.7351851851851853,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-04-11",
+      "portfolio": 13712.89492599536,
+      "dial": 0.8661585365853659,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-04-18",
+      "portfolio": 13702.721390280678,
+      "dial": 0.8661585365853659,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-04-25",
+      "portfolio": 13666.852504940824,
+      "dial": 0.8661585365853659,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-05-02",
+      "portfolio": 13677.347315752706,
+      "dial": 0.8661585365853659,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-05-09",
+      "portfolio": 13503.963454832066,
+      "dial": 0.6686746987951808,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2008-05-16",
+      "portfolio": 13634.57528888402,
+      "dial": 0.6686746987951808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-05-23",
+      "portfolio": 13470.473396037129,
+      "dial": 0.6686746987951808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-05-30",
+      "portfolio": 13534.881167288213,
+      "dial": 0.6686746987951808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-06-06",
+      "portfolio": 13270.254406863804,
+      "dial": 0.5327380952380953,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2008-06-13",
+      "portfolio": 13109.946111677915,
+      "dial": 0.5327380952380953,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2008-06-20",
+      "portfolio": 12894.38200507389,
+      "dial": 0.5327380952380953,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2008-06-27",
+      "portfolio": 12702.785952021764,
+      "dial": 0.5327380952380953,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2008-07-03",
+      "portfolio": 12549.513745173204,
+      "dial": 0.5327380952380953,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2008-07-11",
+      "portfolio": 12531.463199450263,
+      "dial": 0.5802941176470588,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-07-18",
+      "portfolio": 12630.330704837115,
+      "dial": 0.5802941176470588,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-07-25",
+      "portfolio": 12645.626944467936,
+      "dial": 0.5802941176470588,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-08-01",
+      "portfolio": 12678.413233074687,
+      "dial": 0.5802941176470588,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-08-08",
+      "portfolio": 12805.29924640257,
+      "dial": 0.663953488372093,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-08-15",
+      "portfolio": 12791.267969211953,
+      "dial": 0.663953488372093,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-08-22",
+      "portfolio": 12770.439455956124,
+      "dial": 0.663953488372093,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-08-29",
+      "portfolio": 12734.945176825358,
+      "dial": 0.663953488372093,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-09-05",
+      "portfolio": 12576.976044963958,
+      "dial": 0.6994252873563218,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-09-12",
+      "portfolio": 12582.325832325547,
+      "dial": 0.6994252873563218,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-09-19",
+      "portfolio": 12678.733094893556,
+      "dial": 0.6994252873563218,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-09-26",
+      "portfolio": 12437.839944792855,
+      "dial": 0.6994252873563218,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-10-03",
+      "portfolio": 11956.826533099298,
+      "dial": 0.6994252873563218,
+      "scenario": "stress"
+    },
+    {
+      "date": "2008-10-10",
+      "portfolio": 11504.206054123859,
+      "dial": 0.90625,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-10-17",
+      "portfolio": 11575.648355513375,
+      "dial": 0.90625,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-10-24",
+      "portfolio": 11490.607574617628,
+      "dial": 0.90625,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-10-31",
+      "portfolio": 11578.151815901196,
+      "dial": 0.90625,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-11-07",
+      "portfolio": 11580.712465786,
+      "dial": 0.9367977528089887,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-11-14",
+      "portfolio": 11511.83795651908,
+      "dial": 0.9367977528089887,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-11-21",
+      "portfolio": 11516.376497458627,
+      "dial": 0.9367977528089887,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-11-28",
+      "portfolio": 11764.725318220477,
+      "dial": 0.9367977528089887,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-12-05",
+      "portfolio": 11765.251475876797,
+      "dial": 0.7866666666666666,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2008-12-12",
+      "portfolio": 11860.080292504714,
+      "dial": 0.7866666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-12-19",
+      "portfolio": 12053.885933697527,
+      "dial": 0.7866666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2008-12-26",
+      "portfolio": 12063.741597913537,
+      "dial": 0.7866666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2009-01-02",
+      "portfolio": 12097.133130179134,
+      "dial": 0.7866666666666666,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2009-01-09",
+      "portfolio": 11962.612760931634,
+      "dial": 0.7706043956043955,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2009-01-16",
+      "portfolio": 11919.374303756556,
+      "dial": 0.7706043956043955,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2009-01-23",
+      "portfolio": 11825.26744180345,
+      "dial": 0.7706043956043955,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2009-01-30",
+      "portfolio": 11820.123907127101,
+      "dial": 0.7706043956043955,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2009-02-06",
+      "portfolio": 12113.015586084926,
+      "dial": 0.7497282608695651,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-02-13",
+      "portfolio": 11936.18061695848,
+      "dial": 0.7497282608695651,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-02-20",
+      "portfolio": 11627.868361520774,
+      "dial": 0.7497282608695651,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-02-27",
+      "portfolio": 11325.272701199954,
+      "dial": 0.7497282608695651,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-03-06",
+      "portfolio": 11061.59419153664,
+      "dial": 0.7247311827956989,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-03-13",
+      "portfolio": 11670.199798079902,
+      "dial": 0.7247311827956989,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-03-20",
+      "portfolio": 11731.28686890785,
+      "dial": 0.7247311827956989,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-03-27",
+      "portfolio": 12004.867837168456,
+      "dial": 0.7247311827956989,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-04-03",
+      "portfolio": 12140.800264801741,
+      "dial": 0.7247311827956989,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-04-09",
+      "portfolio": 12269.775264692371,
+      "dial": 0.6638297872340426,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-04-17",
+      "portfolio": 12363.869881657027,
+      "dial": 0.6638297872340426,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-04-24",
+      "portfolio": 12338.137750142161,
+      "dial": 0.6638297872340426,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-05-01",
+      "portfolio": 12347.996122635235,
+      "dial": 0.6638297872340426,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-05-08",
+      "portfolio": 12670.975677840708,
+      "dial": 0.5728947368421053,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-05-15",
+      "portfolio": 12544.785951287879,
+      "dial": 0.5728947368421053,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-05-22",
+      "portfolio": 12554.62366660957,
+      "dial": 0.5728947368421053,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-05-29",
+      "portfolio": 12802.154173585666,
+      "dial": 0.5728947368421053,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-06-05",
+      "portfolio": 12878.662115920068,
+      "dial": 0.5239583333333333,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-06-12",
+      "portfolio": 12884.878328742052,
+      "dial": 0.5239583333333333,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-06-19",
+      "portfolio": 12784.263570214887,
+      "dial": 0.5239583333333333,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-06-26",
+      "portfolio": 12887.777869777407,
+      "dial": 0.5239583333333333,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-07-02",
+      "portfolio": 12676.200963288557,
+      "dial": 0.5239583333333333,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-07-10",
+      "portfolio": 12515.931667340406,
+      "dial": 0.5152061855670103,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-07-17",
+      "portfolio": 13080.09084254494,
+      "dial": 0.5152061855670103,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-07-24",
+      "portfolio": 13496.775521293523,
+      "dial": 0.5152061855670103,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-07-31",
+      "portfolio": 13664.792928911684,
+      "dial": 0.5152061855670103,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-08-07",
+      "portfolio": 13715.207009236188,
+      "dial": 0.565561224489796,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-08-14",
+      "portfolio": 13754.889714568153,
+      "dial": 0.565561224489796,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-08-21",
+      "portfolio": 13879.6761102775,
+      "dial": 0.565561224489796,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-08-28",
+      "portfolio": 13926.919925327978,
+      "dial": 0.565561224489796,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-09-04",
+      "portfolio": 13919.213309832981,
+      "dial": 0.565561224489796,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-09-11",
+      "portfolio": 14202.296369228708,
+      "dial": 0.4714646464646465,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-09-18",
+      "portfolio": 14403.631990402599,
+      "dial": 0.4714646464646465,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-09-25",
+      "portfolio": 14222.051422898645,
+      "dial": 0.4714646464646465,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-10-02",
+      "portfolio": 14084.09708358461,
+      "dial": 0.4714646464646465,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-10-09",
+      "portfolio": 14508.36916655772,
+      "dial": 0.41025,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-10-16",
+      "portfolio": 14612.891870031412,
+      "dial": 0.41025,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-10-23",
+      "portfolio": 14555.596890439474,
+      "dial": 0.41025,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-10-30",
+      "portfolio": 14056.824667099943,
+      "dial": 0.41025,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2009-11-06",
+      "portfolio": 14285.360282314072,
+      "dial": 0.5596534653465347,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-11-13",
+      "portfolio": 14475.050553807543,
+      "dial": 0.5596534653465347,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-11-20",
+      "portfolio": 14501.738515349998,
+      "dial": 0.5596534653465347,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-11-27",
+      "portfolio": 14529.722034111564,
+      "dial": 0.5596534653465347,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-12-04",
+      "portfolio": 14592.26410695389,
+      "dial": 0.5596534653465347,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-12-11",
+      "portfolio": 14537.072986786581,
+      "dial": 0.5629901960784314,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-12-18",
+      "portfolio": 14543.141428832989,
+      "dial": 0.5629901960784314,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-12-24",
+      "portfolio": 14642.364176118293,
+      "dial": 0.5629901960784314,
+      "scenario": "stress"
+    },
+    {
+      "date": "2009-12-31",
+      "portfolio": 14593.967847264697,
+      "dial": 0.5629901960784314,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-01-08",
+      "portfolio": 14927.455734684545,
+      "dial": 0.4516990291262136,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-01-15",
+      "portfolio": 14856.896266079291,
+      "dial": 0.4516990291262136,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-01-22",
+      "portfolio": 14463.267703000107,
+      "dial": 0.4516990291262136,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-01-29",
+      "portfolio": 14255.387673905945,
+      "dial": 0.4516990291262136,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-02-12",
+      "portfolio": 14389.083840461963,
+      "dial": 0.5322115384615385,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-02-19",
+      "portfolio": 14672.009714468817,
+      "dial": 0.5322115384615385,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-02-26",
+      "portfolio": 14674.722929389765,
+      "dial": 0.5322115384615385,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-03-05",
+      "portfolio": 15049.859734071828,
+      "dial": 0.43238095238095237,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-03-12",
+      "portfolio": 15143.996849014215,
+      "dial": 0.43238095238095237,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-03-19",
+      "portfolio": 15219.300896380362,
+      "dial": 0.43238095238095237,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-03-26",
+      "portfolio": 15224.908439179022,
+      "dial": 0.43238095238095237,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-04-01",
+      "portfolio": 15411.271796234954,
+      "dial": 0.43238095238095237,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-04-09",
+      "portfolio": 15544.161475205887,
+      "dial": 0.4252358490566038,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-04-16",
+      "portfolio": 15463.303150394138,
+      "dial": 0.4252358490566038,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-04-23",
+      "portfolio": 15595.801422474904,
+      "dial": 0.4252358490566038,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-04-30",
+      "portfolio": 15349.938520873708,
+      "dial": 0.4252358490566038,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-05-07",
+      "portfolio": 14624.976615488546,
+      "dial": 0.44649532710280376,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-05-14",
+      "portfolio": 14886.64571186659,
+      "dial": 0.44649532710280376,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-05-21",
+      "portfolio": 14447.226565485471,
+      "dial": 0.44649532710280376,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-05-28",
+      "portfolio": 14523.665953272639,
+      "dial": 0.44649532710280376,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-06-04",
+      "portfolio": 14511.262522223404,
+      "dial": 0.7770833333333333,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-06-11",
+      "portfolio": 14552.098478554475,
+      "dial": 0.7770833333333333,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-06-18",
+      "portfolio": 14616.579683846092,
+      "dial": 0.7770833333333333,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-06-25",
+      "portfolio": 14633.198699077228,
+      "dial": 0.7770833333333333,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-07-02",
+      "portfolio": 14574.55593625379,
+      "dial": 0.7770833333333333,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-07-09",
+      "portfolio": 14631.338391490786,
+      "dial": 0.7940366972477064,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-07-16",
+      "portfolio": 14620.752479767321,
+      "dial": 0.7940366972477064,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-07-23",
+      "portfolio": 14636.83811046476,
+      "dial": 0.7940366972477064,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-07-30",
+      "portfolio": 14657.957674865314,
+      "dial": 0.7940366972477064,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2010-08-06",
+      "portfolio": 14910.167575220245,
+      "dial": 0.7095454545454545,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2010-08-13",
+      "portfolio": 14715.311291979586,
+      "dial": 0.7095454545454545,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-08-20",
+      "portfolio": 14708.935801578962,
+      "dial": 0.7095454545454545,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-08-27",
+      "portfolio": 14658.500970350295,
+      "dial": 0.7095454545454545,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-09-03",
+      "portfolio": 14871.4713493994,
+      "dial": 0.7095454545454545,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-09-10",
+      "portfolio": 14912.591945209428,
+      "dial": 0.7211711711711712,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-09-17",
+      "portfolio": 15030.257029244289,
+      "dial": 0.7211711711711712,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-09-24",
+      "portfolio": 15186.601182833978,
+      "dial": 0.7211711711711712,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-10-01",
+      "portfolio": 15208.878643279231,
+      "dial": 0.7211711711711712,
+      "scenario": "stress"
+    },
+    {
+      "date": "2010-10-08",
+      "portfolio": 15385.317128502198,
+      "dial": 0.5339285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-10-15",
+      "portfolio": 15452.136526126262,
+      "dial": 0.5339285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-10-22",
+      "portfolio": 15479.967586987486,
+      "dial": 0.5339285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-10-29",
+      "portfolio": 15494.741892730808,
+      "dial": 0.5339285714285714,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-11-05",
+      "portfolio": 15890.249441871492,
+      "dial": 0.529646017699115,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-11-12",
+      "portfolio": 15542.065474995467,
+      "dial": 0.529646017699115,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-11-19",
+      "portfolio": 15552.418548794505,
+      "dial": 0.529646017699115,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-11-26",
+      "portfolio": 15375.344085711828,
+      "dial": 0.529646017699115,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-12-03",
+      "portfolio": 15709.023511389083,
+      "dial": 0.529646017699115,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-12-10",
+      "portfolio": 15787.24455460717,
+      "dial": 0.5098684210526315,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-12-17",
+      "portfolio": 15823.422063321086,
+      "dial": 0.5098684210526315,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-12-23",
+      "portfolio": 15912.40269694559,
+      "dial": 0.5098684210526315,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2010-12-31",
+      "portfolio": 15984.138191724413,
+      "dial": 0.5098684210526315,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-01-07",
+      "portfolio": 16129.777779753333,
+      "dial": 0.25434782608695655,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-01-14",
+      "portfolio": 16455.359413548762,
+      "dial": 0.25434782608695655,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-01-21",
+      "portfolio": 16199.866151629363,
+      "dial": 0.25434782608695655,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-01-28",
+      "portfolio": 16034.632790753913,
+      "dial": 0.25434782608695655,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-02-04",
+      "portfolio": 16465.691678191706,
+      "dial": 0.25434782608695655,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-02-11",
+      "portfolio": 16637.909046917546,
+      "dial": 0.33448275862068966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-02-18",
+      "portfolio": 16837.9501807827,
+      "dial": 0.33448275862068966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-02-25",
+      "portfolio": 16555.181716623825,
+      "dial": 0.33448275862068966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-03-04",
+      "portfolio": 16706.026481131492,
+      "dial": 0.33448275862068966,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-03-11",
+      "portfolio": 16409.532739383278,
+      "dial": 0.28653846153846146,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-03-18",
+      "portfolio": 16049.307587662423,
+      "dial": 0.28653846153846146,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-03-25",
+      "portfolio": 16520.018956803553,
+      "dial": 0.28653846153846146,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-04-01",
+      "portfolio": 16863.25185970459,
+      "dial": 0.28653846153846146,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2011-04-08",
+      "portfolio": 16847.179454443623,
+      "dial": 0.3834745762711864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-04-15",
+      "portfolio": 16866.35161680449,
+      "dial": 0.3834745762711864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-04-21",
+      "portfolio": 17052.27102912993,
+      "dial": 0.3834745762711864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-04-29",
+      "portfolio": 17320.452968225793,
+      "dial": 0.3834745762711864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-05-06",
+      "portfolio": 17162.141435244423,
+      "dial": 0.38424369747899156,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-05-13",
+      "portfolio": 17116.295650074375,
+      "dial": 0.38424369747899156,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-05-20",
+      "portfolio": 17091.087415303853,
+      "dial": 0.38424369747899156,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-05-27",
+      "portfolio": 17101.2396130073,
+      "dial": 0.38424369747899156,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-06-03",
+      "portfolio": 16925.350778271073,
+      "dial": 0.38424369747899156,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-06-10",
+      "portfolio": 16649.10440458879,
+      "dial": 0.5047916666666666,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-06-17",
+      "portfolio": 16611.44368399158,
+      "dial": 0.5047916666666666,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-06-24",
+      "portfolio": 16598.37433857458,
+      "dial": 0.5047916666666666,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-07-01",
+      "portfolio": 17191.509005252086,
+      "dial": 0.5047916666666666,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-07-08",
+      "portfolio": 17234.577799403633,
+      "dial": 0.48657024793388426,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-07-15",
+      "portfolio": 16975.816200379923,
+      "dial": 0.48657024793388426,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-07-22",
+      "portfolio": 17254.995781215694,
+      "dial": 0.48657024793388426,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-07-29",
+      "portfolio": 16897.11071682459,
+      "dial": 0.48657024793388426,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2011-08-05",
+      "portfolio": 16425.421936963692,
+      "dial": 0.655532786885246,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-08-12",
+      "portfolio": 16371.464082883402,
+      "dial": 0.655532786885246,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-08-19",
+      "portfolio": 16203.93685786282,
+      "dial": 0.655532786885246,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-08-26",
+      "portfolio": 16440.832185791834,
+      "dial": 0.655532786885246,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-09-02",
+      "portfolio": 16522.535922989442,
+      "dial": 0.655532786885246,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-09-09",
+      "portfolio": 16481.423100467327,
+      "dial": 0.8691056910569106,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-09-16",
+      "portfolio": 16493.28847118246,
+      "dial": 0.8691056910569106,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-09-23",
+      "portfolio": 16384.748014418896,
+      "dial": 0.8691056910569106,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-09-30",
+      "portfolio": 16379.648292076266,
+      "dial": 0.8691056910569106,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-10-07",
+      "portfolio": 16359.53594599039,
+      "dial": 0.8495967741935483,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-10-14",
+      "portfolio": 16409.75697051985,
+      "dial": 0.8495967741935483,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-10-21",
+      "portfolio": 16408.66292746836,
+      "dial": 0.8495967741935483,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-10-28",
+      "portfolio": 16522.14440743759,
+      "dial": 0.8495967741935483,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-11-04",
+      "portfolio": 16540.43465770048,
+      "dial": 0.8495967741935483,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2011-11-11",
+      "portfolio": 16602.248828807722,
+      "dial": 0.6944,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2011-11-18",
+      "portfolio": 16309.455003933692,
+      "dial": 0.6944,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-11-25",
+      "portfolio": 16010.872903166375,
+      "dial": 0.6944,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-12-02",
+      "portfolio": 16483.656504036906,
+      "dial": 0.6944,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-12-09",
+      "portfolio": 16518.373372103033,
+      "dial": 0.7067460317460318,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-12-16",
+      "portfolio": 16348.74198832093,
+      "dial": 0.7067460317460318,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-12-23",
+      "portfolio": 16560.694709704585,
+      "dial": 0.7067460317460318,
+      "scenario": "stress"
+    },
+    {
+      "date": "2011-12-30",
+      "portfolio": 16535.12675058119,
+      "dial": 0.7067460317460318,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-01-06",
+      "portfolio": 16668.69912002413,
+      "dial": 0.6177165354330709,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-01-13",
+      "portfolio": 16780.09553636959,
+      "dial": 0.6177165354330709,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-01-20",
+      "portfolio": 16919.155421954543,
+      "dial": 0.6177165354330709,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-01-27",
+      "portfolio": 16999.136316932767,
+      "dial": 0.6177165354330709,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-02-03",
+      "portfolio": 17154.4591185488,
+      "dial": 0.6177165354330709,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-02-10",
+      "portfolio": 17087.522568209537,
+      "dial": 0.6767578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-02-17",
+      "portfolio": 17184.957637974214,
+      "dial": 0.6767578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-02-24",
+      "portfolio": 17221.092324781992,
+      "dial": 0.6767578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-03-02",
+      "portfolio": 17249.275449943267,
+      "dial": 0.6767578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-03-09",
+      "portfolio": 17218.1222475128,
+      "dial": 0.4722868217054264,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-03-16",
+      "portfolio": 17447.225675084188,
+      "dial": 0.4722868217054264,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-03-23",
+      "portfolio": 17390.910412298155,
+      "dial": 0.4722868217054264,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-03-30",
+      "portfolio": 17536.630651717398,
+      "dial": 0.4722868217054264,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-04-05",
+      "portfolio": 17386.67809731378,
+      "dial": 0.2446153846153846,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2012-04-13",
+      "portfolio": 17020.698184043715,
+      "dial": 0.2446153846153846,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2012-04-20",
+      "portfolio": 17147.370843267494,
+      "dial": 0.2446153846153846,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2012-04-27",
+      "portfolio": 17417.822654363983,
+      "dial": 0.2446153846153846,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2012-05-04",
+      "portfolio": 16925.40014481663,
+      "dial": 0.2446153846153846,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2012-05-11",
+      "portfolio": 16786.210443231925,
+      "dial": 0.4624045801526717,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-05-18",
+      "portfolio": 16245.493437952953,
+      "dial": 0.4624045801526717,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-05-25",
+      "portfolio": 16367.110104926285,
+      "dial": 0.4624045801526717,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-06-01",
+      "portfolio": 16131.146613406785,
+      "dial": 0.4624045801526717,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-06-08",
+      "portfolio": 16312.995473581774,
+      "dial": 0.6462121212121211,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-06-15",
+      "portfolio": 16435.715950577647,
+      "dial": 0.6462121212121211,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-06-22",
+      "portfolio": 16433.374317768044,
+      "dial": 0.6462121212121211,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-06-29",
+      "portfolio": 16570.43182058368,
+      "dial": 0.6462121212121211,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-07-06",
+      "portfolio": 16535.503593826623,
+      "dial": 0.5795112781954888,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-07-13",
+      "portfolio": 16586.28868606549,
+      "dial": 0.5795112781954888,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-07-20",
+      "portfolio": 16602.703136742315,
+      "dial": 0.5795112781954888,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-07-27",
+      "portfolio": 16714.912674102576,
+      "dial": 0.5795112781954888,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-08-03",
+      "portfolio": 16715.774800207037,
+      "dial": 0.5795112781954888,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-08-10",
+      "portfolio": 16782.5329222648,
+      "dial": 0.6507462686567164,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-08-17",
+      "portfolio": 16781.534912766376,
+      "dial": 0.6507462686567164,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-08-24",
+      "portfolio": 16846.393194127606,
+      "dial": 0.6507462686567164,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-08-31",
+      "portfolio": 16870.61618617028,
+      "dial": 0.6507462686567164,
+      "scenario": "stress"
+    },
+    {
+      "date": "2012-09-07",
+      "portfolio": 17143.58302127494,
+      "dial": 0.48777777777777775,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-09-14",
+      "portfolio": 17345.649370192117,
+      "dial": 0.48777777777777775,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-09-21",
+      "portfolio": 17370.36466939047,
+      "dial": 0.48777777777777775,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-09-28",
+      "portfolio": 17234.32627435474,
+      "dial": 0.48777777777777775,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-10-05",
+      "portfolio": 17447.032216440242,
+      "dial": 0.3623161764705882,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-10-12",
+      "portfolio": 17203.079830165778,
+      "dial": 0.3623161764705882,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-10-19",
+      "portfolio": 17234.543356023827,
+      "dial": 0.3623161764705882,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-10-26",
+      "portfolio": 17126.324698713666,
+      "dial": 0.3623161764705882,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-11-02",
+      "portfolio": 17133.867858299618,
+      "dial": 0.3623161764705882,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-11-09",
+      "portfolio": 16896.907957574695,
+      "dial": 0.3704379562043795,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-11-16",
+      "portfolio": 16736.967498909413,
+      "dial": 0.3704379562043795,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-11-23",
+      "portfolio": 17145.727177921963,
+      "dial": 0.3704379562043795,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-11-30",
+      "portfolio": 17229.74791628894,
+      "dial": 0.3704379562043795,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-12-07",
+      "portfolio": 17302.546626452608,
+      "dial": 0.41286231884057967,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-12-14",
+      "portfolio": 17321.044599626766,
+      "dial": 0.41286231884057967,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-12-21",
+      "portfolio": 17427.749298710198,
+      "dial": 0.41286231884057967,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2012-12-28",
+      "portfolio": 17280.985533234765,
+      "dial": 0.41286231884057967,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-01-04",
+      "portfolio": 17719.539788246908,
+      "dial": 0.41286231884057967,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-01-11",
+      "portfolio": 17849.65091084779,
+      "dial": 0.5100719424460431,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-01-18",
+      "portfolio": 17916.11025679129,
+      "dial": 0.5100719424460431,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-01-25",
+      "portfolio": 17998.87287421545,
+      "dial": 0.5100719424460431,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-02-01",
+      "portfolio": 18074.62503764248,
+      "dial": 0.5100719424460431,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-02-08",
+      "portfolio": 18074.899145062194,
+      "dial": 0.40374999999999994,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-02-15",
+      "portfolio": 18071.232799794478,
+      "dial": 0.40374999999999994,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-02-22",
+      "portfolio": 18017.84659002869,
+      "dial": 0.40374999999999994,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-03-01",
+      "portfolio": 18070.93019273741,
+      "dial": 0.40374999999999994,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-03-08",
+      "portfolio": 18290.29904828414,
+      "dial": 0.46914893617021275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-03-15",
+      "portfolio": 18347.764778047214,
+      "dial": 0.46914893617021275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-03-22",
+      "portfolio": 18311.14418025737,
+      "dial": 0.46914893617021275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-03-28",
+      "portfolio": 18432.55560403336,
+      "dial": 0.46914893617021275,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-04-05",
+      "portfolio": 18383.184128690384,
+      "dial": 0.3642605633802817,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-04-12",
+      "portfolio": 18692.494445737782,
+      "dial": 0.3642605633802817,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-04-19",
+      "portfolio": 18452.05341503991,
+      "dial": 0.3642605633802817,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-04-26",
+      "portfolio": 18701.31931369228,
+      "dial": 0.3642605633802817,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-05-03",
+      "portfolio": 18924.868335597977,
+      "dial": 0.3642605633802817,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-05-10",
+      "portfolio": 19034.177874103534,
+      "dial": 0.42832167832167833,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-05-17",
+      "portfolio": 19193.025607188792,
+      "dial": 0.42832167832167833,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-05-24",
+      "portfolio": 19026.391986378378,
+      "dial": 0.42832167832167833,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-05-31",
+      "portfolio": 18812.36522457164,
+      "dial": 0.42832167832167833,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-06-07",
+      "portfolio": 18837.0444290669,
+      "dial": 0.40798611111111105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-06-14",
+      "portfolio": 18690.6121798263,
+      "dial": 0.40798611111111105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-06-21",
+      "portfolio": 18192.856329107668,
+      "dial": 0.40798611111111105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-06-28",
+      "portfolio": 18396.082910621622,
+      "dial": 0.40798611111111105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-07-05",
+      "portfolio": 18463.889458576672,
+      "dial": 0.5486206896551724,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-07-12",
+      "portfolio": 18975.87033607842,
+      "dial": 0.5486206896551724,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-07-19",
+      "portfolio": 19138.58307093068,
+      "dial": 0.5486206896551724,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-07-26",
+      "portfolio": 19223.194191540344,
+      "dial": 0.5486206896551724,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-08-02",
+      "portfolio": 19320.110138845423,
+      "dial": 0.5486206896551724,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-08-09",
+      "portfolio": 19136.929078867848,
+      "dial": 0.3193493150684931,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-08-16",
+      "portfolio": 18721.725016136457,
+      "dial": 0.3193493150684931,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-08-23",
+      "portfolio": 18848.33160097831,
+      "dial": 0.3193493150684931,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-08-30",
+      "portfolio": 18446.234061247294,
+      "dial": 0.3193493150684931,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-09-06",
+      "portfolio": 18722.35656317057,
+      "dial": 0.5115646258503401,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-09-13",
+      "portfolio": 18995.058971639868,
+      "dial": 0.5115646258503401,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-09-20",
+      "portfolio": 19249.02787120466,
+      "dial": 0.5115646258503401,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-09-27",
+      "portfolio": 19146.08107030933,
+      "dial": 0.5115646258503401,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-10-04",
+      "portfolio": 19198.97067231023,
+      "dial": 0.5115646258503401,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-10-11",
+      "portfolio": 19291.230866221253,
+      "dial": 0.33209459459459456,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-10-18",
+      "portfolio": 19892.519534341696,
+      "dial": 0.33209459459459456,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-10-25",
+      "portfolio": 19987.406376500847,
+      "dial": 0.33209459459459456,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-11-01",
+      "portfolio": 19892.634458768654,
+      "dial": 0.33209459459459456,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2013-11-08",
+      "portfolio": 19801.245972187917,
+      "dial": 0.35889261744966444,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-11-15",
+      "portfolio": 20082.089739237363,
+      "dial": 0.35889261744966444,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-11-22",
+      "portfolio": 20152.294481069046,
+      "dial": 0.35889261744966444,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-11-29",
+      "portfolio": 20246.534646457134,
+      "dial": 0.35889261744966444,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-12-06",
+      "portfolio": 20156.828104353197,
+      "dial": 0.35200000000000004,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-12-13",
+      "portfolio": 19904.716855641873,
+      "dial": 0.35200000000000004,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-12-20",
+      "portfolio": 20207.678402591002,
+      "dial": 0.35200000000000004,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2013-12-27",
+      "portfolio": 20366.221721017155,
+      "dial": 0.35200000000000004,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-01-03",
+      "portfolio": 20287.165033579608,
+      "dial": 0.35200000000000004,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-01-10",
+      "portfolio": 20573.850892164508,
+      "dial": 0.29834437086092713,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-01-17",
+      "portfolio": 20602.190653435046,
+      "dial": 0.29834437086092713,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-01-24",
+      "portfolio": 20068.69293193278,
+      "dial": 0.29834437086092713,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-01-31",
+      "portfolio": 20015.562465619434,
+      "dial": 0.29834437086092713,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-02-07",
+      "portfolio": 20155.84065839038,
+      "dial": 0.4001644736842105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-02-14",
+      "portfolio": 20543.109557978532,
+      "dial": 0.4001644736842105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-02-21",
+      "portfolio": 20575.163212646225,
+      "dial": 0.4001644736842105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-02-28",
+      "portfolio": 20738.921302782037,
+      "dial": 0.4001644736842105,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-03-07",
+      "portfolio": 20885.108055025084,
+      "dial": 0.3209150326797386,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-03-14",
+      "portfolio": 20419.31057628104,
+      "dial": 0.3209150326797386,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-03-21",
+      "portfolio": 20601.373536141782,
+      "dial": 0.3209150326797386,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-03-28",
+      "portfolio": 20462.285991938636,
+      "dial": 0.3209150326797386,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-04-04",
+      "portfolio": 20513.44736928812,
+      "dial": 0.3209150326797386,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-04-11",
+      "portfolio": 20180.036115002345,
+      "dial": 0.42207792207792205,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-04-17",
+      "portfolio": 20459.09566075438,
+      "dial": 0.42207792207792205,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-04-25",
+      "portfolio": 20455.30514947838,
+      "dial": 0.42207792207792205,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-05-02",
+      "portfolio": 20645.819900752933,
+      "dial": 0.42207792207792205,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-05-09",
+      "portfolio": 20581.161039246537,
+      "dial": 0.36564516129032254,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-05-16",
+      "portfolio": 20709.07680171382,
+      "dial": 0.36564516129032254,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-05-23",
+      "portfolio": 20902.878319925363,
+      "dial": 0.36564516129032254,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-05-30",
+      "portfolio": 21045.28502997159,
+      "dial": 0.36564516129032254,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-06-06",
+      "portfolio": 21363.91832987538,
+      "dial": 0.3129807692307692,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-06-13",
+      "portfolio": 21238.187212585886,
+      "dial": 0.3129807692307692,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-06-20",
+      "portfolio": 21539.93343816362,
+      "dial": 0.3129807692307692,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-06-27",
+      "portfolio": 21609.92402564447,
+      "dial": 0.3129807692307692,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-07-03",
+      "portfolio": 21973.98869270548,
+      "dial": 0.3129807692307692,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-07-11",
+      "portfolio": 21730.509939992757,
+      "dial": 0.3386942675159236,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-07-18",
+      "portfolio": 21843.58074722563,
+      "dial": 0.3386942675159236,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-07-25",
+      "portfolio": 21964.036818224602,
+      "dial": 0.3386942675159236,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-08-01",
+      "portfolio": 21436.858067120753,
+      "dial": 0.3386942675159236,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-08-08",
+      "portfolio": 21437.122447917784,
+      "dial": 0.3886075949367089,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-08-15",
+      "portfolio": 21738.90427042161,
+      "dial": 0.3886075949367089,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-08-22",
+      "portfolio": 21939.14858613944,
+      "dial": 0.3886075949367089,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-08-29",
+      "portfolio": 22112.152662342032,
+      "dial": 0.3886075949367089,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-09-05",
+      "portfolio": 22200.3243577295,
+      "dial": 0.2559748427672956,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-09-12",
+      "portfolio": 21836.997394302012,
+      "dial": 0.2559748427672956,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-09-19",
+      "portfolio": 22032.024370185678,
+      "dial": 0.2559748427672956,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-09-26",
+      "portfolio": 21699.619921017125,
+      "dial": 0.2559748427672956,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-10-03",
+      "portfolio": 21517.3908011595,
+      "dial": 0.2559748427672956,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2014-10-10",
+      "portfolio": 21122.810866591088,
+      "dial": 0.43296874999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-10-17",
+      "portfolio": 21000.231803251776,
+      "dial": 0.43296874999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-10-24",
+      "portfolio": 21630.165224446508,
+      "dial": 0.43296874999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-10-31",
+      "portfolio": 22036.892506096785,
+      "dial": 0.43296874999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-11-07",
+      "portfolio": 22041.21606433679,
+      "dial": 0.43959627329192547,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-11-14",
+      "portfolio": 22136.751165173446,
+      "dial": 0.43959627329192547,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-11-21",
+      "portfolio": 22310.38151109904,
+      "dial": 0.43959627329192547,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-11-28",
+      "portfolio": 22469.810749798708,
+      "dial": 0.43959627329192547,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-12-05",
+      "portfolio": 22532.928474571,
+      "dial": 0.4212962962962963,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-12-12",
+      "portfolio": 22094.588362595903,
+      "dial": 0.4212962962962963,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-12-19",
+      "portfolio": 22481.443931503614,
+      "dial": 0.4212962962962963,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2014-12-26",
+      "portfolio": 22529.364707823308,
+      "dial": 0.4212962962962963,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-01-02",
+      "portfolio": 22347.066097455492,
+      "dial": 0.4212962962962963,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-01-09",
+      "portfolio": 22354.983072323073,
+      "dial": 0.5674846625766872,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-01-16",
+      "portfolio": 22410.91591272495,
+      "dial": 0.5674846625766872,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-01-23",
+      "portfolio": 22620.41526339324,
+      "dial": 0.5674846625766872,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-01-30",
+      "portfolio": 22415.685421819686,
+      "dial": 0.5674846625766872,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-02-06",
+      "portfolio": 22451.23665463235,
+      "dial": 0.5913109756097561,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-02-13",
+      "portfolio": 22591.32806762588,
+      "dial": 0.5913109756097561,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-02-20",
+      "portfolio": 22652.946776979563,
+      "dial": 0.5913109756097561,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-02-27",
+      "portfolio": 22709.48653165586,
+      "dial": 0.5913109756097561,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-03-06",
+      "portfolio": 22371.601232827226,
+      "dial": 0.43666666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-03-13",
+      "portfolio": 22295.370977077928,
+      "dial": 0.43666666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-03-20",
+      "portfolio": 22920.14136599638,
+      "dial": 0.43666666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-03-27",
+      "portfolio": 22539.180800094233,
+      "dial": 0.43666666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-04-02",
+      "portfolio": 22626.323315863283,
+      "dial": 0.43666666666666665,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-04-10",
+      "portfolio": 22795.028084297322,
+      "dial": 0.5966867469879519,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-04-17",
+      "portfolio": 22733.3605687562,
+      "dial": 0.5966867469879519,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-04-24",
+      "portfolio": 22870.829102615913,
+      "dial": 0.5966867469879519,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-05-01",
+      "portfolio": 22708.330067442483,
+      "dial": 0.5966867469879519,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-05-08",
+      "portfolio": 22796.186933018354,
+      "dial": 0.37050898203592814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-05-15",
+      "portfolio": 22904.793280867652,
+      "dial": 0.37050898203592814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-05-22",
+      "portfolio": 22930.979709818323,
+      "dial": 0.37050898203592814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-05-29",
+      "portfolio": 22742.41385135669,
+      "dial": 0.37050898203592814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-06-05",
+      "portfolio": 22553.65204752528,
+      "dial": 0.524702380952381,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-06-12",
+      "portfolio": 22615.468526356013,
+      "dial": 0.524702380952381,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-06-19",
+      "portfolio": 22732.72871664953,
+      "dial": 0.524702380952381,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-06-26",
+      "portfolio": 22688.339397268715,
+      "dial": 0.524702380952381,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-07-02",
+      "portfolio": 22497.181490220075,
+      "dial": 0.524702380952381,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-07-10",
+      "portfolio": 22440.97930157376,
+      "dial": 0.5298816568047338,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-07-17",
+      "portfolio": 22896.185984457938,
+      "dial": 0.5298816568047338,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-07-24",
+      "portfolio": 22544.553673517094,
+      "dial": 0.5298816568047338,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-07-31",
+      "portfolio": 22720.216890541546,
+      "dial": 0.5298816568047338,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-08-07",
+      "portfolio": 22569.534477929083,
+      "dial": 0.3801470588235294,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-08-14",
+      "portfolio": 22553.989933129167,
+      "dial": 0.3801470588235294,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-08-21",
+      "portfolio": 21607.7215400268,
+      "dial": 0.3801470588235294,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-08-28",
+      "portfolio": 21711.623374712985,
+      "dial": 0.3801470588235294,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-09-04",
+      "portfolio": 21102.002390199454,
+      "dial": 0.3801470588235294,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2015-09-11",
+      "portfolio": 21111.936728817444,
+      "dial": 0.7788011695906434,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2015-09-18",
+      "portfolio": 21136.141824740247,
+      "dial": 0.7788011695906434,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2015-09-25",
+      "portfolio": 21062.85028184421,
+      "dial": 0.7788011695906434,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2015-10-02",
+      "portfolio": 21134.66545476679,
+      "dial": 0.7788011695906434,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2015-10-09",
+      "portfolio": 21563.774794330016,
+      "dial": 0.6927325581395348,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2015-10-16",
+      "portfolio": 21700.24862343451,
+      "dial": 0.6927325581395348,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-10-23",
+      "portfolio": 21837.632693408057,
+      "dial": 0.6927325581395348,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-10-30",
+      "portfolio": 21806.025897828033,
+      "dial": 0.6927325581395348,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-11-06",
+      "portfolio": 21864.67003487917,
+      "dial": 0.7044797687861271,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-11-13",
+      "portfolio": 21573.08420460526,
+      "dial": 0.7044797687861271,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-11-20",
+      "portfolio": 21855.08531260477,
+      "dial": 0.7044797687861271,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-11-27",
+      "portfolio": 21815.373780108064,
+      "dial": 0.7044797687861271,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-12-04",
+      "portfolio": 21865.999412259545,
+      "dial": 0.7044797687861271,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-12-11",
+      "portfolio": 21513.676316344954,
+      "dial": 0.6604885057471264,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-12-18",
+      "portfolio": 21516.05479323056,
+      "dial": 0.6604885057471264,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-12-24",
+      "portfolio": 21754.352746010707,
+      "dial": 0.6604885057471264,
+      "scenario": "stress"
+    },
+    {
+      "date": "2015-12-31",
+      "portfolio": 21612.54273248107,
+      "dial": 0.6604885057471264,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-01-08",
+      "portfolio": 21090.52089184983,
+      "dial": 0.6524285714285714,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-01-15",
+      "portfolio": 20845.533323037344,
+      "dial": 0.6524285714285714,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-01-22",
+      "portfolio": 20924.716698881868,
+      "dial": 0.6524285714285714,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-01-29",
+      "portfolio": 21087.560791436692,
+      "dial": 0.6524285714285714,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-02-05",
+      "portfolio": 21144.344087271253,
+      "dial": 0.7602272727272726,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2016-02-12",
+      "portfolio": 21182.3588250682,
+      "dial": 0.7602272727272726,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2016-02-19",
+      "portfolio": 21224.40191624336,
+      "dial": 0.7602272727272726,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2016-02-26",
+      "portfolio": 21244.61443801816,
+      "dial": 0.7602272727272726,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2016-03-04",
+      "portfolio": 21340.647382059706,
+      "dial": 0.7602272727272726,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2016-03-11",
+      "portfolio": 21483.041103563686,
+      "dial": 0.6932203389830509,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2016-03-18",
+      "portfolio": 21583.504576089752,
+      "dial": 0.6932203389830509,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-03-24",
+      "portfolio": 21443.75960294316,
+      "dial": 0.6932203389830509,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-04-01",
+      "portfolio": 21627.50685969537,
+      "dial": 0.6932203389830509,
+      "scenario": "stress"
+    },
+    {
+      "date": "2016-04-08",
+      "portfolio": 21445.570861675962,
+      "dial": 0.5456460674157303,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-04-15",
+      "portfolio": 21851.954227441158,
+      "dial": 0.5456460674157303,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-04-22",
+      "portfolio": 22022.397991167985,
+      "dial": 0.5456460674157303,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-04-29",
+      "portfolio": 21815.530016914694,
+      "dial": 0.5456460674157303,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-05-06",
+      "portfolio": 21631.243199134828,
+      "dial": 0.4442737430167598,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-05-13",
+      "portfolio": 21530.320576066242,
+      "dial": 0.4442737430167598,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-05-20",
+      "portfolio": 21614.906756838463,
+      "dial": 0.4442737430167598,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-05-27",
+      "portfolio": 21985.986164177124,
+      "dial": 0.4442737430167598,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-06-03",
+      "portfolio": 22098.79729485669,
+      "dial": 0.4442737430167598,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-06-10",
+      "portfolio": 21916.265181558545,
+      "dial": 0.26166666666666666,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-06-17",
+      "portfolio": 21606.399038395863,
+      "dial": 0.26166666666666666,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-06-24",
+      "portfolio": 21241.620698751532,
+      "dial": 0.26166666666666666,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-07-01",
+      "portfolio": 22349.50858580842,
+      "dial": 0.26166666666666666,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-07-08",
+      "portfolio": 22529.372241928715,
+      "dial": 0.5205801104972375,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-07-15",
+      "portfolio": 22784.081131934225,
+      "dial": 0.5205801104972375,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-07-22",
+      "portfolio": 22932.33056507868,
+      "dial": 0.5205801104972375,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-07-29",
+      "portfolio": 23088.14883060893,
+      "dial": 0.5205801104972375,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-08-05",
+      "portfolio": 23176.855861068954,
+      "dial": 0.3945054945054945,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-08-12",
+      "portfolio": 23259.721181148216,
+      "dial": 0.3945054945054945,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-08-19",
+      "portfolio": 23273.967881662644,
+      "dial": 0.3945054945054945,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-08-26",
+      "portfolio": 23149.0236328468,
+      "dial": 0.3945054945054945,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-09-02",
+      "portfolio": 23337.191043119194,
+      "dial": 0.3945054945054945,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-09-09",
+      "portfolio": 22968.072334918274,
+      "dial": 0.46215846994535514,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-09-16",
+      "portfolio": 22957.02737058271,
+      "dial": 0.46215846994535514,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-09-23",
+      "portfolio": 23266.673859509378,
+      "dial": 0.46215846994535514,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-09-30",
+      "portfolio": 23200.3655640776,
+      "dial": 0.46215846994535514,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-10-07",
+      "portfolio": 23162.867945482292,
+      "dial": 0.29551630434782605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-10-14",
+      "portfolio": 22754.950914806665,
+      "dial": 0.29551630434782605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-10-21",
+      "portfolio": 23033.647314939753,
+      "dial": 0.29551630434782605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-10-28",
+      "portfolio": 22796.66139954862,
+      "dial": 0.29551630434782605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-11-04",
+      "portfolio": 22270.30438505191,
+      "dial": 0.29551630434782605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-11-11",
+      "portfolio": 22835.22806182809,
+      "dial": 0.38810810810810814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-11-18",
+      "portfolio": 22913.259481229477,
+      "dial": 0.38810810810810814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-11-25",
+      "portfolio": 23061.284989641725,
+      "dial": 0.38810810810810814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-12-02",
+      "portfolio": 22926.187801278196,
+      "dial": 0.38810810810810814,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2016-12-09",
+      "portfolio": 23826.361664049284,
+      "dial": 0.234005376344086,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-12-16",
+      "portfolio": 23600.46263406243,
+      "dial": 0.234005376344086,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-12-23",
+      "portfolio": 23707.784224304392,
+      "dial": 0.234005376344086,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2016-12-30",
+      "portfolio": 23537.081239862764,
+      "dial": 0.234005376344086,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-01-06",
+      "portfolio": 24068.85792570956,
+      "dial": 0.18836898395721927,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-01-13",
+      "portfolio": 24211.545580856964,
+      "dial": 0.18836898395721927,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-01-20",
+      "portfolio": 23996.66516587573,
+      "dial": 0.18836898395721927,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-01-27",
+      "portfolio": 24436.00122883004,
+      "dial": 0.18836898395721927,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-02-03",
+      "portfolio": 24558.092763943332,
+      "dial": 0.18836898395721927,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-02-10",
+      "portfolio": 24762.661258205346,
+      "dial": 0.14414893617021277,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-02-17",
+      "portfolio": 25290.77785751829,
+      "dial": 0.14414893617021277,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-02-24",
+      "portfolio": 25374.462233862774,
+      "dial": 0.14414893617021277,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-03-03",
+      "portfolio": 25634.81540388662,
+      "dial": 0.14414893617021277,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-03-10",
+      "portfolio": 25518.428261683,
+      "dial": 0.2624338624338624,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-03-17",
+      "portfolio": 25592.351633647053,
+      "dial": 0.2624338624338624,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-03-24",
+      "portfolio": 25181.10011495198,
+      "dial": 0.2624338624338624,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-03-31",
+      "portfolio": 25348.928811771857,
+      "dial": 0.2624338624338624,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-04-07",
+      "portfolio": 25227.449700461046,
+      "dial": 0.2794736842105263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-04-13",
+      "portfolio": 24895.658062673392,
+      "dial": 0.2794736842105263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-04-21",
+      "portfolio": 25135.63832621529,
+      "dial": 0.2794736842105263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-04-28",
+      "portfolio": 25671.216793284508,
+      "dial": 0.2794736842105263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-05-05",
+      "portfolio": 25952.401015146774,
+      "dial": 0.27382198952879583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-05-12",
+      "portfolio": 25919.812851094906,
+      "dial": 0.27382198952879583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-05-19",
+      "portfolio": 25894.735313911628,
+      "dial": 0.27382198952879583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-05-26",
+      "portfolio": 26265.808920026757,
+      "dial": 0.27382198952879583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-06-02",
+      "portfolio": 26570.4215682108,
+      "dial": 0.27382198952879583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-06-09",
+      "portfolio": 26480.021512560757,
+      "dial": 0.324609375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-06-16",
+      "portfolio": 26443.116247316426,
+      "dial": 0.324609375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-06-23",
+      "portfolio": 26730.426504315616,
+      "dial": 0.324609375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-06-30",
+      "portfolio": 26566.245834463927,
+      "dial": 0.324609375,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-07-07",
+      "portfolio": 26564.538415646177,
+      "dial": 0.31813471502590673,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-07-14",
+      "portfolio": 27185.67939912556,
+      "dial": 0.31813471502590673,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-07-21",
+      "portfolio": 27406.218591311732,
+      "dial": 0.31813471502590673,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-07-28",
+      "portfolio": 27363.995054436255,
+      "dial": 0.31813471502590673,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-08-04",
+      "portfolio": 27473.62725818,
+      "dial": 0.31813471502590673,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-08-11",
+      "portfolio": 26975.48776804201,
+      "dial": 0.2220360824742268,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-08-18",
+      "portfolio": 26943.767406605253,
+      "dial": 0.2220360824742268,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-08-25",
+      "portfolio": 27315.031932549373,
+      "dial": 0.2220360824742268,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-09-01",
+      "portfolio": 27713.36198010436,
+      "dial": 0.2220360824742268,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-09-08",
+      "portfolio": 27611.753202002576,
+      "dial": 0.3162820512820513,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-09-15",
+      "portfolio": 27993.613023337235,
+      "dial": 0.3162820512820513,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-09-22",
+      "portfolio": 27989.15509176403,
+      "dial": 0.3162820512820513,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-09-29",
+      "portfolio": 28087.154113726072,
+      "dial": 0.3162820512820513,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-10-06",
+      "portfolio": 28471.205943783996,
+      "dial": 0.23099489795918365,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-10-13",
+      "portfolio": 28640.592208736743,
+      "dial": 0.23099489795918365,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-10-20",
+      "portfolio": 28809.221888974145,
+      "dial": 0.23099489795918365,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-10-27",
+      "portfolio": 28804.78287000891,
+      "dial": 0.23099489795918365,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-11-03",
+      "portfolio": 28952.15570065215,
+      "dial": 0.23099489795918365,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-11-10",
+      "portfolio": 28697.39372504609,
+      "dial": 0.2644670050761421,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-11-17",
+      "portfolio": 28806.8038527324,
+      "dial": 0.2644670050761421,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-11-24",
+      "portfolio": 29159.748804928015,
+      "dial": 0.2644670050761421,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-12-01",
+      "portfolio": 29398.903004960528,
+      "dial": 0.2644670050761421,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-12-08",
+      "portfolio": 29519.43689958288,
+      "dial": 0.24823232323232325,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-12-15",
+      "portfolio": 29764.255613216443,
+      "dial": 0.24823232323232325,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-12-22",
+      "portfolio": 29928.98327054252,
+      "dial": 0.24823232323232325,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2017-12-29",
+      "portfolio": 29919.963674157574,
+      "dial": 0.24823232323232325,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-01-05",
+      "portfolio": 30877.951186448227,
+      "dial": 0.21658291457286433,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-01-12",
+      "portfolio": 31459.86450015225,
+      "dial": 0.21658291457286433,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-01-19",
+      "portfolio": 31839.870320633472,
+      "dial": 0.21658291457286433,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-01-26",
+      "portfolio": 32718.36815157198,
+      "dial": 0.21658291457286433,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-02-02",
+      "portfolio": 31251.805075485576,
+      "dial": 0.21658291457286433,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-02-09",
+      "portfolio": 29408.757931328273,
+      "dial": 0.184625,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-02-16",
+      "portfolio": 31006.88727851511,
+      "dial": 0.184625,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-02-23",
+      "portfolio": 31195.049136786165,
+      "dial": 0.184625,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-03-02",
+      "portfolio": 30481.030788782755,
+      "dial": 0.184625,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-03-09",
+      "portfolio": 31298.66305193593,
+      "dial": 0.4876865671641791,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-03-16",
+      "portfolio": 30992.543943108336,
+      "dial": 0.4876865671641791,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-03-23",
+      "portfolio": 29712.55952761539,
+      "dial": 0.4876865671641791,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-03-29",
+      "portfolio": 30209.357207006688,
+      "dial": 0.4876865671641791,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-04-06",
+      "portfolio": 30006.03448658134,
+      "dial": 0.6334158415841584,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-04-13",
+      "portfolio": 30220.3772032465,
+      "dial": 0.6334158415841584,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-04-20",
+      "portfolio": 30275.254488226063,
+      "dial": 0.6334158415841584,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-04-27",
+      "portfolio": 30254.884312400758,
+      "dial": 0.6334158415841584,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-05-04",
+      "portfolio": 30130.02320003483,
+      "dial": 0.6334158415841584,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-05-11",
+      "portfolio": 30491.01487554823,
+      "dial": 0.5815270935960591,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-05-18",
+      "portfolio": 30315.670867090103,
+      "dial": 0.5815270935960591,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-05-25",
+      "portfolio": 30373.17253088044,
+      "dial": 0.5815270935960591,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-06-01",
+      "portfolio": 30338.409623649193,
+      "dial": 0.5815270935960591,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-06-08",
+      "portfolio": 30645.40026188856,
+      "dial": 0.5443627450980393,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-06-15",
+      "portfolio": 30538.66509245998,
+      "dial": 0.5443627450980393,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-06-22",
+      "portfolio": 30280.93578108878,
+      "dial": 0.5443627450980393,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-06-29",
+      "portfolio": 29928.028268025144,
+      "dial": 0.5443627450980393,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-07-06",
+      "portfolio": 30240.542017803422,
+      "dial": 0.4247560975609756,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-07-13",
+      "portfolio": 30511.250274274367,
+      "dial": 0.4247560975609756,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-07-20",
+      "portfolio": 30617.80999253167,
+      "dial": 0.4247560975609756,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-07-27",
+      "portfolio": 30843.9853050943,
+      "dial": 0.4247560975609756,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-08-03",
+      "portfolio": 30933.479653051378,
+      "dial": 0.4247560975609756,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2018-08-10",
+      "portfolio": 30855.002163152367,
+      "dial": 0.28009708737864075,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-08-17",
+      "portfolio": 30978.50630412037,
+      "dial": 0.28009708737864075,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-08-24",
+      "portfolio": 31374.57184834168,
+      "dial": 0.28009708737864075,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-08-31",
+      "portfolio": 31738.146716228002,
+      "dial": 0.28009708737864075,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-09-07",
+      "portfolio": 31237.382486099923,
+      "dial": 0.3085748792270531,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-09-14",
+      "portfolio": 31582.550743031512,
+      "dial": 0.3085748792270531,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-09-21",
+      "portfolio": 31907.09936472465,
+      "dial": 0.3085748792270531,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-09-28",
+      "portfolio": 31722.100438307363,
+      "dial": 0.3085748792270531,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-10-05",
+      "portfolio": 31201.12930615072,
+      "dial": 0.21213942307692304,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-10-12",
+      "portfolio": 29920.634855342185,
+      "dial": 0.21213942307692304,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-10-19",
+      "portfolio": 29921.287374670963,
+      "dial": 0.21213942307692304,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-10-26",
+      "portfolio": 28591.904528260307,
+      "dial": 0.21213942307692304,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-11-02",
+      "portfolio": 29350.077721286627,
+      "dial": 0.21213942307692304,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2018-11-09",
+      "portfolio": 29539.232834465485,
+      "dial": 0.6332535885167464,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-11-16",
+      "portfolio": 29469.273935138983,
+      "dial": 0.6332535885167464,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-11-23",
+      "portfolio": 29129.268784744556,
+      "dial": 0.6332535885167464,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-11-30",
+      "portfolio": 29641.284196069773,
+      "dial": 0.6332535885167464,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-12-07",
+      "portfolio": 29080.6361720822,
+      "dial": 0.5694047619047619,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-12-14",
+      "portfolio": 28852.597174793547,
+      "dial": 0.5694047619047619,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-12-21",
+      "portfolio": 28299.17222598412,
+      "dial": 0.5694047619047619,
+      "scenario": "stress"
+    },
+    {
+      "date": "2018-12-28",
+      "portfolio": 28677.004565583582,
+      "dial": 0.5694047619047619,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-01-04",
+      "portfolio": 28951.36625225776,
+      "dial": 0.5694047619047619,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-01-11",
+      "portfolio": 28961.492221657954,
+      "dial": 0.7838862559241707,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2019-01-18",
+      "portfolio": 29046.48301022248,
+      "dial": 0.7838862559241707,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2019-01-25",
+      "portfolio": 29118.865509474745,
+      "dial": 0.7838862559241707,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2019-02-01",
+      "portfolio": 29183.5538581652,
+      "dial": 0.7838862559241707,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2019-02-08",
+      "portfolio": 29059.441911202328,
+      "dial": 0.6679245283018868,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2019-02-15",
+      "portfolio": 29346.55399755969,
+      "dial": 0.6679245283018868,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-02-22",
+      "portfolio": 29412.644869301297,
+      "dial": 0.6679245283018868,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-03-01",
+      "portfolio": 29405.155672083318,
+      "dial": 0.6679245283018868,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-03-08",
+      "portfolio": 29204.37593088446,
+      "dial": 0.587206572769953,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-03-15",
+      "portfolio": 29577.15337781629,
+      "dial": 0.587206572769953,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-03-22",
+      "portfolio": 29328.74341763568,
+      "dial": 0.587206572769953,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-03-29",
+      "portfolio": 29469.602227086365,
+      "dial": 0.587206572769953,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-04-05",
+      "portfolio": 29936.08264846836,
+      "dial": 0.42943925233644864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-04-12",
+      "portfolio": 30002.893636236407,
+      "dial": 0.42943925233644864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-04-18",
+      "portfolio": 29926.506188373183,
+      "dial": 0.42943925233644864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-04-26",
+      "portfolio": 30195.52483705804,
+      "dial": 0.42943925233644864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-05-03",
+      "portfolio": 30381.67577917347,
+      "dial": 0.42943925233644864,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-05-10",
+      "portfolio": 29477.4875015296,
+      "dial": 0.22965116279069767,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-05-17",
+      "portfolio": 29038.18167199846,
+      "dial": 0.22965116279069767,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-05-24",
+      "portfolio": 28753.712759391787,
+      "dial": 0.22965116279069767,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-05-31",
+      "portfolio": 28162.740206015264,
+      "dial": 0.22965116279069767,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-06-07",
+      "portfolio": 28615.925601571307,
+      "dial": 0.5583333333333332,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-06-14",
+      "portfolio": 28655.820842700923,
+      "dial": 0.5583333333333332,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-06-21",
+      "portfolio": 28940.588952146667,
+      "dial": 0.5583333333333332,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-06-28",
+      "portfolio": 29027.741660481617,
+      "dial": 0.5583333333333332,
+      "scenario": "stress"
+    },
+    {
+      "date": "2019-07-05",
+      "portfolio": 29312.906074435406,
+      "dial": 0.45276497695852536,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-07-12",
+      "portfolio": 29274.633194376725,
+      "dial": 0.45276497695852536,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-07-19",
+      "portfolio": 29152.739101747164,
+      "dial": 0.45276497695852536,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-07-26",
+      "portfolio": 29427.73338019324,
+      "dial": 0.45276497695852536,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-08-02",
+      "portfolio": 28870.330093458255,
+      "dial": 0.45276497695852536,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-08-09",
+      "portfolio": 28801.432261878643,
+      "dial": 0.5394495412844036,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-08-16",
+      "portfolio": 28750.80172404239,
+      "dial": 0.5394495412844036,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-08-23",
+      "portfolio": 28456.699671892624,
+      "dial": 0.5394495412844036,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-08-30",
+      "portfolio": 29055.0504300406,
+      "dial": 0.5394495412844036,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-09-06",
+      "portfolio": 29376.01426720196,
+      "dial": 0.5385844748858448,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-09-13",
+      "portfolio": 29506.304494725926,
+      "dial": 0.5385844748858448,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-09-20",
+      "portfolio": 29579.642333754047,
+      "dial": 0.5385844748858448,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-09-27",
+      "portfolio": 29336.937747438486,
+      "dial": 0.5385844748858448,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-10-04",
+      "portfolio": 29337.893494084637,
+      "dial": 0.5385844748858448,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-10-11",
+      "portfolio": 29390.82452840446,
+      "dial": 0.491590909090909,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-10-18",
+      "portfolio": 29611.369538589966,
+      "dial": 0.491590909090909,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-10-25",
+      "portfolio": 29910.332624013754,
+      "dial": 0.491590909090909,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-11-01",
+      "portfolio": 30345.187864236,
+      "dial": 0.491590909090909,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-11-08",
+      "portfolio": 30441.636991921932,
+      "dial": 0.5019230769230769,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-11-15",
+      "portfolio": 30590.288134789414,
+      "dial": 0.5019230769230769,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-11-22",
+      "portfolio": 30636.19268345279,
+      "dial": 0.5019230769230769,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-11-29",
+      "portfolio": 30815.418362576012,
+      "dial": 0.5019230769230769,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2019-12-06",
+      "portfolio": 30961.02315977295,
+      "dial": 0.30011261261261263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-12-13",
+      "portfolio": 31386.468869058295,
+      "dial": 0.30011261261261263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-12-20",
+      "portfolio": 31868.535435450547,
+      "dial": 0.30011261261261263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2019-12-27",
+      "portfolio": 32105.697702466725,
+      "dial": 0.30011261261261263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-01-03",
+      "portfolio": 32062.421202299054,
+      "dial": 0.30011261261261263,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-01-10",
+      "portfolio": 32388.11449491633,
+      "dial": 0.2556053811659193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-01-17",
+      "portfolio": 32974.477323667656,
+      "dial": 0.2556053811659193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-01-24",
+      "portfolio": 32462.747864560548,
+      "dial": 0.2556053811659193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-01-31",
+      "portfolio": 31563.73698104846,
+      "dial": 0.2556053811659193,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-02-07",
+      "portfolio": 32739.805134693088,
+      "dial": 0.3472098214285714,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-02-14",
+      "portfolio": 33245.989326743496,
+      "dial": 0.3472098214285714,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-02-21",
+      "portfolio": 32864.80442959644,
+      "dial": 0.3472098214285714,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-02-28",
+      "portfolio": 29052.30545416872,
+      "dial": 0.3472098214285714,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2020-03-06",
+      "portfolio": 29191.87347775004,
+      "dial": 0.6612222222222223,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-03-13",
+      "portfolio": 27454.632527189326,
+      "dial": 0.6612222222222223,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-03-20",
+      "portfolio": 25974.608602118242,
+      "dial": 0.6612222222222223,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-03-27",
+      "portfolio": 27325.793558177375,
+      "dial": 0.6612222222222223,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-04-03",
+      "portfolio": 27146.53447247097,
+      "dial": 0.6612222222222223,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-04-09",
+      "portfolio": 27572.37064292372,
+      "dial": 0.9077433628318585,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2020-04-17",
+      "portfolio": 27666.16610108059,
+      "dial": 0.9077433628318585,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2020-04-24",
+      "portfolio": 27732.014056102907,
+      "dial": 0.9077433628318585,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2020-05-01",
+      "portfolio": 27626.484339888793,
+      "dial": 0.9077433628318585,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2020-05-08",
+      "portfolio": 28124.105481249862,
+      "dial": 0.7482378854625551,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2020-05-15",
+      "portfolio": 28024.445982691614,
+      "dial": 0.7482378854625551,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-05-22",
+      "portfolio": 28197.17909768162,
+      "dial": 0.7482378854625551,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-05-29",
+      "portfolio": 28576.329462710768,
+      "dial": 0.7482378854625551,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-06-05",
+      "portfolio": 28961.50337619465,
+      "dial": 0.7393640350877193,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-06-12",
+      "portfolio": 28543.273320606568,
+      "dial": 0.7393640350877193,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-06-19",
+      "portfolio": 28807.642568739142,
+      "dial": 0.7393640350877193,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-06-26",
+      "portfolio": 28570.10038781201,
+      "dial": 0.7393640350877193,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-07-02",
+      "portfolio": 28971.428639899546,
+      "dial": 0.7393640350877193,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-07-10",
+      "portfolio": 29273.03854805279,
+      "dial": 0.5812227074235808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-07-17",
+      "portfolio": 29475.482673175167,
+      "dial": 0.5812227074235808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-07-24",
+      "portfolio": 29585.738049326585,
+      "dial": 0.5812227074235808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-07-31",
+      "portfolio": 29794.02631617492,
+      "dial": 0.5812227074235808,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-08-07",
+      "portfolio": 30269.03857507948,
+      "dial": 0.45130434782608697,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-08-14",
+      "portfolio": 30215.480803499973,
+      "dial": 0.45130434782608697,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-08-21",
+      "portfolio": 30296.59900271038,
+      "dial": 0.45130434782608697,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-08-28",
+      "portfolio": 30862.84078307578,
+      "dial": 0.45130434782608697,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-09-04",
+      "portfolio": 30442.33229884078,
+      "dial": 0.45130434782608697,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-09-11",
+      "portfolio": 30012.84250483274,
+      "dial": 0.5050865800865801,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-09-18",
+      "portfolio": 30010.91721615234,
+      "dial": 0.5050865800865801,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-09-25",
+      "portfolio": 29524.400813995388,
+      "dial": 0.5050865800865801,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-10-02",
+      "portfolio": 29944.988465877097,
+      "dial": 0.5050865800865801,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-10-09",
+      "portfolio": 30750.689097833165,
+      "dial": 0.49051724137931035,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-10-16",
+      "portfolio": 30691.93174477736,
+      "dial": 0.49051724137931035,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-10-23",
+      "portfolio": 30681.151784841884,
+      "dial": 0.49051724137931035,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-10-30",
+      "portfolio": 29483.048256000522,
+      "dial": 0.49051724137931035,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-11-06",
+      "portfolio": 30466.404551267948,
+      "dial": 0.661587982832618,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-11-13",
+      "portfolio": 30696.225288725593,
+      "dial": 0.661587982832618,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-11-20",
+      "portfolio": 30679.668200877153,
+      "dial": 0.661587982832618,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-11-27",
+      "portfolio": 30915.80578282769,
+      "dial": 0.661587982832618,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-12-04",
+      "portfolio": 31175.16010550294,
+      "dial": 0.661587982832618,
+      "scenario": "stress"
+    },
+    {
+      "date": "2020-12-11",
+      "portfolio": 31009.058291379006,
+      "dial": 0.4575854700854701,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-12-18",
+      "portfolio": 31351.6607429963,
+      "dial": 0.4575854700854701,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-12-24",
+      "portfolio": 31358.698054462104,
+      "dial": 0.4575854700854701,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2020-12-31",
+      "portfolio": 31775.3620615505,
+      "dial": 0.4575854700854701,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-01-08",
+      "portfolio": 32490.503256091837,
+      "dial": 0.41968085106382985,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-01-15",
+      "portfolio": 32247.017319994597,
+      "dial": 0.41968085106382985,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-01-22",
+      "portfolio": 32552.395869120148,
+      "dial": 0.41968085106382985,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-01-29",
+      "portfolio": 31687.866392948446,
+      "dial": 0.41968085106382985,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-02-05",
+      "portfolio": 32610.040252494986,
+      "dial": 0.4266949152542373,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-02-12",
+      "portfolio": 33074.15125102579,
+      "dial": 0.4266949152542373,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-02-19",
+      "portfolio": 32890.578883614115,
+      "dial": 0.4266949152542373,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-02-26",
+      "portfolio": 32155.125099416673,
+      "dial": 0.4266949152542373,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-03-05",
+      "portfolio": 32516.180707678992,
+      "dial": 0.3007383966244726,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-03-12",
+      "portfolio": 33283.1991248052,
+      "dial": 0.3007383966244726,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-03-19",
+      "portfolio": 33067.663993607246,
+      "dial": 0.3007383966244726,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-03-26",
+      "portfolio": 33311.02194326648,
+      "dial": 0.3007383966244726,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-04-01",
+      "portfolio": 33620.8014396964,
+      "dial": 0.3007383966244726,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-04-09",
+      "portfolio": 34294.01348676466,
+      "dial": 0.3434873949579832,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-04-16",
+      "portfolio": 34932.96741421192,
+      "dial": 0.3434873949579832,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-04-23",
+      "portfolio": 35020.93238312293,
+      "dial": 0.3434873949579832,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-04-30",
+      "portfolio": 34936.33680719887,
+      "dial": 0.3434873949579832,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-05-07",
+      "portfolio": 35755.10253440094,
+      "dial": 0.34989539748953974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-05-14",
+      "portfolio": 35299.91218386691,
+      "dial": 0.34989539748953974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-05-21",
+      "portfolio": 35328.4122008425,
+      "dial": 0.34989539748953974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-05-28",
+      "portfolio": 35830.88438493342,
+      "dial": 0.34989539748953974,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-06-04",
+      "portfolio": 35958.23837271661,
+      "dial": 0.39249999999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-06-11",
+      "portfolio": 36078.90950687207,
+      "dial": 0.39249999999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-06-18",
+      "portfolio": 35371.16861874998,
+      "dial": 0.39249999999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-06-25",
+      "portfolio": 36091.5878524885,
+      "dial": 0.39249999999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-07-02",
+      "portfolio": 36409.996308586604,
+      "dial": 0.39249999999999996,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-07-09",
+      "portfolio": 36368.22798630018,
+      "dial": 0.29522821576763486,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-07-16",
+      "portfolio": 35982.90032906643,
+      "dial": 0.29522821576763486,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-07-23",
+      "portfolio": 36643.4317781563,
+      "dial": 0.29522821576763486,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-07-30",
+      "portfolio": 36669.7627726552,
+      "dial": 0.29522821576763486,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-08-06",
+      "portfolio": 36927.949461277545,
+      "dial": 0.42613636363636365,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-08-13",
+      "portfolio": 37172.63922306791,
+      "dial": 0.42613636363636365,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-08-20",
+      "portfolio": 36944.23898171207,
+      "dial": 0.42613636363636365,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-08-27",
+      "portfolio": 37447.03552101784,
+      "dial": 0.42613636363636365,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-09-03",
+      "portfolio": 37609.248032497075,
+      "dial": 0.42613636363636365,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-09-10",
+      "portfolio": 36853.446750941046,
+      "dial": 0.2226337448559671,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-09-17",
+      "portfolio": 36654.81652134692,
+      "dial": 0.2226337448559671,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-09-24",
+      "portfolio": 36733.96708603573,
+      "dial": 0.2226337448559671,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-10-01",
+      "portfolio": 35772.14373520415,
+      "dial": 0.2226337448559671,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-10-08",
+      "portfolio": 35846.13495282984,
+      "dial": 0.4713114754098361,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-10-15",
+      "portfolio": 36353.08680603431,
+      "dial": 0.4713114754098361,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-10-22",
+      "portfolio": 36877.90091015236,
+      "dial": 0.4713114754098361,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-10-29",
+      "portfolio": 37122.407261437824,
+      "dial": 0.4713114754098361,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-11-05",
+      "portfolio": 37552.8111606194,
+      "dial": 0.20581632653061224,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-11-12",
+      "portfolio": 37530.25393888326,
+      "dial": 0.20581632653061224,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-11-19",
+      "portfolio": 37408.362241351446,
+      "dial": 0.20581632653061224,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-11-26",
+      "portfolio": 36478.92040319653,
+      "dial": 0.20581632653061224,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-12-03",
+      "portfolio": 35879.456916778705,
+      "dial": 0.20581632653061224,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2021-12-10",
+      "portfolio": 36550.28938141494,
+      "dial": 0.4714430894308943,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-12-17",
+      "portfolio": 36469.80922948381,
+      "dial": 0.4714430894308943,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-12-23",
+      "portfolio": 36883.771719997196,
+      "dial": 0.4714430894308943,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2021-12-31",
+      "portfolio": 37077.822903751265,
+      "dial": 0.4714430894308943,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-01-07",
+      "portfolio": 36733.58286292559,
+      "dial": 0.3846153846153846,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-01-14",
+      "portfolio": 36712.707842818,
+      "dial": 0.3846153846153846,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-01-21",
+      "portfolio": 35492.82034859217,
+      "dial": 0.3846153846153846,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-01-28",
+      "portfolio": 35444.82609752203,
+      "dial": 0.3846153846153846,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-02-04",
+      "portfolio": 35925.40950029704,
+      "dial": 0.3846153846153846,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-02-11",
+      "portfolio": 35823.4264222556,
+      "dial": 0.6132056451612904,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-02-18",
+      "portfolio": 35558.190678488696,
+      "dial": 0.6132056451612904,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-02-25",
+      "portfolio": 35682.82460136036,
+      "dial": 0.6132056451612904,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-03-04",
+      "portfolio": 35507.099288181176,
+      "dial": 0.6132056451612904,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-03-11",
+      "portfolio": 35084.56449036329,
+      "dial": 0.6298192771084338,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-03-18",
+      "portfolio": 35909.811990050956,
+      "dial": 0.6298192771084338,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-03-25",
+      "portfolio": 36002.19174550278,
+      "dial": 0.6298192771084338,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-04-01",
+      "portfolio": 36015.143231352864,
+      "dial": 0.6298192771084338,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-04-08",
+      "portfolio": 35662.78297787045,
+      "dial": 0.5197,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-04-14",
+      "portfolio": 35066.521187877705,
+      "dial": 0.5197,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-04-22",
+      "portfolio": 34272.25675555215,
+      "dial": 0.5197,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-04-29",
+      "portfolio": 33528.06880559685,
+      "dial": 0.5197,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-05-06",
+      "portfolio": 33344.485781250725,
+      "dial": 0.7178286852589641,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-05-13",
+      "portfolio": 33092.07580085175,
+      "dial": 0.7178286852589641,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-05-20",
+      "portfolio": 33043.52840529503,
+      "dial": 0.7178286852589641,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-05-27",
+      "portfolio": 33738.38743370904,
+      "dial": 0.7178286852589641,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-06-03",
+      "portfolio": 33522.74517203271,
+      "dial": 0.7178286852589641,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-06-10",
+      "portfolio": 32361.480001249864,
+      "dial": 0.5414682539682539,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-06-17",
+      "portfolio": 31195.157136557926,
+      "dial": 0.5414682539682539,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-06-24",
+      "portfolio": 32394.198984033123,
+      "dial": 0.5414682539682539,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-07-01",
+      "portfolio": 32084.62124351961,
+      "dial": 0.5414682539682539,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-07-08",
+      "portfolio": 32097.554650176033,
+      "dial": 0.7372529644268774,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-07-15",
+      "portfolio": 31957.17123226258,
+      "dial": 0.7372529644268774,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-07-22",
+      "portfolio": 32282.797798962867,
+      "dial": 0.7372529644268774,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-07-29",
+      "portfolio": 32638.331409864008,
+      "dial": 0.7372529644268774,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-08-05",
+      "portfolio": 32602.212470307008,
+      "dial": 0.6971456692913386,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-08-12",
+      "portfolio": 33000.1546319022,
+      "dial": 0.6971456692913386,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-08-19",
+      "portfolio": 32674.584565356978,
+      "dial": 0.6971456692913386,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-08-26",
+      "portfolio": 32308.16239904731,
+      "dial": 0.6971456692913386,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-09-02",
+      "portfolio": 31920.367090887074,
+      "dial": 0.6971456692913386,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-09-09",
+      "portfolio": 32274.960954602397,
+      "dial": 0.6826470588235294,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-09-16",
+      "portfolio": 31762.342344512595,
+      "dial": 0.6826470588235294,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-09-23",
+      "portfolio": 31148.520882254765,
+      "dial": 0.6826470588235294,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-09-30",
+      "portfolio": 30841.813941557706,
+      "dial": 0.6826470588235294,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-10-07",
+      "portfolio": 31030.20293280582,
+      "dial": 0.69892578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-10-14",
+      "portfolio": 30759.136792535697,
+      "dial": 0.69892578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-10-21",
+      "portfolio": 31088.156840405703,
+      "dial": 0.69892578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-10-28",
+      "portfolio": 31412.48335492088,
+      "dial": 0.69892578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-11-04",
+      "portfolio": 31446.2228401201,
+      "dial": 0.69892578125,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-11-11",
+      "portfolio": 32165.840358843412,
+      "dial": 0.5502918287937744,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-11-18",
+      "portfolio": 32160.66194379558,
+      "dial": 0.5502918287937744,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-11-25",
+      "portfolio": 32350.136659269294,
+      "dial": 0.5502918287937744,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-12-02",
+      "portfolio": 32754.355795163,
+      "dial": 0.5502918287937744,
+      "scenario": "stress"
+    },
+    {
+      "date": "2022-12-09",
+      "portfolio": 32193.41060750032,
+      "dial": 0.5092054263565892,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-12-16",
+      "portfolio": 31767.023709212826,
+      "dial": 0.5092054263565892,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-12-23",
+      "portfolio": 31694.828952498196,
+      "dial": 0.5092054263565892,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2022-12-30",
+      "portfolio": 31663.06210529953,
+      "dial": 0.5092054263565892,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-01-06",
+      "portfolio": 32157.963169797233,
+      "dial": 0.5728764478764479,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-01-13",
+      "portfolio": 32511.470963299376,
+      "dial": 0.5728764478764479,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-01-20",
+      "portfolio": 32499.482993791724,
+      "dial": 0.5728764478764479,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-01-27",
+      "portfolio": 32667.68705554534,
+      "dial": 0.5728764478764479,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-02-03",
+      "portfolio": 32547.195618904843,
+      "dial": 0.5728764478764479,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-02-10",
+      "portfolio": 32217.401061607794,
+      "dial": 0.5095192307692308,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-02-17",
+      "portfolio": 32118.352592787403,
+      "dial": 0.5095192307692308,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-02-24",
+      "portfolio": 31407.18123468775,
+      "dial": 0.5095192307692308,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-03-03",
+      "portfolio": 31891.915730702953,
+      "dial": 0.5095192307692308,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-03-10",
+      "portfolio": 31299.00795963096,
+      "dial": 0.5645593869731801,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-03-17",
+      "portfolio": 31322.70784564077,
+      "dial": 0.5645593869731801,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-03-24",
+      "portfolio": 31557.261494686813,
+      "dial": 0.5645593869731801,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-03-31",
+      "portfolio": 31886.51640101653,
+      "dial": 0.5645593869731801,
+      "scenario": "stress"
+    },
+    {
+      "date": "2023-04-06",
+      "portfolio": 32051.069806622796,
+      "dial": 0.5009541984732825,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-04-14",
+      "portfolio": 32301.487243881427,
+      "dial": 0.5009541984732825,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-04-21",
+      "portfolio": 32212.654013255207,
+      "dial": 0.5009541984732825,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-04-28",
+      "portfolio": 32332.99808010642,
+      "dial": 0.5009541984732825,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-05-05",
+      "portfolio": 32245.309912373035,
+      "dial": 0.48089353612167296,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-05-12",
+      "portfolio": 31999.080228514173,
+      "dial": 0.48089353612167296,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-05-19",
+      "portfolio": 32198.766444659566,
+      "dial": 0.48089353612167296,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-05-26",
+      "portfolio": 32039.585137450893,
+      "dial": 0.48089353612167296,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-06-02",
+      "portfolio": 32492.823613231503,
+      "dial": 0.48089353612167296,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-06-09",
+      "portfolio": 32654.11094194164,
+      "dial": 0.5356060606060605,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-06-16",
+      "portfolio": 33214.43908298577,
+      "dial": 0.5356060606060605,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-06-23",
+      "portfolio": 32747.09613234595,
+      "dial": 0.5356060606060605,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-06-30",
+      "portfolio": 33143.442733997,
+      "dial": 0.5356060606060605,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-07-07",
+      "portfolio": 32665.583278012517,
+      "dial": 0.24349056603773583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-07-14",
+      "portfolio": 33848.69549302177,
+      "dial": 0.24349056603773583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-07-21",
+      "portfolio": 33958.99976146594,
+      "dial": 0.24349056603773583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-07-28",
+      "portfolio": 34361.14493394876,
+      "dial": 0.24349056603773583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-08-04",
+      "portfolio": 33373.82172408568,
+      "dial": 0.24349056603773583,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-08-11",
+      "portfolio": 33117.21929996126,
+      "dial": 0.23327067669172932,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-08-18",
+      "portfolio": 32247.278417498568,
+      "dial": 0.23327067669172932,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-08-25",
+      "portfolio": 32593.817986375594,
+      "dial": 0.23327067669172932,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-09-01",
+      "portfolio": 33441.90183802503,
+      "dial": 0.23327067669172932,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-09-08",
+      "portfolio": 32918.93218719566,
+      "dial": 0.1963483146067416,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-09-15",
+      "portfolio": 33040.0844925545,
+      "dial": 0.1963483146067416,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-09-22",
+      "portfolio": 32112.639315216606,
+      "dial": 0.1963483146067416,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-09-29",
+      "portfolio": 31752.813233543366,
+      "dial": 0.1963483146067416,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2023-10-06",
+      "portfolio": 31687.771944790366,
+      "dial": 0.3828358208955224,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-10-13",
+      "portfolio": 31891.758938779516,
+      "dial": 0.3828358208955224,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-10-20",
+      "portfolio": 31241.07224315448,
+      "dial": 0.3828358208955224,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-10-27",
+      "portfolio": 30787.52587954235,
+      "dial": 0.3828358208955224,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-11-03",
+      "portfolio": 32106.070758449976,
+      "dial": 0.3828358208955224,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-11-10",
+      "portfolio": 32141.94251292887,
+      "dial": 0.5132899628252788,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-11-17",
+      "portfolio": 32800.5367787341,
+      "dial": 0.5132899628252788,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-11-24",
+      "portfolio": 33081.82747922626,
+      "dial": 0.5132899628252788,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-12-01",
+      "portfolio": 33460.00623102016,
+      "dial": 0.5132899628252788,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-12-08",
+      "portfolio": 33377.0442965301,
+      "dial": 0.370925925925926,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-12-15",
+      "portfolio": 34148.34078108725,
+      "dial": 0.370925925925926,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-12-22",
+      "portfolio": 34387.81055276501,
+      "dial": 0.370925925925926,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2023-12-29",
+      "portfolio": 34644.740788510455,
+      "dial": 0.370925925925926,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-01-05",
+      "portfolio": 34246.99164023593,
+      "dial": 0.31743542435424354,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-01-12",
+      "portfolio": 34625.41466383544,
+      "dial": 0.31743542435424354,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-01-19",
+      "portfolio": 34737.04509215545,
+      "dial": 0.31743542435424354,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-01-26",
+      "portfolio": 35100.64525934812,
+      "dial": 0.31743542435424354,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-02-02",
+      "portfolio": 35569.89155031056,
+      "dial": 0.31743542435424354,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-02-09",
+      "portfolio": 35982.60676000032,
+      "dial": 0.2561580882352941,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-02-16",
+      "portfolio": 36092.78897126827,
+      "dial": 0.2561580882352941,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-02-23",
+      "portfolio": 36739.854806032825,
+      "dial": 0.2561580882352941,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-03-01",
+      "portfolio": 36967.65607792557,
+      "dial": 0.2561580882352941,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-03-08",
+      "portfolio": 37105.11232805456,
+      "dial": 0.27023809523809517,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-03-15",
+      "portfolio": 36927.18193003848,
+      "dial": 0.27023809523809517,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-03-22",
+      "portfolio": 37629.14151750271,
+      "dial": 0.27023809523809517,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-03-28",
+      "portfolio": 38001.93626558837,
+      "dial": 0.27023809523809517,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-04-05",
+      "portfolio": 37520.072307938324,
+      "dial": 0.2923357664233577,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-04-12",
+      "portfolio": 36624.336640673944,
+      "dial": 0.2923357664233577,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-04-19",
+      "portfolio": 35923.896816173736,
+      "dial": 0.2923357664233577,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-04-26",
+      "portfolio": 36824.94778303294,
+      "dial": 0.2923357664233577,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-05-03",
+      "portfolio": 37125.15399522045,
+      "dial": 0.2923357664233577,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-05-10",
+      "portfolio": 37677.339379880585,
+      "dial": 0.40445454545454546,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-05-17",
+      "portfolio": 38318.19000917931,
+      "dial": 0.40445454545454546,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-05-24",
+      "portfolio": 37970.619577773505,
+      "dial": 0.40445454545454546,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-05-31",
+      "portfolio": 37685.60246674402,
+      "dial": 0.40445454545454546,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-06-07",
+      "portfolio": 38059.74208413956,
+      "dial": 0.257427536231884,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-06-14",
+      "portfolio": 38262.07169269882,
+      "dial": 0.257427536231884,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-06-21",
+      "portfolio": 38585.924944484716,
+      "dial": 0.257427536231884,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-06-28",
+      "portfolio": 38543.224252323984,
+      "dial": 0.257427536231884,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-07-05",
+      "portfolio": 39311.45995082421,
+      "dial": 0.29088447653429605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-07-12",
+      "portfolio": 39958.128901041615,
+      "dial": 0.29088447653429605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-07-19",
+      "portfolio": 39070.600286448986,
+      "dial": 0.29088447653429605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-07-26",
+      "portfolio": 38946.098597950695,
+      "dial": 0.29088447653429605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-08-02",
+      "portfolio": 38125.059004215174,
+      "dial": 0.29088447653429605,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-08-09",
+      "portfolio": 38128.673318884525,
+      "dial": 0.44352517985611506,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-08-16",
+      "portfolio": 39229.743452389615,
+      "dial": 0.44352517985611506,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-08-23",
+      "portfolio": 39699.55561544724,
+      "dial": 0.44352517985611506,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-08-30",
+      "portfolio": 39830.92220547238,
+      "dial": 0.44352517985611506,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-09-06",
+      "portfolio": 38897.07426448329,
+      "dial": 0.4866487455197132,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-09-13",
+      "portfolio": 39726.419408836104,
+      "dial": 0.4866487455197132,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-09-20",
+      "portfolio": 40107.40519760517,
+      "dial": 0.4866487455197132,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-09-27",
+      "portfolio": 40436.377909278184,
+      "dial": 0.4866487455197132,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-10-04",
+      "portfolio": 40312.58410071427,
+      "dial": 0.4866487455197132,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-10-11",
+      "portfolio": 40504.503352817956,
+      "dial": 0.5306250000000001,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-10-18",
+      "portfolio": 40689.733350225135,
+      "dial": 0.5306250000000001,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-10-25",
+      "portfolio": 40075.34792734825,
+      "dial": 0.5306250000000001,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-11-01",
+      "portfolio": 39792.72235858937,
+      "dial": 0.5306250000000001,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-11-08",
+      "portfolio": 40770.96038661331,
+      "dial": 0.4205516014234876,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-11-15",
+      "portfolio": 39819.59904491133,
+      "dial": 0.4205516014234876,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-11-22",
+      "portfolio": 40414.596378998685,
+      "dial": 0.4205516014234876,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-11-29",
+      "portfolio": 40873.6857355987,
+      "dial": 0.4205516014234876,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2024-12-06",
+      "portfolio": 40936.15098289572,
+      "dial": 0.21755319148936172,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-12-13",
+      "portfolio": 40472.21874295329,
+      "dial": 0.21755319148936172,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-12-20",
+      "portfolio": 39408.557607178715,
+      "dial": 0.21755319148936172,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2024-12-27",
+      "portfolio": 39718.823907743405,
+      "dial": 0.21755319148936172,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-01-03",
+      "portfolio": 39603.81818699368,
+      "dial": 0.21755319148936172,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-01-10",
+      "portfolio": 39141.081503072375,
+      "dial": 0.37270318021201415,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-01-17",
+      "portfolio": 40096.586220307036,
+      "dial": 0.37270318021201415,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-01-24",
+      "portfolio": 40684.87765716821,
+      "dial": 0.37270318021201415,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-01-31",
+      "portfolio": 40836.40966555532,
+      "dial": 0.37270318021201415,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-02-07",
+      "portfolio": 41036.084938551925,
+      "dial": 0.3955985915492958,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-02-14",
+      "portfolio": 41366.51434119155,
+      "dial": 0.3955985915492958,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-02-21",
+      "portfolio": 41187.4118671753,
+      "dial": 0.3955985915492958,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-02-28",
+      "portfolio": 41154.05343567032,
+      "dial": 0.3955985915492958,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-03-07",
+      "portfolio": 40726.046210781,
+      "dial": 0.5571052631578947,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-03-14",
+      "portfolio": 40507.03380965689,
+      "dial": 0.5571052631578947,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-03-21",
+      "portfolio": 40744.8403866429,
+      "dial": 0.5571052631578947,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-03-28",
+      "portfolio": 40599.670529132185,
+      "dial": 0.5571052631578947,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-04-04",
+      "portfolio": 39298.66374917015,
+      "dial": 0.5571052631578947,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-04-11",
+      "portfolio": 39905.52521801298,
+      "dial": 0.6011363636363636,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-04-17",
+      "portfolio": 39941.788041531334,
+      "dial": 0.6011363636363636,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-04-25",
+      "portfolio": 40568.874515902564,
+      "dial": 0.6011363636363636,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-05-02",
+      "portfolio": 40856.220103894484,
+      "dial": 0.6011363636363636,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-05-09",
+      "portfolio": 40839.13151438175,
+      "dial": 0.7556620209059233,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2025-05-16",
+      "portfolio": 40784.202695727756,
+      "dial": 0.7556620209059233,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2025-05-23",
+      "portfolio": 40787.949129957364,
+      "dial": 0.7556620209059233,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2025-05-30",
+      "portfolio": 40891.57723914017,
+      "dial": 0.7556620209059233,
+      "scenario": "crisis"
+    },
+    {
+      "date": "2025-06-06",
+      "portfolio": 41313.12996388015,
+      "dial": 0.6309027777777778,
+      "scenario": "recovery"
+    },
+    {
+      "date": "2025-06-13",
+      "portfolio": 41441.180523065166,
+      "dial": 0.6309027777777778,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-06-20",
+      "portfolio": 41314.261577804304,
+      "dial": 0.6309027777777778,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-06-27",
+      "portfolio": 41812.02675635728,
+      "dial": 0.6309027777777778,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-07-03",
+      "portfolio": 42113.003902680284,
+      "dial": 0.6309027777777778,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-07-11",
+      "portfolio": 41972.80763840254,
+      "dial": 0.5584775086505191,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-07-18",
+      "portfolio": 41959.22677210037,
+      "dial": 0.5584775086505191,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-07-25",
+      "portfolio": 42317.0491070738,
+      "dial": 0.5584775086505191,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-08-01",
+      "portfolio": 41861.58888759903,
+      "dial": 0.5584775086505191,
+      "scenario": "stress"
+    },
+    {
+      "date": "2025-08-08",
+      "portfolio": 43034.60380478853,
+      "dial": 0.2861206896551724,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-08-15",
+      "portfolio": 43646.41529689779,
+      "dial": 0.2861206896551724,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-08-22",
+      "portfolio": 44104.06434225087,
+      "dial": 0.2861206896551724,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-08-29",
+      "portfolio": 43818.15057120223,
+      "dial": 0.2861206896551724,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-09-05",
+      "portfolio": 44169.2075770832,
+      "dial": 0.2671821305841924,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-09-12",
+      "portfolio": 45142.16244273743,
+      "dial": 0.2671821305841924,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-09-19",
+      "portfolio": 45697.8272704686,
+      "dial": 0.2671821305841924,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-09-26",
+      "portfolio": 45492.5125237708,
+      "dial": 0.2671821305841924,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-10-03",
+      "portfolio": 46584.81689193659,
+      "dial": 0.2671821305841924,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-10-10",
+      "portfolio": 45196.00812521035,
+      "dial": 0.2612157534246575,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-10-17",
+      "portfolio": 46430.19973572968,
+      "dial": 0.2612157534246575,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-10-24",
+      "portfolio": 47310.54369984236,
+      "dial": 0.2612157534246575,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-10-31",
+      "portfolio": 47321.538794662934,
+      "dial": 0.2612157534246575,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-11-07",
+      "portfolio": 46748.78263846996,
+      "dial": 0.3092150170648464,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-11-14",
+      "portfolio": 47181.73969559645,
+      "dial": 0.3092150170648464,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-11-21",
+      "portfolio": 46312.303043569125,
+      "dial": 0.3092150170648464,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-11-28",
+      "portfolio": 48012.44533542964,
+      "dial": 0.3092150170648464,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2025-12-05",
+      "portfolio": 47935.36158499654,
+      "dial": 0.4129251700680272,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-12-12",
+      "portfolio": 47989.236664109274,
+      "dial": 0.4129251700680272,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-12-19",
+      "portfolio": 48192.673247878585,
+      "dial": 0.4129251700680272,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2025-12-26",
+      "portfolio": 48847.723103168384,
+      "dial": 0.4129251700680272,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-01-02",
+      "portfolio": 48541.39250801021,
+      "dial": 0.4129251700680272,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-01-09",
+      "portfolio": 49294.919443489955,
+      "dial": 0.46279661016949153,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-01-16",
+      "portfolio": 49112.963524510065,
+      "dial": 0.46279661016949153,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-01-23",
+      "portfolio": 49376.19627978773,
+      "dial": 0.46279661016949153,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-01-30",
+      "portfolio": 49231.14099473278,
+      "dial": 0.46279661016949153,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-02-06",
+      "portfolio": 49640.85659510823,
+      "dial": 0.41309121621621625,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-02-13",
+      "portfolio": 49425.6539424057,
+      "dial": 0.41309121621621625,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-02-20",
+      "portfolio": 49867.53756525432,
+      "dial": 0.41309121621621625,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-02-27",
+      "portfolio": 50027.3402812354,
+      "dial": 0.41309121621621625,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-03-06",
+      "portfolio": 48517.49261302423,
+      "dial": 0.3648148148148148,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-03-13",
+      "portfolio": 47710.36372585965,
+      "dial": 0.3648148148148148,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-03-20",
+      "portfolio": 46736.11113234664,
+      "dial": 0.3648148148148148,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-03-27",
+      "portfolio": 46175.01493699706,
+      "dial": 0.3648148148148148,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-04-02",
+      "portfolio": 47465.616019069996,
+      "dial": 0.3648148148148148,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-04-10",
+      "portfolio": 48702.80741448165,
+      "dial": 0.5314597315436241,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-04-17",
+      "portfolio": 50122.00703623578,
+      "dial": 0.5314597315436241,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-04-24",
+      "portfolio": 49919.39470213616,
+      "dial": 0.5314597315436241,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-05-01",
+      "portfolio": 50186.41934142081,
+      "dial": 0.5314597315436241,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-05-08",
+      "portfolio": 51069.79120823292,
+      "dial": 0.41312709030100336,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-05-15",
+      "portfolio": 50539.38319501104,
+      "dial": 0.41312709030100336,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-05-22",
+      "portfolio": 51186.06937020521,
+      "dial": 0.41312709030100336,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-05-29",
+      "portfolio": 51799.9571553272,
+      "dial": 0.41312709030100336,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-06-05",
+      "portfolio": 49847.12202487305,
+      "dial": 0.32949999999999996,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2026-06-12",
+      "portfolio": 51383.20137140491,
+      "dial": 0.32949999999999996,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2026-06-18",
+      "portfolio": 52527.436222716984,
+      "dial": 0.32949999999999996,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2026-06-26",
+      "portfolio": 51012.33839822273,
+      "dial": 0.32949999999999996,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2026-07-02",
+      "portfolio": 51322.03707609649,
+      "dial": 0.32949999999999996,
+      "scenario": "bull_calm"
+    },
+    {
+      "date": "2026-07-10",
+      "portfolio": 51501.80056181128,
+      "dial": 0.36901993355481727,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-07-17",
+      "portfolio": 50827.576110682516,
+      "dial": 0.36901993355481727,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-07-24",
+      "portfolio": 50745.37192169609,
+      "dial": 0.36901993355481727,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-07-31",
+      "portfolio": 50934.53449276064,
+      "dial": 0.36901993355481727,
+      "scenario": "bull_late"
+    },
+    {
+      "date": "2026-08-05",
+      "portfolio": 51172.461291685235,
+      "dial": 0.40794701986754967,
+      "scenario": "bull_late"
+    }
+  ]
+}

@@ -350,6 +350,7 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY],
 app.title = "Market Terminal"
 
 app.layout = html.Div([
+    dcc.Store(id="monitor-store", data={"status": "STOPPED", "msg": ""}),
     dcc.Store(id="selected-ticker", data=None),
     dcc.Store(id="selected-article", data=None),
     dcc.Store(id="chart-period", data="1y"),
@@ -1497,7 +1498,7 @@ def bot_save_allocation(n_clicks, alloc_str):
     prevent_initial_call=True,
 )
 def bot_start(n_clicks):
-    if not ctx.triggered or not ctx.triggered[0]["value"]:
+    if not n_clicks or n_clicks == 0:
         return dash.no_update
     config = load_bot_config()
     config["active"] = True
@@ -1511,7 +1512,7 @@ def bot_start(n_clicks):
     prevent_initial_call=True,
 )
 def bot_stop(n_clicks):
-    if not ctx.triggered or not ctx.triggered[0]["value"]:
+    if not n_clicks or n_clicks == 0:
         return dash.no_update
     config = load_bot_config()
     config["active"] = False
@@ -1526,7 +1527,7 @@ def bot_stop(n_clicks):
     prevent_initial_call=True,
 )
 def phase_next(n_clicks):
-    if not ctx.triggered or not ctx.triggered[0]["value"]:
+    if not n_clicks or n_clicks == 0:
         return dash.no_update
     config = load_bot_config()
     if config.get("phase", 1) < 3:
@@ -1547,7 +1548,7 @@ def phase_next(n_clicks):
     prevent_initial_call=True,
 )
 def phase_back(n_clicks):
-    if not ctx.triggered or not ctx.triggered[0]["value"]:
+    if not n_clicks or n_clicks == 0:
         return dash.no_update
     config = load_bot_config()
     if config.get("phase", 1) > 1:
@@ -1752,6 +1753,78 @@ def schwab_sync(n_clicks):
             return "✗ Sync failed — no positions found"
     except Exception as e:
         return f"✗ Error: {e}"
+
+
+# ── Global Monitor callbacks ──────────────────────────────────
+@app.callback(
+    Output("monitor-status-msg", "children", allow_duplicate=True),
+    [Input("btn-start-monitor", "n_clicks"),
+     Input("btn-stop-monitor", "n_clicks"),
+     Input("btn-test-alert", "n_clicks"),
+     Input("btn-monitor-log", "n_clicks")],
+    prevent_initial_call=True
+)
+def handle_monitor_buttons(start, stop, test, log):
+    import subprocess, os
+    from dash import ctx
+    if not ctx.triggered:
+        return ""
+    btn = ctx.triggered[0]["prop_id"].split(".")[0]
+
+    if btn == "btn-start-monitor":
+        try:
+            # Check if already running
+            result = subprocess.run(
+                ["pgrep", "-f", "market_monitor.py"],
+                capture_output=True, text=True)
+            if result.stdout.strip():
+                return "✅ Monitor already running"
+            # Start it
+            subprocess.Popen(
+                ["python3",
+                 os.path.expanduser("~/tradingbot/engine/market_monitor.py")],
+                stdout=open(os.path.expanduser(
+                    "~/tradingbot/engine/monitor_log.txt"), "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True)
+            return "✅ Monitor started — watching US, Asia, Europe, Futures 24/7"
+        except Exception as e:
+            return f"❌ Error: {e}"
+
+    elif btn == "btn-stop-monitor":
+        try:
+            subprocess.run(["pkill", "-f", "market_monitor.py"])
+            return "⏹ Monitor stopped"
+        except Exception as e:
+            return f"❌ Error: {e}"
+
+    elif btn == "btn-test-alert":
+        try:
+            sys.path.append(os.path.expanduser("~/tradingbot/engine"))
+            from slack_utils import send_slack
+            send_slack(
+                "TEST ALERT from Market Terminal. "
+                "Global monitor is active and connected. "
+                "US, Asia, Europe, Futures -- all markets watched 24/7")
+            return "✅ Test alert sent to Slack"
+        except Exception as e:
+            return f"❌ Slack error: {e}"
+
+    elif btn == "btn-monitor-log":
+        try:
+            log_path = os.path.expanduser(
+                "~/tradingbot/engine/monitor_log.txt")
+            if os.path.exists(log_path):
+                with open(log_path) as f:
+                    lines = f.readlines()[-10:]
+                return html.Pre(
+                    "".join(lines),
+                    style={"fontSize": "11px", "marginTop": "8px",
+                           "color": "#94a3b8", "whiteSpace": "pre-wrap"})
+            return "No log file yet — start the monitor first"
+        except Exception as e:
+            return f"❌ Error: {e}"
+    return ""
 
 if __name__ == "__main__":
     app.run(debug=False, port=8050)
