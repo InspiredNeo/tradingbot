@@ -111,6 +111,8 @@ BLENDS = {
 
 TCOST        = 0.0005
 MIN_TRADE    = 0.020
+DERISK_MAX   = 0.15   # max weekly move toward defense
+RERISK_MAX   = 0.06   # max weekly move toward risk
 LOOKBACK     = 504
 SVI_STEPS    = 800
 SVI_DRAWS    = 800
@@ -628,6 +630,7 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
     validate_dates = [d for d in all_dates if d > split_date]
 
     port_val   = 10000.0
+    equity_now = 0.70          # current equity %, rate-limited
     weights    = None
     state      = ScenarioState()
     records    = []
@@ -684,8 +687,9 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
             dial_val = float(dial_series.asof(d)) \
                        if d >= dial_series.index[0] else 0.40
 
-        # Update scenario state (hysteresis)
-        scenario = state.update(dial_val)
+        # Rate-limited allocation -- no state machine.
+        # De-risk fast, re-risk slow. Cannot latch.
+        scenario = get_scenario_label(dial_val)  # display only
 
         # Get bootstrap dial allocation (smoother threshold handling)
         dial_hist = list(dial_series[:d].dropna().tail(52).values)
@@ -752,7 +756,15 @@ def run_adaptive_v2(start="2004-06-30", verbose=True):
             w = _project_simplex_capped(w)
 
         # Apply continuous equity/defensive split
-        eq_target = alloc["equity_target"]
+        # Rate-limited equity: de-risk fast, re-risk slow.
+        # Replaces the scenario state machine entirely -- there is
+        # no state to latch in, only a float tracking a float.
+        raw_target = alloc["equity_target"]
+        if raw_target < equity_now:
+            equity_now += max(raw_target - equity_now, -DERISK_MAX)
+        else:
+            equity_now += min(raw_target - equity_now, RERISK_MAX)
+        eq_target = equity_now
         ri = [avail.index(t) for t in avail_risk if t in avail]
         di = [avail.index(t) for t in avail_def  if t in avail]
 
