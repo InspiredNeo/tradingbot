@@ -567,8 +567,24 @@ class ScenarioState:
                     self.weeks_in = 1
                 return self.current
             else:
-                # From recovery/stress/crisis: go to bull_late first
-                # (handled above on next call)
+                # From recovery/stress/crisis: step down one level
+                # toward bull_late, honoring hysteresis.
+                # Cannot return self.current unchanged -- raw_target
+                # stays bull_calm while dial is low, so the
+                # bull_late branch is never reached and the bot
+                # gets permanently trapped.
+                exit_map = {
+                    "recovery": 3,
+                    "stress":   HYSTERESIS["stress_exit_weeks"] + 1,
+                    "crisis":   HYSTERESIS["crisis_exit_weeks"] + 1,
+                }
+                needed = exit_map.get(self.current, 3)
+                thresh = THRESHOLDS["bull_late_max"]
+                if (self.weeks_in >= needed and
+                    d < thresh - HYSTERESIS["exit_buffer"]):
+                    self.current   = "bull_late"
+                    self.weeks_in  = 1
+                    self.peak_dial = d
                 return self.current
 
         return self.current
