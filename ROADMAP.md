@@ -1333,3 +1333,42 @@ downgrade branch has an unintended extra condition.
 
 Cost in this instance was small (portfolio still rose on bond
 and gold strength). Would be larger off a sharp equity bottom.
+
+### v3 Sequencing Decision
+
+Do magnitude-scaled hysteresis ALONE in v3. Reasons:
+  - Deterministic, verifiable against known failure cases
+  - Single change means clean attribution of any improvement
+  - May be sufficient on its own -- it adapts to drop size,
+    which is the actual signal distinguishing noise from regime
+    change
+
+Defer self-correcting/learned hysteresis to Layer 3. Failure
+mode: hysteresis protects against rare events, so evaluating it
+during calm stretches (2013-2019) makes every hold look like a
+mistake. Bot relaxes the parameter, then 2020 arrives with the
+protection optimized away.
+
+If learned version is built later, required guardrails:
+  Learn only from episodes where dial exceeded 0.60
+  Max 0.1 weeks adjustment per episode
+  Hard bounds: 1 to 4 weeks
+  Reversion toward 2.5 weeks when idle
+  Minimum 10 episodes before any adjustment
+  (~3-4 qualifying episodes per decade, so decades to move
+  meaningfully -- which is appropriate)
+
+### BUG TO INVESTIGATE (before v3)
+
+May-June 2005: entered stress Apr 15, still in stress Jun 03.
+That is 7 weeks, but stress_exit_weeks + 1 = 3 should allow exit
+once dial < 0.44. Dial was 0.32 by May 20 and 0.23 by Jun 03.
+
+Check:
+  - Does weeks_in reset on same-level updates?
+  - Does the bull_late downgrade branch have an unintended
+    extra condition?
+  - Is the recovery branch intercepting before bull_late is
+    reachable?
+
+Find this before adding magnitude-scaling on top.
