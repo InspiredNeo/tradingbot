@@ -1372,3 +1372,43 @@ Check:
     reachable?
 
 Find this before adding magnitude-scaling on top.
+
+### v3 Candidate: Piecewise Continuous Allocation
+
+Problem: current continuous_allocation uses one straight line
+(slope -0.714) across the entire dial range 0-1. This means the
+calm zone (dial 0.0-0.35, most of 2004-08, 2013-19, 2023-26) gets
+the same sensitivity as the crisis transition zone, capping
+equity around 83-90% even at the calmest readings -- a candidate
+explanation for underperforming SPY's 100% exposure.
+
+Fix: piecewise curve, three segments, each with its own slope,
+continuous at every junction (no cliffs), still a pure function
+of dial with NO memory of prior state.
+
+    dial < 0.35:  equity = 0.90 - d * 0.20   (gentle, protect bull runs)
+    0.35-0.68:    equity = 0.83 - (d-0.35) * 1.161   (steep, real transitions)
+    dial >= 0.68: equity = 0.447 - (d-0.68) * 0.616  (gentler taper, near floor)
+
+Rate limiter (15% down / 6% up per week) sits on top unchanged.
+Only the target-generating function changes.
+
+Guardrail: must stay stateless. If any version of this needs to
+remember which segment it was in last week to decide behavior,
+that reintroduces the state-machine trap risk from tonight's
+three bugs. Verify with a pure function test:
+f(dial) always returns the same output regardless of call history.
+
+Test protocol before any real backtest:
+  1. Swap continuous_allocation -> continuous_allocation_v3
+     in dryrun_v2.py only
+  2. Run dryrun_v2.py (~20s), check:
+     - latch check still <= 2 weeks (confirms still stateless-safe)
+     - equity/dial correlation still < -0.5
+     - NEW: compare mean equity during dial<0.20 weeks against
+       v2's current curve -- should be meaningfully higher
+  3. Only then apply to the real adaptive_backtest_v2.py
+
+Do not implement until current full run (started 2004-06-30)
+completes and its calm-period vs SPY comparison is read first.
+This is a response to a hypothesis, not yet a confirmed leak.
