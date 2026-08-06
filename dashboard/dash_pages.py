@@ -2245,6 +2245,280 @@ def load_bot_log():
     return []
 
 
+def live_allocation_card():
+    """
+    Live allocation panel -- shows what the bot would hold RIGHT NOW,
+    computed instantly from the market-implied dial. No SVI lag.
+    """
+    try:
+        import sys
+        sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+        from live_allocation import get_live_allocation, read_allocation_log
+        alloc = get_live_allocation()
+        log_entries = read_allocation_log(20)
+        error = None
+    except Exception as e:
+        alloc = None
+        log_entries = []
+        error = str(e)
+
+    if error:
+        return html.Div([
+            html.Div("LIVE ALLOCATION", style={"color": COLORS["text3"], "fontSize": "11px",
+                                               "fontWeight": "600", "letterSpacing": "0.5px",
+                                               "marginBottom": "16px"}),
+            html.Div(f"Unable to compute: {error}",
+                     style={"color": COLORS["red"], "fontSize": "12px"}),
+        ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+                  "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+    dial = alloc["dial"]
+    label = alloc["scenario_label"]
+    label_colors = {
+        "bull_calm": "#4ade80",
+        "bull_late": "#a3e635",
+        "stress":    "#f59e0b",
+        "crisis":    "#f87171",
+    }
+    label_color = label_colors.get(label, COLORS["text2"])
+
+    # Dial gauge bar
+    dial_pct = min(max(dial * 100, 0), 100)
+    gauge = html.Div([
+        html.Div(style={
+            "height": "8px", "borderRadius": "4px", "position": "relative",
+            "background": "linear-gradient(to right, #4ade80 0%, #a3e635 28%, "
+                          "#f59e0b 48%, #f97316 68%, #f87171 100%)",
+        }),
+        html.Div(style={
+            "position": "relative", "top": "-14px",
+            "left": f"calc({dial_pct}% - 6px)",
+            "width": "0", "height": "0",
+            "borderLeft": "6px solid transparent",
+            "borderRight": "6px solid transparent",
+            "borderTop": f"8px solid {COLORS['text']}",
+        }),
+    ], style={"marginBottom": "4px"})
+
+    def alloc_row(name, pct, color):
+        return html.Div([
+            html.Span(name, style={"color": COLORS["text2"], "fontSize": "12px",
+                                   "minWidth": "90px", "display": "inline-block"}),
+            html.Div(
+                html.Div(style={"width": f"{min(pct,100)}%", "background": color,
+                                "height": "8px", "borderRadius": "4px"}),
+                style={"flex": "1", "background": COLORS["border"],
+                       "borderRadius": "4px", "height": "8px", "margin": "0 12px"}
+            ),
+            html.Span(f"{pct:.1f}%", style={"color": COLORS["text"], "fontFamily": FONT_MONO,
+                                            "fontSize": "12px", "minWidth": "44px",
+                                            "textAlign": "right"}),
+        ], style={"display": "flex", "alignItems": "center", "marginBottom": "8px"})
+
+    rows = [
+        alloc_row("Equity", alloc["equity_pct"], "#4b8bf5"),
+        alloc_row("Defensive", alloc["defensive_pct"], "#94a3b8"),
+        alloc_row("DBMF", alloc["dbmf_pct"], "#a78bfa"),
+        alloc_row("Gold (min)", alloc["gld_min_pct"], "#facc15"),
+    ]
+    for short_name, short_pct in alloc.get("shorts", {}).items():
+        rows.append(alloc_row(f"Short: {short_name}", short_pct, "#f87171"))
+
+    return html.Div([
+        html.Div([
+            html.Div("LIVE ALLOCATION", style={"color": COLORS["text3"], "fontSize": "11px",
+                                               "fontWeight": "600", "letterSpacing": "0.5px"}),
+            html.Div(f"as of {alloc['as_of']}", style={"color": COLORS["text3"],
+                     "fontSize": "10px"}),
+        ], style={"display": "flex", "justifyContent": "space-between",
+                  "marginBottom": "16px"}),
+
+        html.Div([
+            html.Span(f"{dial:.3f}", style={"color": label_color, "fontSize": "28px",
+                                            "fontWeight": "800", "fontFamily": FONT_MONO,
+                                            "marginRight": "12px"}),
+            html.Span(label.replace("_", " ").upper(),
+                     style={"color": label_color, "fontSize": "13px",
+                            "fontWeight": "700", "letterSpacing": "0.5px"}),
+        ], style={"marginBottom": "8px"}),
+        gauge,
+        html.Div(style={"height": "16px"}),
+
+        html.Div(rows),
+
+        html.Div(style={"height": "12px"}),
+        html.Div(alloc.get("summary", ""),
+                 style={"color": COLORS["text2"], "fontSize": "12px",
+                        "fontStyle": "italic", "marginBottom": "10px",
+                        "lineHeight": "1.5"}),
+        html.Div([
+            html.Div(line, style={"color": COLORS["text3"], "fontSize": "11px",
+                                  "padding": "4px 0", "lineHeight": "1.4"})
+            for line in alloc.get("reasoning", [])
+        ], style={"borderTop": f"1px solid {COLORS['border']}", "paddingTop": "10px",
+                  "marginBottom": "12px"}),
+
+        html.Div([
+            html.Span("Leverage: ", style={"color": COLORS["text3"], "fontSize": "11px"}),
+            html.Span(f"{alloc['leverage']:.2f}x", style={"color": COLORS["text"],
+                     "fontSize": "11px", "fontFamily": FONT_MONO, "marginRight": "16px"}),
+            html.Span("Computed: ", style={"color": COLORS["text3"], "fontSize": "11px"}),
+            html.Span(alloc["computed_at"], style={"color": COLORS["text3"], "fontSize": "11px",
+                     "fontFamily": FONT_MONO}),
+        ], style={"marginTop": "4px", "marginBottom": "16px"}),
+
+        html.Div("LOG HISTORY", style={"color": COLORS["text3"], "fontSize": "10px",
+                 "fontWeight": "600", "letterSpacing": "0.5px", "marginBottom": "8px",
+                 "borderTop": f"1px solid {COLORS['border']}", "paddingTop": "12px"}),
+        html.Div([
+            html.Div(entry, style={"color": COLORS["text3"], "fontSize": "10px",
+                     "fontFamily": FONT_MONO, "padding": "3px 0", "lineHeight": "1.4",
+                     "whiteSpace": "nowrap", "overflow": "hidden", "textOverflow": "ellipsis"})
+            for entry in log_entries
+        ] if log_entries else [
+            html.Div("No history yet -- entries accumulate as this tab is viewed.",
+                     style={"color": COLORS["text3"], "fontSize": "11px", "fontStyle": "italic"})
+        ], style={"maxHeight": "220px", "overflowY": "auto"}),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+
+def backtest_viewer_tab():
+    """
+    Live-updating view of backtest progress, plus a picker for
+    saved/completed backtest results. Read-only -- never touches
+    the running backtest process itself.
+    """
+    import sys
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from backtest_reader import (list_available_backtests, parse_live_log,
+                                  is_backtest_running)
+
+    available = list_available_backtests()
+    running_logs = [b for b in available if b["type"] == "running"]
+
+    if running_logs:
+        active_log = running_logs[0]["name"]
+        records = parse_live_log(active_log, max_points=1200)
+        status_text = f"● LIVE -- {active_log}"
+        status_color = COLORS["green"]
+    elif available:
+        # Fall back to most recently modified log
+        logs_only = [b for b in available if b["type"] in ("log", "running")]
+        if logs_only:
+            active_log = sorted(logs_only, key=lambda x: x["modified"])[-1]["name"]
+            records = parse_live_log(active_log, max_points=1200)
+            status_text = f"○ Not running -- last log: {active_log}"
+            status_color = COLORS["text3"]
+        else:
+            records = []
+            status_text = "No backtest logs found"
+            status_color = COLORS["text3"]
+    else:
+        records = []
+        status_text = "No backtest data found"
+        status_color = COLORS["text3"]
+
+    # Build chart if we have records
+    if records:
+        dates = [r["date"] for r in records]
+        values = [r["value"] for r in records]
+        dials = [r["dial"] for r in records]
+
+        chart = dcc.Graph(
+            figure={
+                "data": [
+                    {"x": dates, "y": values, "type": "scatter", "mode": "lines",
+                     "name": "Portfolio Value", "yaxis": "y",
+                     "line": {"color": COLORS["blue"], "width": 1.5}},
+                    {"x": dates, "y": dials, "type": "scatter", "mode": "lines",
+                     "name": "Dial", "yaxis": "y2",
+                     "line": {"color": "#f59e0b", "width": 1}},
+                ],
+                "layout": {
+                    "height": 340,
+                    "margin": {"l": 60, "r": 60, "t": 20, "b": 40},
+                    "paper_bgcolor": COLORS["panel"],
+                    "plot_bgcolor": COLORS["panel"],
+                    "font": {"color": COLORS["text2"], "size": 11},
+                    "xaxis": {"gridcolor": COLORS["border"]},
+                    "yaxis": {"title": "Portfolio $", "gridcolor": COLORS["border"]},
+                    "yaxis2": {"title": "Dial", "overlaying": "y", "side": "right",
+                              "range": [0, 1], "gridcolor": COLORS["border"]},
+                    "legend": {"orientation": "h", "y": 1.1},
+                },
+            },
+            config={"displayModeBar": False},
+        )
+        latest = records[-1]
+        latest_summary = html.Div([
+            html.Span(f"Latest: {latest['date']}  ", style={"color": COLORS["text2"]}),
+            html.Span(f"${latest['value']:,.0f}  ", style={"color": COLORS["text"],
+                     "fontWeight": "700", "fontFamily": FONT_MONO}),
+            html.Span(f"dial={latest['dial']:.3f}  ", style={"color": "#f59e0b",
+                     "fontFamily": FONT_MONO}),
+            html.Span(f"[{latest['scenario']}]", style={"color": COLORS["text2"]}),
+        ], style={"fontSize": "13px", "marginBottom": "12px"})
+    else:
+        chart = html.Div("No data to chart yet.",
+                          style={"color": COLORS["text3"], "padding": "40px",
+                                "textAlign": "center"})
+        latest_summary = html.Div()
+
+    # Picker for available saved backtests
+    picker_rows = []
+    for bt in sorted(available, key=lambda x: x["modified"], reverse=True):
+        final_str = f"${bt['final']:,.0f}" if bt.get("final") else "--"
+        sharpe_str = f"{bt['sharpe']:.2f}" if bt.get("sharpe") else "--"
+        type_color = {"running": COLORS["green"], "completed": COLORS["blue"],
+                      "log": COLORS["text3"]}.get(bt["type"], COLORS["text3"])
+        picker_rows.append(html.Div([
+            html.Span(bt["type"].upper(), style={"color": type_color, "fontSize": "9px",
+                     "fontWeight": "700", "minWidth": "70px", "display": "inline-block"}),
+            html.Span(bt["name"], style={"color": COLORS["text"], "fontSize": "12px",
+                     "fontFamily": FONT_MONO, "minWidth": "260px", "display": "inline-block"}),
+            html.Span(final_str, style={"color": COLORS["text2"], "fontSize": "12px",
+                     "minWidth": "90px", "display": "inline-block"}),
+            html.Span(f"Sharpe {sharpe_str}", style={"color": COLORS["text2"], "fontSize": "12px",
+                     "minWidth": "100px", "display": "inline-block"}),
+            html.Span(bt["modified"], style={"color": COLORS["text3"], "fontSize": "11px"}),
+        ], style={"padding": "6px 0", "borderBottom": f"1px solid {COLORS['border']}"}))
+
+    return html.Div([
+        html.Div([
+            html.Div("BACKTEST VIEWER", style={"color": COLORS["text3"], "fontSize": "11px",
+                     "fontWeight": "600", "letterSpacing": "0.5px"}),
+            html.Div(status_text, style={"color": status_color, "fontSize": "12px",
+                     "fontWeight": "700"}),
+        ], style={"display": "flex", "justifyContent": "space-between",
+                  "marginBottom": "12px"}),
+        latest_summary,
+        chart,
+
+        html.Div(style={"height": "20px"}),
+        html.Div("SAVED / AVAILABLE BACKTESTS", style={"color": COLORS["text3"],
+                 "fontSize": "10px", "fontWeight": "600", "letterSpacing": "0.5px",
+                 "marginBottom": "8px", "borderTop": f"1px solid {COLORS['border']}",
+                 "paddingTop": "12px"}),
+        html.Div(picker_rows if picker_rows else
+                 html.Div("No backtests found.", style={"color": COLORS["text3"]})),
+
+        html.Div(style={"height": "16px"}),
+        html.Div([
+            dbc.Input(id="snapshot-name-input", placeholder="Name this run to save it permanently...",
+                     size="sm", style={"background": COLORS["panel2"],
+                     "border": f"1px solid {COLORS['border2']}", "color": COLORS["text"],
+                     "display": "inline-block", "width": "280px", "marginRight": "8px"}),
+            dbc.Button("Save Snapshot", id="btn-save-snapshot", color="primary", size="sm"),
+        ]),
+        html.Div(id="snapshot-save-status", style={"color": COLORS["text3"],
+                 "fontSize": "11px", "marginTop": "8px"}),
+
+        dcc.Interval(id="backtest-viewer-refresh", interval=15000, n_intervals=0),
+    ], style={"background": COLORS["panel"], "border": f"1px solid {COLORS['border']}",
+              "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
+
+
 def bot_control_tab():
     config = load_bot_config()
     status = {}
@@ -2887,8 +3161,8 @@ def bot_control_tab():
               "border": f"1px solid {COLORS['border']}",
               "borderRadius": "10px", "padding": "20px", "marginBottom": "16px"})
 
-    return html.Div([phase_card, header, regime_card, models_card, settings_card,
-                     schwab_card, slack_card, alloc_card, log_card, monitor_card])
+    return html.Div([phase_card, live_allocation_card(), header, regime_card, models_card,
+                     settings_card, schwab_card, slack_card, alloc_card, log_card, monitor_card])
 
 
 

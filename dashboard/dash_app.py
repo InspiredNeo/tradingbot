@@ -423,6 +423,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="⚖️ Compare", tab_id="tab-compare"),
             dbc.Tab(label="📈 Economy", tab_id="tab-economy"),
             dbc.Tab(label="⏱️ Backtest", tab_id="tab-backtest"),
+            dbc.Tab(label="📡 Live Runs", tab_id="tab-liveruns"),
             dbc.Tab(label="🔔 Alerts", tab_id="tab-alerts"),
             dbc.Tab(label="₿ Crypto", tab_id="tab-crypto"),
             dbc.Tab(label="🤖 Bot", tab_id="tab-bot"),
@@ -486,6 +487,9 @@ def render_tab(active_tab):
         return economic_tab()
     if active_tab == "tab-backtest":
         return backtest_tab()
+    if active_tab == "tab-liveruns":
+        from dash_pages import backtest_viewer_tab
+        return backtest_viewer_tab()
     if active_tab == "tab-alerts":
         return alerts_tab()
     if active_tab == "tab-crypto":
