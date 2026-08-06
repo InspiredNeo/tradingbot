@@ -1308,3 +1308,28 @@ early (portfolio drops right after downgrade) or too late
 - Market dial weights (credit 0.35 / vol 0.30 / rate 0.18 /
   intl 0.10 / gold 0.07) were set by hand. Worth a sensitivity
   sweep once v2 baseline exists.
+
+### v3 Evidence: Hysteresis Overcorrection Confirmed
+
+Observed in v2 run, May-June 2005 (GM/Ford credit event):
+  Apr 15  dial=0.50  stress   (correct entry)
+  May 20  dial=0.32  stress   (dial collapsed, still held)
+  May 27  dial=0.27  stress   (bull_calm territory, still held)
+  Jun 03  dial=0.23  stress   (deeply calm, still stuck)
+
+Dial fell 0.27 in three weeks -- clearly a regime change, not
+noise -- but fixed hysteresis held stress config (~55% equity)
+when ~74% was appropriate.
+
+Magnitude-scaled formula would have released on May 20:
+  drop = 0.50 - 0.32 = 0.18
+  weeks = max(1, round(3 - 0.18/0.12)) = max(1, round(1.5)) = 2
+  ...and fully by May 27 (drop 0.23 -> 1 week).
+
+Also investigate: bot appears to hold longer than
+stress_exit_weeks+1 = 3 weeks implies. Check whether weeks_in
+counter resets on same-level updates, or whether the bull_late
+downgrade branch has an unintended extra condition.
+
+Cost in this instance was small (portfolio still rose on bond
+and gold strength). Would be larger off a sharp equity bottom.
