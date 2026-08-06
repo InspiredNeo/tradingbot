@@ -56,7 +56,7 @@ def parse_live_log(log_filename, max_points=2000):
     return records
 
 
-def is_backtest_running(process_name="adaptive_backtest_v2.py"):
+def is_backtest_running(process_name="adaptive_backtest_v3.py"):
     """
     Check if a backtest process is currently running, using ps.
     Best-effort -- returns False if the check itself fails.
@@ -100,7 +100,12 @@ def list_available_backtests():
     # Live/in-progress logs
     for path in glob.glob(os.path.join(ENGINE_DIR, "*backtest*log.txt")):
         name = os.path.basename(path)
-        running = is_backtest_running() if "v2" in name else False
+        if "v3" in name:
+            running = is_backtest_running("adaptive_backtest_v3.py")
+        elif "v2" in name:
+            running = is_backtest_running("adaptive_backtest_v2.py")
+        else:
+            running = False
         results.append({
             "name": name,
             "type": "running" if running else "log",
@@ -143,7 +148,7 @@ if __name__ == "__main__":
         print(f"  {bt}")
     print()
     print("Parsing current v2 log (last 5 rows):")
-    records = parse_live_log("adaptive_backtest_v2_log.txt")
+    records = parse_live_log("adaptive_backtest_v3_log.txt")
     for r in records[-5:]:
         print(f"  {r}")
     print(f"\nTotal parsed: {len(records)}")
