@@ -1412,3 +1412,69 @@ Test protocol before any real backtest:
 Do not implement until current full run (started 2004-06-30)
 completes and its calm-period vs SPY comparison is read first.
 This is a response to a hypothesis, not yet a confirmed leak.
+
+---
+
+## LIVE OBSERVATIONS FROM v2 RUN (2008 SECTION)
+
+Watched in real time as the backtest progressed through 2008-2009.
+Two distinct failure modes identified, different from the earlier
+state-machine bugs -- these are dial/response-curve issues, not
+bugs, and both need real evidence before fixing.
+
+### Failure Mode A: Lehman-week lag (Sept-Oct 2008)
+Dial climbed 0.52 -> 0.58 -> 0.64 through Sept 12-26 but didn't
+cross into crisis (0.69) until Oct 3 -- portfolio dropped $12,209
+-> $10,578 (-13.4%) in that single week before crisis config
+engaged. This is a weekly-rebalance / weekly-dial-check structural
+limit, not a bug -- confirming a regime change takes several
+readings, and Lehman was violent enough to do most of its damage
+before confirmation completed.
+
+Candidate fix: daily dial computation (compute_market_implied_dial
+already supports any date) while keeping weekly trading. Cheap to
+test -- same historical data, no live feed needed, isolates
+whether check-frequency alone would have caught this earlier.
+
+### Failure Mode B: flat dial during grinding decline (Dec 2008 - Feb 2009)
+Dial sat 0.61-0.67 for ~8 weeks while market kept making new lows.
+Portfolio drifted $11,529 -> $10,111 (-12.3%) with equity held
+roughly constant the whole time, because dial genuinely wasn't
+moving, not because of any lag or bug. Different problem: the dial
+measures "how bad does this feel right now," not "is this still
+getting worse even slowly."
+
+Three candidate fixes discussed, NOT yet chosen between:
+
+  1. Trend/momentum term: add rolling drawdown-from-recent-high
+     into the dial computation directly, so sustained slow declines
+     register even when nothing single-day is scary.
+
+  2. Steeper response curve in the 0.55-0.70 band specifically:
+     same dial readings, but continuous_allocation moves equity
+     more per unit of dial in that zone (extension of the
+     piecewise-curve idea already logged above).
+
+  3. Duration/persistence signal: if dial stays above ~0.55 for
+     N+ consecutive weeks without breaking back below ~0.40, treat
+     sustained stress as its own escalating signal, independent of
+     any single reading's magnitude. Currently nothing in the
+     system distinguishes "one bad week" from "eight mediocre weeks
+     in a row" -- they can produce the same dial reading.
+
+Decision on which of these three (if any) to build: DEFERRED until
+full run completes. Required before choosing: pull every stretch
+in the completed backtest where dial sat flat for 6+ weeks and
+check what price action was doing underneath each one. If
+consistently "flat dial + still declining," points at #3
+(duration). If mixed results (sometimes flat-and-fine), points at
+needing a genuinely separate signal (#1, trend) rather than
+amplifying the existing one.
+
+### Sequencing
+Do not build any of these mid-run. After full run completes:
+  1. Read final results and OOS split first
+  2. Pull the flat-dial-stretch evidence described above
+  3. Choose ONE candidate fix per failure mode based on that
+     evidence, not on tonight's guesses
+  4. Test via dryrun_v2.py before any real backtest commitment
