@@ -1920,3 +1920,59 @@ score_etf(), select_universe() with percentile+absolute-floor
 tiering, size_positions() (the unsmoothed version) -- all
 confirmed sensible across 2012/2017/2022. Only the week-to-week
 smoothing layer needs rework.
+
+## NEXT SESSION PLAN: ETF Universe Expansion
+
+Built and validated tonight: score_etf(), select_universe() with
+percentile+absolute-floor tiering, size_positions(), and
+size_positions_smoothed() with proportional (EWMA) smoothing --
+all tested against 2012/2017/2022 real data, including a caught
+and corrected design mistake (flat weekly cap rejected in favor
+of proportional smoothing after identifying a compounding-lag
+failure mode before it caused damage).
+
+This all currently operates on CANDIDATE_UNIVERSE, a fixed
+hand-picked list of 14 tickers. That is NOT the broad-universe
+system discussed earlier ("scan ~800 liquid ETFs") -- it's
+mechanically ready, but still working on a small fixed list, just
+like the original 13-ticker universe it's meant to eventually
+replace.
+
+Agreed order for next session:
+
+1. BROADEN THE UNIVERSE SOURCE
+   Where does a genuinely large candidate list (hundreds of
+   tickers) actually come from? Needs a real data source, not a
+   hand-typed list. Practical constraints to solve: avoiding
+   re-downloading/re-scoring hundreds of tickers fresh every
+   single week when most won't have changed meaningfully --
+   caching strategy needed.
+
+2. REAL LIQUIDITY / ELIGIBILITY FILTER
+   Current liquidity score in score_etf() is a placeholder using
+   history length as a stand-in, not real volume data -- adequate
+   for 14 already-liquid, hand-picked ETFs, NOT adequate for a
+   broad screen where some candidates could be genuinely illiquid.
+   Needs real volume-based filtering before scoring even runs.
+
+3. HANDLE UNIVERSE MEMBERSHIP CHANGES, NOT JUST WEIGHT CHANGES
+   Everything built tonight assumes the candidate list itself is
+   fixed and only weights shift within it. A real system needs to
+   handle: a ticker becoming newly eligible (no prior weight to
+   smooth from -- already partially handled), AND a ticker leaving
+   eligibility entirely (delisted, become illiquid, no longer
+   relevant) -- a different kind of event than a weight adjustment,
+   not yet designed.
+
+4. WIRE INTO A CHEAP DRY-RUN TEST BEFORE ANY REAL BACKTEST
+   Same discipline used successfully tonight (dryrun_v2.py) --
+   test the full scoring/tiering/sizing/universe pipeline cheaply
+   before ever connecting it to adaptive_backtest_v3.py or
+   committing to a multi-hour run. Find out if ETF selection
+   genuinely adds value on top of the existing dial-driven
+   equity/defensive split, or interacts with it unexpectedly,
+   BEFORE spending real compute time on it.
+
+Start fresh next session with item 1. Everything from tonight
+(scorer/tiering/sizing/smoothing) is solid and tested -- this is
+additive work on top of it, not a rebuild.
