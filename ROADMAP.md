@@ -2034,3 +2034,35 @@ Real, tested idea. Not yet built into anything. Worth considering
 as a refinement to the existing equity-sleeve blend logic (min-var
 weighting during stress) rather than a standalone system, once
 the ETF universe expansion work is further along.
+
+## Dynamic Universe Test -- Early Real Signal (July-Aug 2006 crisis)
+
+Running adaptive_backtest_v3_dynuniverse.py (dial+ceiling+dynamic
+universe combined vs v2 baseline, NOT isolated -- v3 alone never
+finished last night so v2 is the only clean baseline available).
+
+Consistent lead over v2 across ~30 real checked dates spanning
+calm periods and stress. Most notable: during a genuine crisis
+reading (dial=0.75, July 14 2006), the gap widened sharply to
+$718-1,082, far larger than the $200-600 typical of calm-period
+checks. Since total equity/defensive split is IDENTICAL between
+the two systems during a crisis (same dial, same rate limiter),
+this gap can only be coming from WHICH equities are held during
+the pullback -- direct evidence the dynamic universe is adding
+real value specifically during stress, not just calm periods.
+Gap narrowed back to $270-399 as conditions calmed, consistent
+with composition mattering less once equity exposure normalizes.
+
+Still early (11% through). Two real tests remain before drawing
+a conclusion: 2008's genuine severe crisis (does this hold up
+under real pressure, or was 2006 too mild a test), and the long
+calm stretches 2013-2019 / 2023-2026 (where last night's
+ceiling-only test lost its early momentum once checked deeper).
+
+IMPORTANT CAVEAT: this run cannot cleanly separate "ceiling
+change" from "dynamic universe" since v3-alone was never
+completed as a clean baseline. If this run's full result looks
+good, a follow-up isolating JUST the dynamic universe against
+the ORIGINAL v2 formula (no ceiling change) would be needed to
+know how much of any improvement is attributable to universe
+selection specifically vs the ceiling change riding along with it.
