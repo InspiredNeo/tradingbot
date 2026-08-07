@@ -2371,3 +2371,59 @@ year like 2005 or 2017 to confirm it stays silent). Only once this
 ONE dial is fully correct should the same template get replicated
 to volatility, rate, and (already-existing, needs no rebuild)
 credit dials.
+
+## Rate Dial -- Real Progress, Not Yet Finished
+
+Built dial_rate.py following the proven currency/EM/volatility
+template. Detection layer validates well (separation +0.599,
+0.6% overlap -- comparable to the other two dials).
+
+Action layer found a genuine, distinct false-fire pattern,
+different in character from currency/EM's blind spot:
+- Original: 13/52 false fires in 2017, caused by TLT genuinely
+  RISING (real bond rally) being misread as "stress" by the
+  ratio-based percentile, since unusual-in-either-direction was
+  being treated as stress-in-one-direction.
+- First fix (absolute decline check, same pattern as currency/EM):
+  reduced to 7/52. Remaining fires traced to a genuinely CHOPPY,
+  non-trending period (TLT bounced 91.92->91.15->93.46->89.98->
+  91.05 in early 2017) where a simple "below 63 days ago" check
+  flips unpredictably depending on which two points in the chop
+  get compared.
+- Second fix (require >1% meaningful decline, not just any
+  negative sign): reduced to 4/52 false fires, BUT also reduced
+  real 2022 crisis detection from 37/43 to 34/43 weeks -- a real
+  cost, not free. This is the same sensitivity/specificity
+  tradeoff discussed conceptually all session, now directly
+  measured rather than theoretical.
+
+### Honest assessment
+Three consecutive threshold/confirmation tightening passes are
+showing diminishing returns -- each buys some false-fire reduction
+at a real, measurable cost to genuine detection. This suggests
+TLT/SHY is a genuinely noisier signal in its normal state than
+either currency/EM or volatility, and further threshold tweaking
+on the SAME mechanism is unlikely to solve it cleanly.
+
+### Next steps to actually try (not yet attempted):
+- Longer/smoother lookback window for the underlying ratio itself
+  (not just the decline-confirmation check) -- may reduce
+  noise at the source rather than filtering after the fact
+- Consider whether TLT/SHY is even the right pair -- maybe the
+  actual yield curve (e.g. 10yr-2yr spread, if that data is
+  available) would be a cleaner, more direct signal than a bond
+  ETF price ratio
+- Do NOT keep tightening the same absolute-decline threshold
+  further -- diminishing returns already demonstrated
+
+### Status of all three dials attempted this session:
+- CURRENCY/EM: complete, validated, committed (0 false fires in
+  2017 after fix, correct 2013 Taper Tantrum detection preserved)
+- VOLATILITY: complete, validated, committed (0 false fires in
+  2017 with NO additional fix needed, correct Volmageddon
+  detection)
+- RATE: real progress, not finished. Detection layer solid,
+  action layer needs a different approach than threshold-tightening,
+  not more of the same fix. Pick up fresh next session.
+- Fourth dial (credit) already exists as the original main dial,
+  no rebuild needed.
