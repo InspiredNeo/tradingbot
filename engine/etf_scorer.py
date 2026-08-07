@@ -294,80 +294,61 @@ def size_positions(date_str, universe=None, verbose=True):
     return weights
 
 
-MAX_WEEKLY_WEIGHT_CHANGE = 0.05  # cap: any single ticker's weight
-                                    # can move at most 5 percentage
-                                    # points toward its target per
-                                    # week, same principle as the
-                                    # equity rate limiter -- pure
-                                    # function of (previous weights,
-                                    # this week\'s target), no
-                                    # accumulating internal state
+SMOOTHING_ALPHA = 0.35  # fraction of the CURRENT gap closed each
+                          # week -- not a flat cap. A small gap
+                          # (plausibly noise) produces a small move.
+                          # A large gap (genuine regime shift)
+                          # produces a large move, immediately, with
+                          # no artificial floor on catch-up speed.
+                          # If the target moves again before a prior
+                          # transition finishes, next week's step is
+                          # computed from the NEW gap, not a queued
+                          # leftover -- so the position can never
+                          # get permanently stuck perpetually
+                          # chasing something that has already moved
+                          # on. Rejected in favor of this: a flat
+                          # 5%/week cap, which forced a fixed
+                          # 12-week minimum to reach any target
+                          # regardless of urgency, and could compound
+                          # into perpetual re-targeting if markets
+                          # moved faster than the fixed cap allowed
+                          # catch-up.
 
 
 def size_positions_smoothed(date_str, previous_weights=None,
                              universe=None, verbose=True):
     """
-    Same as size_positions(), but rate-limited against the prior
-    week's actual weights instead of jumping straight to this
-    week's freshly computed target.
+    Same as size_positions(), but smoothed against the prior week's
+    actual weights using proportional (EWMA-style) response instead
+    of a flat per-week cap.
 
     previous_weights: dict of {ticker: weight} from the prior
-    week's call to this function. Pass None for the first call
-    (no history yet -- target is used directly).
+    week's call. Pass None for the first call (no history yet).
 
-    This is a pure function of (previous_weights, current target)
-    each time it's called -- it does not maintain any state of its
-    own between calls. The caller is responsible for passing in
-    last week's output as this week's previous_weights, the same
-    way the equity rate limiter's "equity_now" is threaded through
-    the main backtest loop rather than stored inside the function.
-
-    Returns the smoothed weight dict, which the caller should save
-    and pass back in as previous_weights on the next call.
+    Pure function of (previous_weights, current target) -- no
+    internal state. Caller threads last week's output back in as
+    this week's previous_weights, same pattern as the equity rate
+    limiter's equity_now.
     """
     target_weights = size_positions(date_str, universe=universe, verbose=False)
 
     if previous_weights is None:
-        # No history yet -- nothing to smooth against, use target directly
         smoothed = dict(target_weights)
     else:
         all_tickers = set(target_weights.keys()) | set(previous_weights.keys())
-        capped = {}
+        moved = {}
         for t in all_tickers:
             prev = previous_weights.get(t, 0.0)
             target = target_weights.get(t, 0.0)
             gap = target - prev
-            step = max(-MAX_WEEKLY_WEIGHT_CHANGE,
-                      min(MAX_WEEKLY_WEIGHT_CHANGE, gap))
-            capped[t] = prev + step
+            moved[t] = prev + SMOOTHING_ALPHA * gap
 
-        # Renormalize so weights sum to 1.0 -- but renormalizing can
-        # push an individual ticker back OUTSIDE its cap relative to
-        # where it started (confirmed: readings up to 8.3% appeared
-        # despite a 5% cap, before this fix). Re-clamp against the
-        # ORIGINAL previous weight after renormalizing to guarantee
-        # the true limit holds, then do one final light renorm.
-        total = sum(capped.values())
+        total = sum(moved.values())
         if total > 0:
-            normalized = {t: w / total for t, w in capped.items()}
+            smoothed = {t: round(w / total, 4) for t, w in moved.items()}
         else:
-            normalized = capped
+            smoothed = {t: round(w, 4) for t, w in moved.items()}
 
-        reclamped = {}
-        for t in all_tickers:
-            prev = previous_weights.get(t, 0.0)
-            n = normalized.get(t, 0.0)
-            lo = max(0.0, prev - MAX_WEEKLY_WEIGHT_CHANGE)
-            hi = prev + MAX_WEEKLY_WEIGHT_CHANGE
-            reclamped[t] = round(min(max(n, lo), hi), 4)
-
-        total2 = sum(reclamped.values())
-        if total2 > 0:
-            smoothed = {t: round(w / total2, 4) for t, w in reclamped.items()}
-        else:
-            smoothed = reclamped
-
-        # Drop near-zero positions to avoid carrying dust forever
         smoothed = {t: w for t, w in smoothed.items() if w >= 0.005}
 
     if verbose:
