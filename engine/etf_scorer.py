@@ -32,6 +32,57 @@ CANDIDATE_UNIVERSE = [
 # This is expected, not a bug.
 
 
+_VOLUME_CACHE = None
+
+def _load_volume():
+    global _VOLUME_CACHE
+    if _VOLUME_CACHE is None:
+        vol_path = os.path.join(DATA_DIR, "bt_volume.parquet")
+        _VOLUME_CACHE = pd.read_parquet(vol_path)
+        _VOLUME_CACHE.index = pd.to_datetime(_VOLUME_CACHE.index).tz_localize(None)
+    return _VOLUME_CACHE
+
+
+def _compute_liquidity(ticker, date, lookback_days=63, min_dollar_vol=1e6):
+    """
+    Real liquidity score from actual dollar volume (price x shares
+    traded), averaged over a trailing window (default ~3 months).
+
+    Scored on a log scale since dollar volume spans many orders of
+    magnitude across ETFs -- a linear scale would make everything
+    below the biggest fund look identically near-zero.
+
+    min_dollar_vol: below this average daily dollar volume, an ETF
+    is considered too illiquid to trade meaningfully regardless of
+    how it scores elsewhere. Currently a soft floor via the log
+    scale, not a hard exclusion -- exclusion logic is a separate,
+    later decision (item 3 in the roadmap: universe membership).
+    """
+    vol = _load_volume()
+    if ticker not in vol.columns:
+        return 0.0
+
+    px = pd.read_parquet(os.path.join(DATA_DIR, "bt_prices.parquet"))
+    px.index = pd.to_datetime(px.index).tz_localize(None)
+    if ticker not in px.columns:
+        return 0.0
+
+    v = vol.loc[:date, ticker].dropna().iloc[-lookback_days:]
+    p = px.loc[:date, ticker].dropna().iloc[-lookback_days:]
+    common = v.index.intersection(p.index)
+    if len(common) < 10:
+        return 0.0
+
+    dollar_vol = (v.loc[common] * p.loc[common]).mean()
+    if dollar_vol <= 0:
+        return 0.0
+
+    # Log scale: $1M/day -> ~0.0, $10M/day -> ~0.3, $100M/day -> ~0.6,
+    # $1B/day -> ~1.0 (roughly -- soft curve, not hard cutoffs)
+    score = (np.log10(dollar_vol) - np.log10(min_dollar_vol)) / 3.0
+    return float(np.clip(score, 0, 1))
+
+
 def _safe_series(px, ticker, date, min_days=126):
     if ticker not in px.columns:
         return None
@@ -70,11 +121,10 @@ def score_etf(px, ticker, date, reference_returns, lookback=252):
     else:
         diversification_score = 0.5  # unknown, neutral
 
-    # Liquidity proxy: how much real trading history exists
-    # (a genuine liquidity check would use volume; we don't have
-    # volume data cached, so this is a placeholder using history
-    # length as a rough stand-in -- flagged as a known limitation)
-    liquidity_score = float(np.clip(len(s) / (lookback * 2), 0, 1))
+    # Real liquidity score using actual dollar volume (price x
+    # shares traded), replacing the earlier history-length
+    # placeholder now that real volume data is cached.
+    liquidity_score = _compute_liquidity(ticker, date)
 
     # Smoothness (renamed from "quality" -- this measures stability
     # of returns, NOT fund quality. True fund quality would need
