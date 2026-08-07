@@ -1818,3 +1818,33 @@ architecture once that gets built. When split-mind work begins,
 the stopgap's confirmation-by-consecutive-weeks logic should be
 replaced by confirmation-by-cross-watcher-agreement, not kept
 alongside it.
+
+## ETF Scorer/Tiering/Sizing -- Stability Gap Found
+
+Built and validated tonight: score_etf(), select_universe() with
+percentile+absolute-floor tiering, size_positions(). All three
+checked against 2012/2017/2022 and behave sensibly and honestly
+in each regime, including the 2022 concentration edge case.
+
+REAL PROBLEM FOUND: size_positions() has no week-to-week memory --
+recomputed fresh every time from that week's scores alone. Tested
+across 8 consecutive weekly dates in a CALM stretch (May-June 2012)
+and got single-ticker weight swings up to 17.3% even when nothing
+dramatic was happening in the market. 2022 volatile stretch showed
+swings up to 32.9%, some coinciding with full ticker entry/exit.
+
+This is the same structural gap the rate limiter solved for the
+equity/defensive split -- ETF-level sizing needs equivalent
+smoothing before it's trustworthy in a real backtest or live
+system. Root cause: tier boundary crossings (Tier 2 -> Tier 1 or
+vice versa) can flip a ticker's weight multiplier in one step with
+no gradual transition.
+
+NEXT STEP (not built yet): apply a rate limiter to individual ETF
+weights, same principle as the equity rate limiter -- cap max
+weekly change per ticker. Needs to stay stateless-pattern-safe
+(pure function bounded by previous week's actual weights, not an
+accumulating internal state).
+
+Test in isolation (cheap, no SVI) before ever wiring into a real
+backtest -- same discipline used for everything else tonight.
