@@ -70,9 +70,27 @@ def compute_reading_series(px, dates):
 
 
 def compute_action_signal(reading_history, current_reading,
+                          eem_absolute_declining=None,
                           lookback_weeks=26, relative_threshold=1.5,
                           use_absolute_bar=True,
                           absolute_bar=0.857):
+    """
+    Second, independent check added after finding a real false-fire
+    case: Jan 2017 fired purely on EEM underperforming SCHF in
+    RELATIVE terms, while EEM itself was genuinely rising in
+    absolute terms the whole time (confirmed: $28.18 -> $31.05,
+    real market data). That's ordinary bull-market sector rotation,
+    not EM stress by any honest definition.
+
+    eem_absolute_declining: bool, whether EEM's own price is
+    actually below where it was ~63 days ago (same lookback as the
+    relative spread calculation). If explicitly False (EEM is
+    genuinely rising), the reading is NOT considered unusual
+    regardless of the relative percentile -- a real currency/EM
+    shock should show EEM actually falling, not just underperforming
+    a stronger peer. If None (not provided), skips this check
+    entirely, same as before this fix.
+    """
     """
     ACTION layer -- separate, higher bar than detection.
 
@@ -100,6 +118,11 @@ def compute_action_signal(reading_history, current_reading,
       2. PERSISTS for `persistence_weeks` consecutive weeks
     """
     is_unusual_absolute = current_reading >= absolute_bar
+    if is_unusual_absolute and eem_absolute_declining is False:
+        # Relative spread says "stressed" but EEM is genuinely
+        # rising -- override, this is sector rotation, not a
+        # real EM shock
+        is_unusual_absolute = False
 
     # Still compute the relative z-score for transparency/logging,
     # even though action now gates on the absolute bar -- keeps
@@ -144,7 +167,17 @@ def simulate_action_layer(px, dates, verbose=True):
         reading = compute_raw_reading(px, d)
         if reading is None:
             continue
-        is_unusual, z = compute_action_signal(history, reading)
+
+        # Real check: is EEM itself actually declining (not just
+        # underperforming SCHF in relative terms)?
+        eem_declining = None
+        if "EEM" in px.columns:
+            eem = px.loc[:d, "EEM"].dropna()
+            if len(eem) >= 65:
+                eem_declining = bool(eem.iloc[-1] < eem.iloc[-63])
+
+        is_unusual, z = compute_action_signal(
+            history, reading, eem_absolute_declining=eem_declining)
 
         is_unusual_window.append(is_unusual)
         is_unusual_window = is_unusual_window[-WINDOW:]
