@@ -19,10 +19,17 @@ import numpy as np
 DATA_DIR = os.path.expanduser("~/tradingbot/engine/histdata")
 
 CANDIDATE_UNIVERSE = [
-    "VTI", "QQQ", "SCHF", "EEM", "XLV", "XLF",  # current universe
-    "AGG", "TLT", "GLD",                          # current defensive
-    "SOXX", "XLE", "XLK", "VNQ", "TIP",           # candidate additions
+    "VTI", "QQQ", "SCHF", "EEM", "XLV", "XLF",     # current universe
+    "AGG", "TLT", "GLD",                             # current defensive
+    "SOXX", "XLE", "XLK", "VNQ", "TIP",              # earlier additions
+    "XLI", "XLB", "XLU", "XLC", "XLRE",              # remaining sector SPDRs
+    "MTUM", "VLUE", "USMV",                          # factor/style ETFs
+    "IWM", "EFA",                                     # small cap, developed intl
 ]
+# Note: XLC (2018), XLRE (2015), MTUM/VLUE (2013), USMV (2011) have
+# limited history -- they will simply be absent from scoring at
+# dates before their inception, same as SCHF/DBMF already behave.
+# This is expected, not a bug.
 
 
 def _safe_series(px, ticker, date, min_days=126):
