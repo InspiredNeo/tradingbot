@@ -627,7 +627,7 @@ def momentum_weights(rets, n):
     return scores / scores.sum()
 
 
-def run_adaptive_v3(start="2004-06-30", verbose=True):
+def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
     from svi_covariance import fit_svi
     from stability_index import compute_dial
     from portfolio_engine import (risk_parity, min_variance,
@@ -643,7 +643,8 @@ def run_adaptive_v3(start="2004-06-30", verbose=True):
     dial_series = stab["stability_risk"].dropna()
 
     # Weekly dates
-    all_dates = pd.date_range(start=start, end=px.index.max(), freq="W-FRI")
+    range_end = pd.Timestamp(end) if end is not None else px.index.max()
+    all_dates = pd.date_range(start=start, end=range_end, freq="W-FRI")
     all_dates = [px.index[px.index <= d].max() for d in all_dates]
     all_dates = [d for d in all_dates if pd.notna(d)]
 
@@ -655,6 +656,12 @@ def run_adaptive_v3(start="2004-06-30", verbose=True):
     port_val   = 10000.0
     equity_now = 0.70          # current equity %, rate-limited
     weights    = None
+    # ScenarioState is instantiated but never called anywhere in
+    # this loop -- confirmed dead code, leftover from before the
+    # rate-limiter rewrite replaced the state machine. Kept
+    # instantiated (harmless) rather than removed, to avoid
+    # touching more of this validated file than necessary right
+    # now. Safe to delete in a future cleanup pass.
     state      = ScenarioState()
     records    = []
     t0         = time.time()
@@ -871,7 +878,22 @@ def run_adaptive_v3(start="2004-06-30", verbose=True):
         weights = weight_dict
 
         # Roll forward to next rebalance
-        next_d = all_dates[i+1] if i+1 < len(all_dates) else px.index[-1]
+        # BUG FIX: previously fell back to px.index[-1] (today's
+        # actual date) on the last loop iteration when i+1 was out
+        # of range. This was fine for the original unbounded
+        # function where all_dates already extended close to
+        # px.index[-1] anyway -- but once a real `end` parameter
+        # was added for short test windows, this fallback reached
+        # all the way to TODAY's live price data, computing a
+        # nonsense multi-year "one week" return using Dec 2013
+        # prices as the start and Aug 2026 prices as the end.
+        # Confirmed: this produced a phantom final record
+        # (portfolio=$47,278, dated 2026-08-07) that corrupted
+        # every summary statistic in a bounded window test.
+        # Correct fallback: just repeat the last real date, which
+        # naturally produces zero return for a redundant final
+        # iteration instead of a fabricated one.
+        next_d = all_dates[i+1] if i+1 < len(all_dates) else all_dates[i]
 
         # Compute return
         ret = 0.0

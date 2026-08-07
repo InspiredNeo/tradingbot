@@ -100,7 +100,9 @@ def list_available_backtests():
     # Live/in-progress logs
     for path in glob.glob(os.path.join(ENGINE_DIR, "*backtest*log.txt")):
         name = os.path.basename(path)
-        if "dynuniverse" in name:
+        if "window_crisis" in name:
+            running = is_backtest_running("run_window")
+        elif "dynuniverse" in name:
             running = is_backtest_running("adaptive_backtest_v3_dynuniverse.py")
         elif "v3" in name:
             running = is_backtest_running("adaptive_backtest_v3.py")

@@ -2066,3 +2066,62 @@ good, a follow-up isolating JUST the dynamic universe against
 the ORIGINAL v2 formula (no ceiling change) would be needed to
 know how much of any improvement is attributable to universe
 selection specifically vs the ceiling change riding along with it.
+
+## SESSION SUMMARY -- Where Things Actually Stand
+
+### Confirmed solid, trust this:
+- Market-implied dial: validated on 10 real historical dates,
+  correctly separates real crises from noise (2012 EU contagion
+  correctly stayed calm, 2018 blind spot fixed)
+- Rate limiter: replaced the 3x-latching state machine, confirmed
+  stateless and non-latching across 2008/2011/2018/2020/2022
+- ETF scorer/tiering/sizing/smoothing mechanism: built and tested
+  correctly at the mechanism level (dry run, 1153 weeks, all
+  checks pass)
+
+### Tested and inconclusive/negative -- do not build further on
+### these without new evidence:
+- Equity ceiling raise (0.90->1.00 base): mixed across 4 real
+  historical windows in v3, no consistent improvement over v2
+- Dynamic ETF universe for equity selection: initial dramatic
+  result was a BUG (bonds/TLT leaking into equity sleeve,
+  double-counting the defensive sleeve's job). Once genuinely
+  fixed (bonds excluded from CANDIDATE_UNIVERSE), a real short-
+  window test (2007-2013, corrected for a separate phantom-row
+  bug) showed -36.6% max drawdown, WORSE than the established
+  ~-25% to -33% baseline. This is a real, sobering result, not
+  explained away -- the honest equity-only selection may simply
+  be less protective during 2008 than the accidental bond-heavy
+  version was.
+
+### New tools built this session, ready for future use:
+- backtest_windows.py: short (~2hr) curated test windows
+  (2007-2013 crisis+recovery, 2019-2023 COVID+2022) instead of
+  full 22yr (~7hr) runs, for fast iteration before committing to
+  a long run
+- Fixed a real bug in this new tool: the last-week fallback
+  (`next_d = ... else px.index[-1]`) reached all the way to
+  TODAY's live price data on bounded windows, producing a
+  phantom final record that corrupted every summary stat.
+  Fixed: falls back to repeating the last real date instead.
+  Full 22yr runs (v1/v2) were NEVER affected by this -- their
+  natural end date was already close to px.index[-1].
+
+### Conclusion reached this session:
+Two consecutive nights of incremental changes to the SAME core
+architecture (dial-driven equity/defensive split + various equity
+sleeve refinements) have not produced a clean, consistent
+improvement. Neither the ceiling change nor the dynamic universe
+(once correctly fixed) closed the gap to SPY or improved crisis
+protection. This is real evidence that the next useful change is
+likely STRUCTURAL -- a genuine redesign of how the dial governs
+the portfolio -- rather than another incremental parameter or
+sub-system tweak on top of the existing architecture.
+
+### Next session: structural dial redesign
+User has indicated wanting to discuss structural changes to the
+dial itself, plus "a few changes to our system" -- not yet
+specified. Start fresh next session with this full context loaded
+rather than re-deriving it. Do NOT default back to tuning
+parameters on the existing architecture without first having the
+structural conversation.
