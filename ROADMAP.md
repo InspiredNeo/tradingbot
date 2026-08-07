@@ -2305,3 +2305,69 @@ RATE dial (yield curve, TLT/SHY)
    sanity checks used for every prior dry run this session
 5. Short-window backtest (backtest_windows.py) before any full
    22-year run
+
+## Currency/EM Dial -- Debugging Session, Real Progress, Fix Pending
+
+Built dial_currency_em.py as the template for the multi-dial
+architecture. Genuine progress and real bugs found and fixed:
+
+1. Detection layer validated properly via validate_signal_separation()
+   -- real stressed-vs-calm comparison (not single-event eyeballing,
+   which gave a false "GOOD" verdict initially). Real result:
+   stressed mean 0.904, calm mean 0.531, only 4.9% overlap. Signal
+   IS legitimate, contrary to an earlier mistaken conclusion this
+   session that it was "just noisy."
+
+2. First action-layer bug found and fixed: relative z-score vs
+   trailing 26-week mean failed to trigger AT ALL during real 2013
+   Taper Tantrum, because the trailing baseline became contaminated
+   by the crisis's own leading edge. Fixed with an absolute bar
+   (0.905) instead, derived from the real stressed-period median.
+
+3. Second bug found (root cause took 3 debugging attempts and 2
+   wrong diagnoses to isolate -- worth remembering the process,
+   not just the fix): using the STRESSED-period median (0.905) as
+   the bar means roughly half of genuine crisis weeks read BELOW
+   it by definition, causing real, legitimate stress periods to
+   trigger false releases. Real percentile check against calm-only
+   history: 90th percentile of calm readings = 0.857. This is a
+   better, calm-anchored bar -- clearly above normal variation,
+   with real headroom below typical crisis readings (0.85-0.99),
+   not sitting exactly on the boundary the stressed-median bar did.
+
+4. THIRD bug diagnosed but fix NOT YET APPLIED: strict consecutive-
+   week counting (3 in a row unusual to engage, 3 in a row normal
+   to release) is too brittle -- a single legitimate noisy dip
+   during ongoing real stress (confirmed present in actual April-
+   May 2013 data) resets the counter and can cause premature
+   release even mid-crisis. Proposed fix (designed, not yet
+   correctly applied to the file due to a failed text-match edit):
+   replace strict consecutive counting with a TRAILING WINDOW
+   FRACTION -- e.g. engage if >=75% of the last 4 weeks are
+   unusual, release only if <=25% of the last 4 weeks are unusual.
+   Tolerant of normal single-week noise in either direction without
+   losing the persistence requirement entirely.
+
+### Also worth remembering: the debugging process itself
+This session's dial-building went through THREE consecutive wrong
+diagnoses before finding the real bug each time (relative-z-score
+contamination theory -- correct; "signal is noisy" theory -- WRONG,
+fixed by proper stressed-vs-calm validation; consecutive_normal
+locals() bug -- correct but not the full picture; finally the real
+bar-placement + persistence-brittleness issues). This is normal
+and expected for genuinely new signal engineering, but it's worth
+noting HOW LONG it took (many iterations) as a planning input for
+building the remaining three dials -- budget real time for this
+per dial, don't expect it to go faster just because the pattern is
+now established.
+
+### Status: NOT ready to replicate to other 3 dials yet
+Fix the trailing-window persistence logic properly first (edit
+failed to apply this session -- verify actual file state before
+continuing, do not assume prior edits landed). Then re-validate
+against full-year 2013 AND check it doesn't introduce new false
+releases/engagements elsewhere (e.g. run against a genuinely calm
+year like 2005 or 2017 to confirm it stays silent). Only once this
+ONE dial is fully correct should the same template get replicated
+to volatility, rate, and (already-existing, needs no rebuild)
+credit dials.
