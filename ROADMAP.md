@@ -2125,3 +2125,104 @@ specified. Start fresh next session with this full context loaded
 rather than re-deriving it. Do NOT default back to tuning
 parameters on the existing architecture without first having the
 structural conversation.
+
+## NEXT SESSION: MULTI-DIAL ARCHITECTURE (real redesign, not a tweak)
+
+### The core problem, stated precisely
+The current system compresses all market information into ONE
+number (the dial), then makes ONE decision (equity vs defensive
+split) based on it. This means genuinely different situations
+that happen to produce the same dial reading get treated
+identically -- a regional currency shock (e.g. China deval) and
+a systemic credit freeze (e.g. Lehman) could both read as 0.65,
+but they warrant completely different responses. By the time you
+see the blended number, the information about WHICH kind of
+stress is happening has already been destroyed.
+
+This is not a new observation -- the "split mind" idea was
+discussed and agreed on as the right direction weeks before this
+session, then never built. Two full nights were then spent tuning
+PARAMETERS inside the single-dial architecture instead (ceiling
+formula, equity sleeve selection) -- neither produced a clean win.
+That's real evidence the single-dial container itself, not its
+parameters, is the actual bottleneck.
+
+### The proposed structure
+Multiple independent, narrow dials, each watching one domain:
+
+  CREDIT dial: HYG/LQD, US-specific credit stress
+  VOLATILITY dial: VIX direct, market-wide fear
+  CURRENCY/EM dial: EEM vs SCHF divergence, dollar strength --
+    catches regional/EM-specific shocks (China deval, EM crisis)
+    without triggering a systemic-level response
+  RATE dial: yield curve, TLT/SHY -- catches slow rate-driven
+    grinds (2022-style) which are structurally different in
+    character from sudden credit freezes (2008-style)
+
+Each dial computed independently, same market-implied approach
+already validated for the current single dial (10-date real
+history check before trusting any new one).
+
+### The key architectural change: response depends on COMBINATION,
+### not just magnitude
+Currently: one number -> one response curve.
+Proposed: which dial(s) are elevated determines the SHAPE of the
+response, not just its size.
+  - Currency/EM dial alone elevated, others calm: small, targeted
+    reduction in EM-specific exposure. NOT a broad equity pullback.
+  - Credit + volatility + rate all elevated together: correctly
+    read as closer to systemic, broad pullback + shorts, similar
+    to current crisis behavior.
+  - This is what "cannot tell a China deval from Lehman" actually
+    means fixed -- the RESPONSE becomes different because the
+    SIGNATURE across dials is different, even at similar overall
+    severity.
+
+### Why this is a real architecture change, not a tweak
+This is not "add a signal to the blend" (already tried, e.g. the
+5-signal blend inside the current single dial). It's restructuring
+HOW the decision gets made -- from one number driving one curve,
+to multiple numbers driving a combination-aware response. Real,
+substantial design work. Do not rush this at the end of a long
+session -- start fresh.
+
+### Required discipline carrying forward from this session's
+### hard-won lessons (do not repeat these mistakes):
+1. Each new dial must be validated against 10+ real historical
+   dates BEFORE trusting it, same as the original market-implied
+   dial was.
+2. Any position-sizing/response logic must be pure-function/
+   stateless, same rate-limiter pattern already proven -- no new
+   state machines, no repeat of the 3x-latching saga.
+3. Test cheaply first (dry run, no SVI) before ANY multi-hour
+   backtest commitment.
+4. When a result looks dramatically good, check ACTUAL HOLDINGS
+   directly before trusting the aggregate number -- this is
+   exactly what caught the TLT bug, and should be step one, not
+   a last resort after hours of runtime.
+5. Use backtest_windows.py (short 2007-2013 / 2019-2023 windows)
+   for iteration. Only run the full 22-year backtest once a short
+   window already looks correct.
+6. Watch for the specific failure mode already caught once this
+   session: a bounded-window backtest run must be checked for
+   phantom end-of-range artifacts (confirmed bug, now fixed, but
+   worth remembering the failure signature: an impossible final
+   jump in the reported final value).
+
+### Open sub-questions to resolve when actually designing this
+(not yet decided):
+- Exactly how many dials, and which specific domains -- 4
+  proposed above (credit/vol/currency-EM/rate) is a starting
+  point, not final.
+- How does "combination" translate into actual position sizing --
+  needs a real, specific formula, not just the qualitative
+  description above.
+- Does each dial get its own equity-sleeve-style sub-selection
+  (e.g. does the currency/EM dial specifically control EEM/SCHF
+  weight, separate from the credit dial controlling something
+  else), or do all dials feed into ONE combined equity/defensive
+  decision with the combination logic only affecting how much/
+  how fast, not which specific assets?
+- Should this replace the current single dial entirely, or run
+  alongside it during a transition/comparison period the way the
+  dynamic universe ran alongside v2 tonight?
