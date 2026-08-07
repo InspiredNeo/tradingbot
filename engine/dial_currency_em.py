@@ -127,40 +127,37 @@ def simulate_action_layer(px, dates, verbose=True):
     action_engaged = False
     results = []
 
+    # SECOND fix, after full diagnosis: strict consecutive-week
+    # counting resets to zero on a SINGLE noisy dip, even during
+    # genuine ongoing stress (confirmed: real April-May 2013 data
+    # has legitimate single-week dips below the bar while the
+    # crisis was still fully active, causing premature release).
+    # Fixed to a trailing-window FRACTION instead of strict
+    # consecutive count -- tolerates normal single-week noise in
+    # either direction without losing the persistence requirement.
+    is_unusual_window = []
+    WINDOW = 4
+    ENGAGE_FRACTION = 0.75   # 3 of last 4 weeks unusual -> engage
+    RELEASE_FRACTION = 0.25  # only 1 of last 4 weeks unusual -> release
+
     for d in dates:
         reading = compute_raw_reading(px, d)
         if reading is None:
             continue
-
         is_unusual, z = compute_action_signal(history, reading)
 
-        if is_unusual:
-            consecutive_unusual += 1
-            consecutive_normal = 0
-        else:
-            consecutive_unusual = 0
-            consecutive_normal += 1
+        is_unusual_window.append(is_unusual)
+        is_unusual_window = is_unusual_window[-WINDOW:]
 
-        # ENGAGE: fires only after persistence_weeks of sustained
-        # unusual readings -- not on the first unusual week alone
-        newly_actionable = consecutive_unusual >= 3
-        if newly_actionable and not action_engaged:
-            action_engaged = True
-
-        # RELEASE: FIXED bug -- was releasing on a SINGLE normal
-        # week (confirmed: released Apr 26 2013 on one borderline
-        # reading, even though May-Aug stayed genuinely elevated
-        # the whole real crisis). Same asymmetric persistence
-        # principle as the main dial's de-escalation logic: fast
-        # to engage, slow to release. Now requires the SAME
-        # persistence_weeks of sustained NORMAL readings before
-        # releasing, not just one dip.
-        elif action_engaged and consecutive_normal >= 3:
-            action_engaged = False
+        if len(is_unusual_window) >= WINDOW:
+            frac_unusual = sum(is_unusual_window) / WINDOW
+            if not action_engaged and frac_unusual >= ENGAGE_FRACTION:
+                action_engaged = True
+            elif action_engaged and frac_unusual <= RELEASE_FRACTION:
+                action_engaged = False
 
         results.append({
             "date": d, "reading": reading, "z_score": z,
-            "consecutive_unusual": consecutive_unusual,
             "action_engaged": action_engaged,
         })
         history.append(reading)
