@@ -1848,3 +1848,75 @@ accumulating internal state).
 
 Test in isolation (cheap, no SVI) before ever wiring into a real
 backtest -- same discipline used for everything else tonight.
+
+## ETF Weight Smoothing -- Flat Cap Rejected, Needs Redesign
+
+### What was built and why it's wrong
+
+size_positions_smoothed() applied a flat 5%-per-week cap on how
+fast any ticker's weight could move toward its target, borrowing
+the equity/defensive rate limiter's pattern directly. This was a
+mistake -- applied by analogy without checking whether the
+justification actually transfers.
+
+The equity rate limiter's asymmetry (fast de-risk, slow re-risk)
+is justified by a real safety argument: protect against a false
+"all clear" being premature. ETF selection has no equivalent
+argument -- it's "which acceptable option deserves more weight,"
+not "is danger really over." A flat cap on ETF weight changes has
+no such justification and imposes real cost: going from 0% to a
+60% target takes 12 weeks at 5%/week, a full quarter of being
+meaningfully underexposed to what the scorer has already
+correctly identified as the best available opportunity.
+
+### The worse, compounding failure mode (identified before building)
+
+If the market shifts again before a slow-moving position finishes
+catching up to its original target (very plausible within a
+12-week catch-up window), the bot re-targets from wherever it
+currently sits and starts crawling toward the NEW target instead.
+If this repeats, the bot can spend extended periods perpetually
+partway through a transition, never actually arriving anywhere --
+a different and arguably worse form of instability than the
+original noise problem, and one that would NOT show up in a short
+8-week test window (need 12+ weeks of history to even see a
+single full catch-up cycle, let alone a repeated-retarget loop).
+
+This was caught through reasoning before building and testing it
+against real data -- worth confirming with an actual longer-window
+test (12-16+ consecutive weeks, watching for retargeting-before-
+arrival) once a new design exists, rather than trusting the
+correctness of the reasoning alone.
+
+### Direction for the redesign (not yet built)
+
+Distinguish NOISE from SIGNAL rather than applying a uniform speed
+limit to all changes:
+  - Small week-to-week score changes (plausibly noise): smooth/damp
+  - Large, genuine score changes (real regime shift): allow fast,
+    close to immediate movement toward the new target
+
+Additionally, even for smoothed/noise-case movements, cap how far
+BEHIND target the position is allowed to drift before being forced
+to catch up faster -- closer to the magnitude-scaled hysteresis
+idea logged earlier for the main dial, applied here instead. A
+flat percentage-per-week cap with no such catch-up-forcing
+mechanism is what allows the compounding-lag/retargeting-loop
+failure mode described above.
+
+### Status
+Rejected: flat 5%/week cap (implemented, tested, found to have a
+real theoretical flaw before deeper testing revealed it in
+practice -- caught through the user's own reasoning about market
+dynamics, not through the 8-week test which was too short to show
+it directly).
+
+Not yet built: noise-vs-signal distinction + magnitude-aware
+catch-up mechanism. Design fresh next session, do not extend
+tonight's flat-cap code further.
+
+Everything else built tonight remains valid and tested:
+score_etf(), select_universe() with percentile+absolute-floor
+tiering, size_positions() (the unsmoothed version) -- all
+confirmed sensible across 2012/2017/2022. Only the week-to-week
+smoothing layer needs rework.

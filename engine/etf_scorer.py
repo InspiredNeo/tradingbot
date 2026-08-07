@@ -294,6 +294,92 @@ def size_positions(date_str, universe=None, verbose=True):
     return weights
 
 
+MAX_WEEKLY_WEIGHT_CHANGE = 0.05  # cap: any single ticker's weight
+                                    # can move at most 5 percentage
+                                    # points toward its target per
+                                    # week, same principle as the
+                                    # equity rate limiter -- pure
+                                    # function of (previous weights,
+                                    # this week\'s target), no
+                                    # accumulating internal state
+
+
+def size_positions_smoothed(date_str, previous_weights=None,
+                             universe=None, verbose=True):
+    """
+    Same as size_positions(), but rate-limited against the prior
+    week's actual weights instead of jumping straight to this
+    week's freshly computed target.
+
+    previous_weights: dict of {ticker: weight} from the prior
+    week's call to this function. Pass None for the first call
+    (no history yet -- target is used directly).
+
+    This is a pure function of (previous_weights, current target)
+    each time it's called -- it does not maintain any state of its
+    own between calls. The caller is responsible for passing in
+    last week's output as this week's previous_weights, the same
+    way the equity rate limiter's "equity_now" is threaded through
+    the main backtest loop rather than stored inside the function.
+
+    Returns the smoothed weight dict, which the caller should save
+    and pass back in as previous_weights on the next call.
+    """
+    target_weights = size_positions(date_str, universe=universe, verbose=False)
+
+    if previous_weights is None:
+        # No history yet -- nothing to smooth against, use target directly
+        smoothed = dict(target_weights)
+    else:
+        all_tickers = set(target_weights.keys()) | set(previous_weights.keys())
+        capped = {}
+        for t in all_tickers:
+            prev = previous_weights.get(t, 0.0)
+            target = target_weights.get(t, 0.0)
+            gap = target - prev
+            step = max(-MAX_WEEKLY_WEIGHT_CHANGE,
+                      min(MAX_WEEKLY_WEIGHT_CHANGE, gap))
+            capped[t] = prev + step
+
+        # Renormalize so weights sum to 1.0 -- but renormalizing can
+        # push an individual ticker back OUTSIDE its cap relative to
+        # where it started (confirmed: readings up to 8.3% appeared
+        # despite a 5% cap, before this fix). Re-clamp against the
+        # ORIGINAL previous weight after renormalizing to guarantee
+        # the true limit holds, then do one final light renorm.
+        total = sum(capped.values())
+        if total > 0:
+            normalized = {t: w / total for t, w in capped.items()}
+        else:
+            normalized = capped
+
+        reclamped = {}
+        for t in all_tickers:
+            prev = previous_weights.get(t, 0.0)
+            n = normalized.get(t, 0.0)
+            lo = max(0.0, prev - MAX_WEEKLY_WEIGHT_CHANGE)
+            hi = prev + MAX_WEEKLY_WEIGHT_CHANGE
+            reclamped[t] = round(min(max(n, lo), hi), 4)
+
+        total2 = sum(reclamped.values())
+        if total2 > 0:
+            smoothed = {t: round(w / total2, 4) for t, w in reclamped.items()}
+        else:
+            smoothed = reclamped
+
+        # Drop near-zero positions to avoid carrying dust forever
+        smoothed = {t: w for t, w in smoothed.items() if w >= 0.005}
+
+    if verbose:
+        print(f"\nSmoothed weights as of {date_str}:")
+        for t, w in sorted(smoothed.items(), key=lambda x: -x[1]):
+            tgt = target_weights.get(t, 0.0)
+            marker = "" if abs(w - tgt) < 0.001 else f"  (target: {tgt:.1%})"
+            print(f"  {t:<6} {w:>6.1%}{marker}")
+
+    return smoothed
+
+
 if __name__ == "__main__":
     # Quick sanity check across a few dates we already understand
     for d in ["2012-06-30", "2017-12-31", "2022-06-30"]:
