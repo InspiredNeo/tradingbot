@@ -25,3 +25,16 @@ Thresholds: Y=0.12 O=0.2 R=0.28
 Watching: US, Asia, Europe, Futures 24/7
 ============================================================
   [19:48] dial=0.34 status=OK sessions=['Futures']
+$PAK: possibly delisted; no price data found  (period=2d)
+
+1 Failed download:
+['PAK']: possibly delisted; no price data found  (period=2d)
+Monitor initialized. Baseline dial: 0.41
+============================================================
+MARKET TERMINAL — GLOBAL MONITOR
+============================================================
+Baseline: 0.41
+Thresholds: Y=0.12 O=0.2 R=0.28
+Watching: US, Asia, Europe, Futures 24/7
+============================================================
+  [21:17] dial=0.33 status=OK sessions=['Futures', 'Asia']

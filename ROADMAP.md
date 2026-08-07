@@ -1976,3 +1976,61 @@ Agreed order for next session:
 Start fresh next session with item 1. Everything from tonight
 (scorer/tiering/sizing/smoothing) is solid and tested -- this is
 additive work on top of it, not a rebuild.
+
+## Defensive Sector Rotation -- Tested Against 5 Real Crises
+
+### The idea
+Instead of reducing total equity exposure during stress (current
+system's approach), stay near 100% equity but rotate composition
+toward historically defensive sectors (XLV healthcare, XLP
+staples) rather than growth (QQQ, SOXX). Would preserve full
+market participation during calm periods (closing the SPY gap)
+while still offering some crash protection through lower-beta
+holdings.
+
+### Real test: peak-to-trough drawdown, single-holding, across
+### 5 distinct crisis types (perfect-timing ceiling, not a
+### realistic backtest -- see limitations below)
+### Findings
+- XLP (staples) consistently the best rotation target, beating
+  XLV in 4 of 5 crises tested.
+- XLP beats or ties bonds (TLT) specifically when bonds themselves
+  get hurt -- 2022's rate crisis is the clear example (TLT -39.1%,
+  worse than XLP's -16.3%). This matters: our current system's
+  defensive sleeve leans on bonds, which is NOT safe in every
+  crisis type.
+- Rotation alone is roughly comparable to our actual system in
+  2008 (tie) and 2022 (system slightly better).
+- Rotation alone is CLEARLY worse than our actual system in 2020 --
+  the fastest crash in the dataset. Staples still fell 24.5% vs
+  our system's ~17.8%, because a fast enough crash drags down all
+  equities together regardless of sector defensiveness. This is
+  exactly where active de-risking + shorts earn their keep, and
+  where staying at 100% equity (however composed) cannot help.
+
+### Honest conclusion
+Rotation is a real, legitimate technique -- not a weaker version
+of doing nothing, genuinely competitive with the current system
+in slower-moving crises. But it does not consistently beat what
+exists now, and clearly underperforms in fast/violent crash types.
+Strongest likely use: as an ADDITIONAL input layered onto the
+current system's equity sleeve during stress (e.g. the min-var
+blend already tilts toward defensive names -- could be made more
+deliberate/aggressive about it), NOT a wholesale replacement for
+dial-driven exposure reduction + shorts.
+
+### Limitations of this test (important)
+- Single-holding peak-to-trough with perfect timing, not a
+  realistic backtest. Real rotation logic has lag, same as the
+  dial does -- actual results would be worse than this ceiling.
+- Only checked XLV/XLP as rotation targets. Other defensive
+  sectors (XLU utilities, low-vol factor ETFs) not yet tested.
+- 5 crises is a reasonable sample but not exhaustive -- worth
+  testing against 2015-16 China slowdown and any other distinct
+  crisis character if this gets built further.
+
+### Status
+Real, tested idea. Not yet built into anything. Worth considering
+as a refinement to the existing equity-sleeve blend logic (min-var
+weighting during stress) rather than a standalone system, once
+the ETF universe expansion work is further along.

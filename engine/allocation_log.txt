@@ -2,3 +2,6 @@
 2026-08-06T15:41:16 | as_of 2026-08-05 | dial=0.223 [bull_calm] | eq=74.1% def=16.4% dbmf=9.6% | 4 of 5 signals agree with the overall calm reading. Global risk appetite is the outlier, reading higher than the rest.
 2026-08-06T15:42:17 | as_of 2026-08-05 | dial=0.223 [bull_calm] | eq=74.1% def=16.4% dbmf=9.6% | 4 of 5 signals agree with the overall calm reading. Global risk appetite is the outlier, reading higher than the rest.
 2026-08-06T15:43:17 | as_of 2026-08-05 | dial=0.223 [bull_calm] | eq=74.1% def=16.4% dbmf=9.6% | 4 of 5 signals agree with the overall calm reading. Global risk appetite is the outlier, reading higher than the rest.
+2026-08-06T21:17:02 | as_of 2026-08-06 | dial=0.223 [bull_calm] | eq=81.7% def=8.8% dbmf=9.6% | 4 of 5 signals agree with the overall calm reading. Global risk appetite is the outlier, reading higher than the rest.
+2026-08-06T21:18:40 | as_of 2026-08-06 | dial=0.223 [bull_calm] | eq=81.7% def=8.8% dbmf=9.6% | 4 of 5 signals agree with the overall calm reading. Global risk appetite is the outlier, reading higher than the rest.
+2026-08-06T21:19:15 | as_of 2026-08-06 | dial=0.223 [bull_calm] | eq=81.7% def=8.8% dbmf=9.6% | 4 of 5 signals agree with the overall calm reading. Global risk appetite is the outlier, reading higher than the rest.
