@@ -2226,3 +2226,82 @@ session -- start fresh.
 - Should this replace the current single dial entirely, or run
   alongside it during a transition/comparison period the way the
   dynamic universe ran alongside v2 tonight?
+
+## MULTI-DIAL ARCHITECTURE -- FINALIZED DESIGN (v2 of the plan)
+
+Supersedes the "combination-aware single decision" version logged
+earlier this session. That version still funneled everything to
+one final number -- user correctly pushed back that the system
+should make MULTIPLE simultaneous moves, not just one, as long as
+those moves can't collide.
+
+### The core design principle
+Multiple dials, each with its OWN exclusive, non-overlapping
+lever. No two dials can ever touch the same resource. This is not
+a coordination rule to remember and enforce -- it's a hard
+structural boundary, the same way TLT's bug (two systems reaching
+for the same asset) becomes IMPOSSIBLE by construction rather than
+prevented by convention.
+
+### The four dials and their exclusive levers
+
+CREDIT dial (HYG/LQD, US-specific)
+  Owns: overall equity vs defensive split
+  This is the current system's dial, doing its current job,
+  unchanged in what it controls.
+
+VOLATILITY dial (VIX direct)
+  Owns: rate-limiter SPEED -- how fast the credit dial's target
+  gets approached, not WHAT is held. High vol = move faster
+  toward whatever the credit dial has already decided. Does not
+  touch composition or sizing directly, only tempo.
+
+CURRENCY/EM dial (EEM vs SCHF divergence, dollar strength)
+  Owns: EEM/SCHF weight specifically, as its own slice within
+  whatever total equity allocation the credit dial has set. A
+  China-deval-style shock trims this slice alone -- the credit
+  dial's overall equity percentage doesn't need to move at all.
+
+RATE dial (yield curve, TLT/SHY)
+  Owns: TBF/duration hedge exposure -- its own small, dedicated
+  sleeve, separate from both the main equity sleeve and the EM
+  slice. This is what should have specifically caught 2022 (a
+  rate-driven grind where bonds themselves got hurt) without
+  needing the credit dial to also react.
+
+### Why this resolves both original concerns
+1. Genuinely simultaneous, independent decisions -- not one
+   blended number. A currency shock produces real, specific
+   action (EM slice trimmed) without touching the broader equity/
+   defensive split at all.
+2. Cannot recreate the TLT bug. There is no asset or decision any
+   two dials could both claim, because each lever is exclusively
+   owned. Not prevented by a rule -- prevented by there being no
+   shared resource to fight over in the first place.
+
+### Still open, needs real design work before building:
+- Exact formula for how the volatility dial's "speed" modifier
+  interacts with the existing rate limiter (multiply the existing
+  step size? A separate multiplier bounded to some range?)
+- Exact sizing for the EM slice and the rate/duration sleeve --
+  how large is each allowed to get relative to the whole
+  portfolio, and does either have its own ceiling/floor
+- Whether the EM slice and rate sleeve are carved OUT of the
+  credit dial's equity allocation (reducing what's left for
+  everything else) or ADDED on top as their own separate buckets
+  -- this affects total portfolio composition math and needs to
+  be decided precisely, not implicitly
+
+### Build order (once above is resolved)
+1. Validate each new dial's raw signal against 10+ real historical
+   dates BEFORE any of them touch portfolio logic (same discipline
+   as the original market-implied dial)
+2. Build each lever's formula in isolation, test standalone
+   (same pattern as continuous_allocation() being testable alone)
+3. Combine only after each piece is independently verified
+4. Dry-run test (no SVI) across the full 1153-week history,
+   checking specifically: do the four levers ever produce
+   contradictory or nonsensical combined output, same latch/
+   sanity checks used for every prior dry run this session
+5. Short-window backtest (backtest_windows.py) before any full
+   22-year run
