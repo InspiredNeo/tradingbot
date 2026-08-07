@@ -83,11 +83,38 @@ def _compute_liquidity(ticker, date, lookback_days=63, min_dollar_vol=1e6):
     return float(np.clip(score, 0, 1))
 
 
-def _safe_series(px, ticker, date, min_days=126):
+def _safe_series(px, ticker, date, min_days=126, max_staleness_days=10):
+    """
+    Returns the price history for a ticker up to `date`, or None
+    if the ticker isn't eligible right now.
+
+    Two separate checks, not one:
+      1. Enough TOTAL history to compute momentum/vol meaningfully
+      2. The MOST RECENT data point is actually recent -- not just
+         "this ticker had data at some point in the past."
+
+    The second check matters because a delisted or currently-stale
+    ticker can still have plenty of old historical data that would
+    incorrectly pass check 1 alone. Confirmed as a real gap in the
+    original version: it only checked total row count, with no
+    concept of whether the ticker is CURRENTLY tradeable as of the
+    query date. max_staleness_days=10 allows for normal weekends/
+    holidays without falsely rejecting a healthy, currently-traded
+    ticker.
+    """
     if ticker not in px.columns:
         return None
     s = px.loc[:date, ticker].dropna()
-    return s if len(s) >= min_days else None
+    if len(s) < min_days:
+        return None
+
+    date_ts = pd.Timestamp(date)
+    staleness = (date_ts - s.index[-1]).days
+    if staleness > max_staleness_days:
+        return None  # ticker's most recent data is too old -- likely
+                     # delisted, halted, or a data feed problem
+
+    return s
 
 
 def score_etf(px, ticker, date, reference_returns, lookback=252):
