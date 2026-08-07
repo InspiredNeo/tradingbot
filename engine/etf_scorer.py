@@ -18,18 +18,30 @@ import numpy as np
 
 DATA_DIR = os.path.expanduser("~/tradingbot/engine/histdata")
 
+# CANDIDATE_UNIVERSE is for the EQUITY sleeve only. Bonds/gold
+# (TLT, AGG, GLD) are DELIBERATELY EXCLUDED here -- they already
+# belong to DEF_ASSETS in the main backtest, managed by the dial's
+# defensive sleeve. Confirmed as a real bug: with bonds included,
+# the equity-sleeve scorer put TLT at 50%+ during the 2008 crisis
+# (a genuinely strong pick that year), effectively double-counting
+# the same bond bet the defensive sleeve was already making, and
+# understating the portfolio's true equity exposure relative to
+# what the dial intended. Two systems independently reaching for
+# the same asset with no coordination is a real design flaw, not
+# a feature -- same category of issue as tonight's other caught
+# bugs, just a different part of the system.
 CANDIDATE_UNIVERSE = [
     "VTI", "QQQ", "SCHF", "EEM", "XLV", "XLF",     # current universe
-    "AGG", "TLT", "GLD",                             # current defensive
-    "SOXX", "XLE", "XLK", "VNQ", "TIP",              # earlier additions
+    "SOXX", "XLE", "XLK", "VNQ",                     # earlier additions (VNQ is REITs, real assets not bonds)
     "XLI", "XLB", "XLU", "XLC", "XLRE",              # remaining sector SPDRs
     "MTUM", "VLUE", "USMV",                          # factor/style ETFs
     "IWM", "EFA",                                     # small cap, developed intl
 ]
+# Removed from equity candidates: AGG, TLT, GLD, TIP -- all
+# already handled by DEF_ASSETS in the main backtest loop.
 # Note: XLC (2018), XLRE (2015), MTUM/VLUE (2013), USMV (2011) have
-# limited history -- they will simply be absent from scoring at
-# dates before their inception, same as SCHF/DBMF already behave.
-# This is expected, not a bug.
+# limited history -- absent from scoring before their inception,
+# same as SCHF/DBMF already behave. Expected, not a bug.
 
 
 _VOLUME_CACHE = None
