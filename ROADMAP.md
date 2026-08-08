@@ -2427,3 +2427,64 @@ on the SAME mechanism is unlikely to solve it cleanly.
   not more of the same fix. Pick up fresh next session.
 - Fourth dial (credit) already exists as the original main dial,
   no rebuild needed.
+
+## ALTERNATIVE ARCHITECTURE IDEA: Graduated Static Bot Blending
+
+Discussed as a genuinely different structural approach from the
+multi-dial continuous-formula system built this session. Not yet
+built, worth comparing against the multi-dial approach once both
+have real results.
+
+### The idea
+Instead of one continuously-adjusting portfolio driven by a
+formula (current approach), maintain several complete, pre-built,
+individually-validated static portfolios (like the original
+Balanced/Growth/etc. configs from early this session) representing
+distinct market regimes. The dial's job becomes selecting which
+whole static portfolio to gradually blend toward, rather than
+tweaking individual formula parameters.
+
+Extension discussed: don't just have 4 distinct bots (Calm/
+Bull-late/Stress/Crisis) with linear math interpolating between
+them -- build genuine INTERMEDIATE static bots too (e.g. "Mild
+Caution" between Calm and Stress, "Serious Concern" between Stress
+and Crisis), each independently tested and validated the same way
+the four original ones were. This means blending only ever happens
+between two known-good, individually-checked waypoints, rather
+than trusting a formula to produce sensible behavior at every
+possible point on a continuous line -- most of which was never
+directly tested.
+
+### Why this might help with sudden regime changes specifically
+A pre-built static bot doesn't need real-time computation --
+it's already fully formed. When the dial detects a shift, the
+system can start blending toward an already-validated target
+immediately, rather than computing a brand-new allocation from
+scratch right when speed and reliability matter most (directly
+relevant to the Lehman-week lag and the volatility dial's
+persistence-delay tradeoff, both found this session).
+
+### Honest limitation, discussed directly
+The actual TRANSITION speed between static bots still needs the
+same careful, gradual handling as everything built this session
+(rate limiter, persistence checks) -- this idea does not
+automatically solve the speed/lag problem by itself. The real
+benefit is CONSISTENCY of the target being blended toward (a
+known, pre-tested portfolio) rather than raw speed of the
+transition itself.
+
+### Comparison to build, once both approaches have real results
+- Multi-dial continuous system (this session's main work): smooth
+  formula-driven adjustment, each dial owns an exclusive lever,
+  validated dial-by-dial
+- Graduated static bot blending (this idea): discrete, validated
+  waypoints with blending only between adjacent known-good states
+
+Not mutually exclusive -- could potentially combine (e.g. static
+bots as the credit dial's targets, with the volatility/currency-EM
+levers still operating independently on top). Worth exploring
+which produces more reliable, more explainable behavior during
+real historical regime transitions once there's actual backtest
+data from the multi-dial system to compare against.
+
+### Status: idea only, not built, no code written

@@ -35,6 +35,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.expanduser("~/tradingbot/engine/histdata")
 
 # ── Universe ──────────────────────────────────────────────────
+import dial_volatility
+import dial_currency_em
+
 RISK_ASSETS  = ["VTI", "QQQ", "SCHF", "EEM", "XLV", "XLF"]
 DEF_ASSETS   = ["AGG", "TLT", "GLD"]
 SHORT_ASSETS = ["SH", "PSQ", "TBF"]
@@ -664,6 +667,12 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
     # now. Safe to delete in a future cleanup pass.
     state      = ScenarioState()
     records    = []
+    em_dial_history = []  # currency/EM dial's own trailing state,
+                            # properly scoped to this function call,
+                            # threaded through the loop -- NOT a
+                            # global (fixed from an earlier hacky
+                            # implementation before it was ever run
+                            # for real)
     t0         = time.time()
 
     print("=" * 72)
@@ -790,10 +799,30 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
         # Replaces the scenario state machine entirely -- there is
         # no state to latch in, only a float tracking a float.
         raw_target = alloc["equity_target"]
+
+        # VOLATILITY DIAL LEVER: speed multiplier only. Never
+        # touches WHAT is held (that's the credit dial's target,
+        # raw_target, computed independently above and NEVER
+        # modified here) -- only HOW FAST the rate limiter moves
+        # toward it. This is the exclusive-lever design: no other
+        # dial can ever touch equity_target itself.
+        vol_speed_mult = 1.0
+        try:
+            vol_reading = dial_volatility.compute_raw_reading(px, d)
+            if vol_reading is not None:
+                vol_unusual = dial_volatility.compute_action_signal(vol_reading)
+                if vol_unusual:
+                    vol_speed_mult = 1.5
+        except Exception:
+            pass  # dial failure never blocks the main loop
+
+        derisk_max = DERISK_MAX * vol_speed_mult
+        rerisk_max = RERISK_MAX * vol_speed_mult
+
         if raw_target < equity_now:
-            equity_now += max(raw_target - equity_now, -DERISK_MAX)
+            equity_now += max(raw_target - equity_now, -derisk_max)
         else:
-            equity_now += min(raw_target - equity_now, RERISK_MAX)
+            equity_now += min(raw_target - equity_now, rerisk_max)
         eq_target = equity_now
         ri = [avail.index(t) for t in avail_risk if t in avail]
         di = [avail.index(t) for t in avail_def  if t in avail]
@@ -805,6 +834,45 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
                 w[di] *= (1 - eq_target) / max(1 - cr, 1e-9)
             w = np.clip(w, 0, None)
             w = w / w.sum()
+
+        # CURRENCY/EM DIAL LEVER: EEM slice weight only. Never
+        # touches overall equity/defensive split (eq_target,
+        # already applied above and NEVER modified here) -- only
+        # how much of the equity sleeve's existing allocation goes
+        # to EEM specifically. Exclusive-lever design, same
+        # principle as the volatility dial above.
+        try:
+            em_reading = dial_currency_em.compute_raw_reading(px, d)
+            if em_reading is not None:
+                eem_declining = None
+                if "EEM" in px.columns:
+                    eem_series = px.loc[:d, "EEM"].dropna()
+                    if len(eem_series) >= 65:
+                        eem_declining = bool(
+                            eem_series.iloc[-1] < eem_series.iloc[-63])
+
+                em_unusual = dial_currency_em.compute_action_signal(
+                    em_dial_history, em_reading,
+                    eem_absolute_declining=eem_declining)[0]
+
+                if em_unusual and "EEM" in avail:
+                    eem_i = avail.index("EEM")
+                    trimmed = w[eem_i] * 0.5
+                    freed = w[eem_i] - trimmed
+                    w[eem_i] = trimmed
+                    # Redistribute freed weight proportionally
+                    # across the rest of the RISK sleeve only --
+                    # never touches the defensive sleeve, staying
+                    # inside this lever's exclusive territory
+                    other_ri = [i for i in ri if i != eem_i]
+                    if other_ri:
+                        other_sum = w[other_ri].sum()
+                        if other_sum > 0:
+                            w[other_ri] += (w[other_ri] / other_sum) * freed
+
+                em_dial_history.append(em_reading)
+        except Exception:
+            pass  # dial failure never blocks the main loop
 
         # GLD minimum 4%
         gld_idx = [avail.index(t) for t in ["GLD"] if t in avail]
