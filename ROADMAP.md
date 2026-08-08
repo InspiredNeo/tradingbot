@@ -2782,3 +2782,51 @@ Both dial_currency_em.py and dial_volatility.py remain trusted,
 validated pieces of work from earlier sessions -- this diagnostic
 confirms they are not the source of the Lehman-week discrepancy.
 The actual cause is elsewhere and not yet found.
+
+## Lehman-Gap Diagnostic -- Deeper Investigation, Real Progress, Cause Narrowed
+
+Continued investigating why v3 baseline, vol-only, and em-only
+produce genuinely different equity_target values at 2008-10-03
+despite all sharing "identical" credit-dial logic.
+
+### Ruled out with real, direct evidence:
+1. Raw market-implied dial computation (compute_market_implied_dial):
+   confirmed fully deterministic, identical value (0.691630) across
+   3 repeated calls with same inputs.
+2. Dial history feeding the bootstrap step (dial_hist, sourced from
+   the static stability.parquet file): confirmed deterministic,
+   stable values, correct length (52), file is static and unchanged
+   across all test runs this session.
+3. Bootstrap randomness in bootstrap_dial_allocation (np.random.choice
+   + np.random.normal, NO seed set -- confirmed real, unseeded
+   randomness exists here): measured directly across 10 repeated
+   calls with identical input, equity_target varied only 0.4920 to
+   0.5011 (~0.9 percentage points). Real, but too small to explain
+   the actual gaps measured (which involve equity_target differing
+   by 3-4+ percentage points between script versions, e.g. baseline
+   0.6299 vs em-only 0.6611 at the same date).
+
+### Real, unresolved lead (not yet checked)
+SVI covariance fitting (fit_svi, called separately from the dial's
+own bootstrap step) ALSO involves sampling/randomness
+(n_steps/n_draws parameters seen earlier this session) and has NOT
+been checked for a random seed or for how much variance it
+introduces on its own. This is the next concrete thing to test --
+same methodology as the dial bootstrap check just completed: call
+fit_svi directly, multiple times, with identical inputs, measure
+the real spread in output, compare against the actual measured
+gaps to see if this explains them.
+
+### Honest assessment
+This diagnostic has now correctly ruled out 3 real hypotheses with
+direct evidence (toggle mechanism -- confirmed working correctly
+in isolation; dial computation -- deterministic; dial bootstrap --
+real but too small). Each ruling-out was genuine, evidence-based
+work, not wasted effort, even though the root cause remains
+unfound. The pattern of "checked, genuinely eliminated, moved to
+next hypothesis" is the right process -- worth continuing this
+exact methodology on fit_svi next session rather than guessing.
+
+### Status: cause still not found, but search space meaningfully
+### narrowed. Next concrete step: test fit_svi determinism/variance
+### the same way bootstrap_dial_allocation was just tested.

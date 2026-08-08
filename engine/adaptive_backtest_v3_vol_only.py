@@ -838,6 +838,8 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
         else:
             equity_now += min(raw_target - equity_now, rerisk_max)
         eq_target = equity_now
+        if str(d.date()) in ['2008-09-26','2008-10-03']:
+            print(f"    [DIAG] {d.date()}: raw_target={raw_target:.4f} equity_now={equity_now:.4f}")
         ri = [avail.index(t) for t in avail_risk if t in avail]
         di = [avail.index(t) for t in avail_def  if t in avail]
 
