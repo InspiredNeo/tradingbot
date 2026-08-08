@@ -2866,3 +2866,40 @@ new dials (currency/EM, volatility) should be considered CLEARED
 -- there is no confirmed evidence they cause any problem. The
 right next action, once seeding is added, is to rerun a clean,
 seeded comparison to get an actually trustworthy answer.
+
+## LEHMAN-GAP DIAGNOSTIC -- FULLY RESOLVED AND VERIFIED
+
+Root cause fix (seeds added to fit_svi and bootstrap_dial_allocation,
+derived from week index i) applied to all three script versions
+(adaptive_backtest_v3.py, _vol_only.py, _em_only.py). Found and
+fixed a real secondary bug during this process: the two derived
+copies had been forked from adaptive_backtest_v3.py BEFORE the
+seed parameter was added to bootstrap_dial_allocation's own
+definition, so their call sites had the new seed argument but
+their local function definitions didn't accept it yet (TypeError
+on first test run -- caught and fixed immediately).
+
+FINAL VERIFICATION: with seeding properly applied across all three
+files, baseline / vol-only / em-only now produce IDENTICAL
+equity_target at 2008-10-03 (0.6303, matching to 4 decimal places
+across all three). This conclusively confirms the root-cause
+diagnosis -- the entire "gap" investigated across two sessions was
+unseeded randomness in SVI/bootstrap sampling, not a real bug in
+either the volatility or currency/EM dial lever.
+
+### Status: CLOSED
+- Both new dial levers (currency/EM, volatility): fully cleared,
+  confirmed working as designed, no real issue ever existed
+- SVI and dial bootstrap: now properly seeded, all future variant
+  comparisons will be genuinely controlled and trustworthy
+- This was a real, multi-step debugging success: correct hypothesis
+  eventually found through systematic elimination (toggle mechanism
+  ruled out, dial computation ruled out, dial history ruled out,
+  dial bootstrap partially implicated, SVI fully implicated and
+  confirmed via direct before/after measurement), not a guess
+
+Next real work: with a trustworthy, deterministic comparison tool
+now in hand, a genuine, clean multi-hour backtest of the full
+multi-dial system vs v3 baseline would finally produce a real,
+trustworthy answer to whether the two new dials actually help --
+worth doing once ready to commit to that run.

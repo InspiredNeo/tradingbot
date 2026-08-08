@@ -1,12 +1,12 @@
 {
   "version": "v3",
-  "final": 7949.394930278804,
-  "total": -0.20506050697211964,
-  "ann_ret": -0.20506050697211964,
-  "sharpe_weekly": -6.101505128355256,
+  "final": 8023.9384633434,
+  "total": -0.19760615366566003,
+  "ann_ret": -0.19760615366566003,
+  "sharpe_weekly": -6.08511132458423,
   "sharpe_daily": null,
-  "max_dd": -0.21267708967028917,
-  "calmar": -0.9641871030397424,
+  "max_dd": -0.2050852632525011,
+  "calmar": -0.9635317064316182,
   "years": 0.07665982203969883,
   "oos": {
     "ann_ret": 0.0,
@@ -24,35 +24,35 @@
   "records": [
     {
       "date": "2008-09-12",
-      "portfolio": 10010.410934660867,
+      "portfolio": 10011.063809811058,
       "dial": 0.440661336151867,
       "scenario": "bull_late",
       "in_sample": true
     },
     {
       "date": "2008-09-19",
-      "portfolio": 10096.740264994702,
+      "portfolio": 10094.08694091448,
       "dial": 0.5225611106206501,
       "scenario": "stress",
       "in_sample": true
     },
     {
       "date": "2008-09-26",
-      "portfolio": 9823.727898530033,
+      "portfolio": 9827.598185929559,
       "dial": 0.5821833323524113,
       "scenario": "stress",
       "in_sample": true
     },
     {
       "date": "2008-10-03",
-      "portfolio": 9262.923623976772,
+      "portfolio": 9296.82740406478,
       "dial": 0.6410243818123054,
       "scenario": "stress",
       "in_sample": true
     },
     {
       "date": "2008-10-10",
-      "portfolio": 7949.394930278804,
+      "portfolio": 8023.9384633434,
       "dial": 0.6916298185941044,
       "scenario": "crisis",
       "in_sample": true

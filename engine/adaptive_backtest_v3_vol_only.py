@@ -402,7 +402,9 @@ def continuous_allocation(dial):
     }
 
 
-def bootstrap_dial_allocation(dial_history, n_bootstrap=300):
+def bootstrap_dial_allocation(dial_history, n_bootstrap=300, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
     """
     Bootstrap posterior over dial for smoother threshold handling.
     Uses last 52 available dial readings.
@@ -732,13 +734,14 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
 
         # Get bootstrap dial allocation (smoother threshold handling)
         dial_hist = list(dial_series[:d].dropna().tail(52).values)
-        alloc = bootstrap_dial_allocation(dial_hist, n_bootstrap=300)
+        alloc = bootstrap_dial_allocation(dial_hist, n_bootstrap=300, seed=1000+i)
         blend_name = get_blend_name(dial_val)
 
         # SVI covariance
         try:
             covs, _ = fit_svi(rets, n_steps=SVI_STEPS,
-                              n_draws=SVI_DRAWS, verbose=False)
+                              n_draws=SVI_DRAWS, verbose=False,
+                              seed=2000+i)
             idx_s   = np.linspace(0, len(covs)-1,
                                   OPT_DRAWS).astype(int)
             covs_np = covs[idx_s].numpy() * 252

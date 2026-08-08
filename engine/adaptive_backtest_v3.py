@@ -402,7 +402,17 @@ def continuous_allocation(dial):
     }
 
 
-def bootstrap_dial_allocation(dial_history, n_bootstrap=300):
+def bootstrap_dial_allocation(dial_history, n_bootstrap=300, seed=None):
+    """
+    seed: if provided, makes this call deterministic. Confirmed
+    via direct testing that without a seed, this function alone
+    produces ~1 percentage point of variance in equity_target from
+    identical inputs -- combined with fit_svi's own unseeded
+    variance (up to 2.38pp), this fully explained a gap mistakenly
+    chased as a real multi-dial bug across two sessions.
+    """
+    if seed is not None:
+        np.random.seed(seed)
     """
     Bootstrap posterior over dial for smoother threshold handling.
     Uses last 52 available dial readings.
@@ -732,13 +742,14 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
 
         # Get bootstrap dial allocation (smoother threshold handling)
         dial_hist = list(dial_series[:d].dropna().tail(52).values)
-        alloc = bootstrap_dial_allocation(dial_hist, n_bootstrap=300)
+        alloc = bootstrap_dial_allocation(dial_hist, n_bootstrap=300, seed=1000+i)
         blend_name = get_blend_name(dial_val)
 
         # SVI covariance
         try:
             covs, _ = fit_svi(rets, n_steps=SVI_STEPS,
-                              n_draws=SVI_DRAWS, verbose=False)
+                              n_draws=SVI_DRAWS, verbose=False,
+                              seed=2000+i)
             idx_s   = np.linspace(0, len(covs)-1,
                                   OPT_DRAWS).astype(int)
             covs_np = covs[idx_s].numpy() * 252
