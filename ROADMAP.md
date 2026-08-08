@@ -2606,3 +2606,61 @@ written assuming a yfinance-sourced parquet cache. This is real,
 separate work for whenever live-trading integration begins --
 worth remembering this split so live-path development doesn't
 accidentally inherit yfinance as a live dependency by default.
+
+## DECIDED: Next Major Architecture Direction -- Regime-as-Distinct-Bot
+
+Synthesis of two ideas discussed separately tonight (graduated
+static bot blending + the near-100%-exposure "option 1" from the
+honest-gap discussion), now combined into one real direction.
+
+### The core shift
+Current architecture: ONE continuous formula, same underlying
+logic/caution baked in across the whole dial range, just scaled by
+a number. This is confirmed, by real evidence, to produce a
+structural drag during calm years large enough that crash
+protection cannot close the resulting gap (measured: ~2x final
+gap vs SPY, too wide for any plausible future crash to erase).
+
+New direction: each regime (Calm / Mild Caution / Stress / Crisis)
+becomes its OWN distinct, separately-built trading style, not a
+scaled version of one shared formula.
+  - CALM regime: genuinely aggressive, built to capture close to
+    full market participation, none of the reflexive caution the
+    current single formula always carries. This is the direct fix
+    for the actual confirmed problem (calm-year drag).
+  - CRISIS regime: stays exactly as protective as current design,
+    untouched, separately validated -- the part that already works.
+  - Mid-tier regimes (Mild Caution, Stress): genuinely intermediate
+    styles, not linear interpolation between the two extremes.
+  - Dial's job changes from "adjust one formula's output" to
+    "decide which distinct regime/bot is currently active" +
+    smooth transition between them (reusing the proportional
+    smoothing logic already built and validated this session).
+
+### Why this is a real structural change, not another tuning pass
+Confirmed via real, careful testing across two sessions that
+tuning parameters WITHIN the existing single-formula architecture
+(equity ceiling, ETF selection, multi-dial levers) has not closed
+the gap. This is not guesswork -- it's the honest conclusion from
+real evidence. A structurally different approach is warranted.
+
+### Required discipline (same as everything validated this session)
+- Each regime-bot must be independently validated against real
+  historical dates before trusting it, same as every dial was
+- Transitions between regime-bots must use the same
+  stateless/proportional-smoothing pattern already proven --
+  no new state machines
+- Test each regime-bot's behavior via backtest_windows.py (short,
+  cheap) before any full 22-year commitment
+- Specifically verify: does an aggressive Calm regime, even with
+  Crisis regime unchanged, produce a WORSE overall crash outcome
+  than today's system, because more of the timeline is spent in
+  the aggressive style before a crisis is confirmed? This is the
+  real, honest risk of this direction and must be measured, not
+  assumed away.
+
+### Status
+Decided direction for next major session. NOT yet designed in
+detail (exact regime boundaries, how many regimes, exact
+transition logic) or built. Sequencing: finish current universe
+build + Lehman-gap diagnosis first, then start this fresh.
