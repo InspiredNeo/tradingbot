@@ -13,8 +13,19 @@ candidates so we can sanity-check the ranking against dates we
 already understand well before building anything that acts on it.
 """
 import os
+import warnings
 import pandas as pd
 import numpy as np
+
+# Suppress numpy warnings from correlation calculations on
+# very-short-history tickers -- these are harmless byproducts of
+# attempting calculations right before the length check correctly
+# rejects them (confirmed via testing: e.g. CDX at 2022-06-30 had
+# only 92 days of real history at that date, correctly returned
+# None, warnings were cosmetic noise from the attempt, not a sign
+# of bad data).
+warnings.filterwarnings("ignore", category=RuntimeWarning,
+                        module="numpy")
 
 DATA_DIR = os.path.expanduser("~/tradingbot/engine/histdata")
 
