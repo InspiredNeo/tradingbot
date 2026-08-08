@@ -1172,7 +1172,29 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
         json.dump(results, f, indent=2, default=str)
     print(f"Saved to {out}")
     print(f"Also saved to {out_latest} (convenience pointer to most recent run)")
-    print(f"\n  Saved to {out}")
+
+    # Also save to the SQL database -- genuinely collision-proof,
+    # since each run gets a unique run_id (script name + timestamp
+    # + random suffix), unlike the flat-file approach that lost
+    # the real baseline earlier tonight to a filename collision.
+    try:
+        from db_backtest_save import save_backtest_run
+        db_run_id = save_backtest_run(
+            script_name="adaptive_backtest_v3",
+            start_date=start,
+            end_date=str(end) if end else "present",
+            results={
+                "final_value": results["final"],
+                "sharpe_weekly": results["sharpe_weekly"],
+                "max_drawdown": results["max_dd"],
+                "calmar": results["calmar"],
+                "all_gates_passed": results["all_pass"],
+            },
+            records=records,
+        )
+        print(f"Also saved to database, run_id: {db_run_id}")
+    except Exception as e:
+        print(f"Database save failed (non-fatal, JSON files still saved): {e}")
     print(f"  Runtime: {(time.time()-t0)/60:.0f} minutes")
     return results
 
