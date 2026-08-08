@@ -1152,9 +1152,26 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
             for r in records
         ],
     }
-    out = os.path.join(DATA_DIR, "adaptive_backtest_v3.json")
+    # FIXED after losing the real full-length baseline to an
+    # accidental overwrite: previously every run (full-length AND
+    # short diagnostic tests) saved to this same fixed filename,
+    # so a short test run silently destroyed the real baseline
+    # results earlier tonight. Filename now includes a timestamp
+    # so no run can ever overwrite another's saved results.
+    from datetime import datetime
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out = os.path.join(DATA_DIR, f"adaptive_backtest_v3_{ts}.json")
+    # Also save under the old fixed name for backward compatibility
+    # with anything that expects it, but this is now considered
+    # "most recent run" not "the real baseline" -- check the
+    # timestamped file for anything that needs to be trusted long-term
+    out_latest = os.path.join(DATA_DIR, "adaptive_backtest_v3_latest.json")
     with open(out, "w") as f:
         json.dump(results, f, indent=2, default=str)
+    with open(out_latest, "w") as f:
+        json.dump(results, f, indent=2, default=str)
+    print(f"Saved to {out}")
+    print(f"Also saved to {out_latest} (convenience pointer to most recent run)")
     print(f"\n  Saved to {out}")
     print(f"  Runtime: {(time.time()-t0)/60:.0f} minutes")
     return results
