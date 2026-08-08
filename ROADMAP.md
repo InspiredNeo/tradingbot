@@ -2574,3 +2574,35 @@ while hitting rate limits or other silent-failure conditions.
    only, rerun; compare each against the full combined version) --
    do NOT guess at a third fix without this real, targeted
    diagnostic step first.
+
+## Data Source Split: yfinance vs Schwab (clarified)
+
+Important distinction surfaced discussing rate limits: these two
+sources serve genuinely different purposes, not redundant with
+each other.
+
+BACKTESTING/RESEARCH (yfinance): needs deep history (20+ years)
+across hundreds of tickers to validate strategies against real
+past regimes (2008, 2013, 2018, 2022, etc.) -- exactly what every
+dial and the ETF scorer needed tonight. Free/unofficial, real rate
+limits, acceptable for this use case since it's not live-money-
+critical, but should be used respectfully (space out large batch
+downloads, as learned tonight).
+
+LIVE TRADING (should be Schwab, once built): does NOT need deep
+history -- only needs the trailing lookback windows the live
+system actually uses (63-day returns, 252-day percentile ranks,
+etc. -- at most ~1-2 years back from "now"). Schwab's own API
+(already authenticated, already integrated via schwab_client.py)
+can very plausibly supply this directly, meaning the LIVE system
+likely does not need yfinance at all once built -- removing a real
+fragility point (free, unofficial, rate-limited source) from the
+part of the system that will actually have real money on the line.
+
+NOT YET BUILT: the live-data-fetching path through Schwab
+specifically for the rolling lookback windows dials/scorer need.
+Currently everything (including what would be live logic) is
+written assuming a yfinance-sourced parquet cache. This is real,
+separate work for whenever live-trading integration begins --
+worth remembering this split so live-path development doesn't
+accidentally inherit yfinance as a live dependency by default.
