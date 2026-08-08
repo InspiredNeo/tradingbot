@@ -2488,3 +2488,89 @@ real historical regime transitions once there's actual backtest
 data from the multi-dial system to compare against.
 
 ### Status: idea only, not built, no code written
+
+## Multi-Dial Backtest Integration -- Real Bug Found, Fix Incomplete
+
+Wired volatility and currency/EM dials into adaptive_backtest_v3.py
+as real, exclusive levers (volatility -> rate limiter speed,
+currency/EM -> EEM slice weight). Confirmed working correctly in
+calm/mild-stress periods (small, consistent positive gaps vs v3
+baseline throughout early-mid 2007 and around Bear Stearns).
+
+REAL BUG FOUND at the actual Lehman crash (Oct 2008): multi-dial
+version was $1,250-1,282 BEHIND baseline at the worst point
+(Oct 3 2008), both BEFORE and AFTER a fix attempt.
+
+First diagnosis (volatility speed multiplier applying to BOTH
+de-risk and re-risk directions, causing premature re-risking
+during brief mid-crisis vol dips): real bug, genuinely fixed
+(multiplier now only applies to de-risking). BUT did not resolve
+the Oct 3 gap -- $1,282 after the fix, essentially unchanged from
+$1,250 before it. This diagnosis was WRONG, or at best incomplete
+-- the volatility fix was a real, worthwhile fix on its own merits,
+but it is not the (or not the only) cause of this specific gap.
+
+### Status: NOT YET DIAGNOSED CORRECTLY
+Do not assume the volatility fix solved anything until re-verified.
+Real next step: isolate which lever (volatility speed OR currency/
+EM EEM trim) actually causes the Oct 3 2008 gap by disabling one
+at a time and rerunning just that single date/narrow window --
+targeted diagnostic, not another guess. Given two consecutive wrong
+diagnoses of the same gap this session (same failure pattern as
+the earlier currency/EM action-layer debugging), don't guess a
+third time -- isolate mechanically before proposing another fix.
+
+## ETF Universe Expansion via Schwab API -- Real, Major Progress
+
+Found and used a genuine, high-value data source: Schwab's own
+Instruments API (already authenticated via existing schwab_client.py
+connection) supports description-regex search. Built
+search_instruments_by_description() in schwab_client.py.
+
+Real pipeline built and validated:
+  1. Search Schwab for "ETF" in description -> 23,490 raw results
+  2. Filter to asset_type == 'ETF' exactly -> 5,473
+  3. Filter symbol format (no $ prefix, no dots, reasonable
+     length) -> 5,471
+  4. Filter out leveraged/inverse/exotic products by description
+     keyword -> 4,494 "appropriate" candidates
+  5. For each candidate: download real price/volume history,
+     require 2+ years of history AND real dollar volume >= $1M/day
+     (same _compute_liquidity threshold already used elsewhere)
+
+Real, measured yield rate: consistently 27-45% survive the full
+liquidity/history filter, most batches landing 33-37%. This rate
+held stable and consistent across 30 real batches (4,500
+candidates), not just the first one -- genuinely trustworthy.
+
+CONFIRMED: computational cost of scoring is NOT a real constraint.
+91 tickers scored in the same ~0.25s as 45 tickers -- fixed
+overhead dominates, per-ticker cost is ~2.8ms. No reason to cap
+the universe size for performance reasons; the real constraint is
+candidate quality/discovery, not scoring speed.
+
+Built build_full_universe.py -- checkpointed, safely re-runnable,
+picks up exactly where it left off (progress saved to
+histdata/universe_build_progress.json).
+
+### Progress as of stopping tonight
+2,250 of 4,494 total appropriate candidates processed.
+783 validated survivors found (real, liquid, appropriate ETFs).
+Original target was 250-300 -- already exceeded by 2.6x.
+Revised target based on measured yield rate: ~1,500 total
+survivors achievable from the full candidate pool.
+
+STOPPED due to yfinance rate limiting (YFRateLimitError hit on
+the last batch) -- correct call to stop rather than push through,
+given tonight's repeated lesson about not trusting data gathered
+while hitting rate limits or other silent-failure conditions.
+
+### Next session: two real, separate threads to pick up
+1. Continue build_full_universe.py -- 2,244 candidates remain,
+   script will resume automatically from saved progress. Space out
+   batches to avoid the rate limit this time.
+2. Properly diagnose the Oct 2008 multi-dial gap via isolation
+   (disable currency/EM lever only, rerun; disable volatility lever
+   only, rerun; compare each against the full combined version) --
+   do NOT guess at a third fix without this real, targeted
+   diagnostic step first.

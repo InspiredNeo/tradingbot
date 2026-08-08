@@ -135,6 +135,42 @@ class SchwabClient:
             print(f"Positions fetch failed: {e}")
             return []
 
+    def search_instruments_by_description(self, search_term, max_results=None):
+        """
+        Search for instruments by description regex, e.g. searching
+        for "ETF" in the description field to find a broad batch of
+        ETF tickers in one call, rather than needing to already
+        know each symbol in advance.
+
+        Returns a list of dicts: symbol, description, asset_type,
+        exchange -- or empty list on any failure (connection issue,
+        no matches, API error). Never raises -- same fail-safe
+        pattern as get_positions() above.
+        """
+        if not self.connected or not self.client:
+            return []
+        try:
+            resp = self.client.get_instruments(
+                search_term,
+                projection=self.client.Instrument.Projection.DESCRIPTION_REGEX
+            )
+            data = resp.json()
+            instruments = data.get("instruments", [])
+            results = []
+            for inst in instruments:
+                results.append({
+                    "symbol": inst.get("symbol", ""),
+                    "description": inst.get("description", ""),
+                    "asset_type": inst.get("assetType", ""),
+                    "exchange": inst.get("exchange", ""),
+                })
+            if max_results:
+                results = results[:max_results]
+            return results
+        except Exception as e:
+            print(f"Instrument search failed: {e}")
+            return []
+
     def get_portfolio_summary(self):
         """Returns combined balance + positions for the terminal."""
         balance = self.get_account_balance()
