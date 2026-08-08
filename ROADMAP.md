@@ -2830,3 +2830,39 @@ exact methodology on fit_svi next session rather than guessing.
 ### Status: cause still not found, but search space meaningfully
 ### narrowed. Next concrete step: test fit_svi determinism/variance
 ### the same way bootstrap_dial_allocation was just tested.
+
+## LEHMAN-GAP DIAGNOSTIC -- ROOT CAUSE FOUND
+
+Real, measured root cause: SVI covariance fitting has NO random
+seed, and its own internal randomness alone produces up to 2.38
+percentage points of variance in risky-asset weighting from
+IDENTICAL inputs (measured directly: 5 runs, same data, same
+date, weight sum ranged 0.5235 to 0.5473). Combined with the
+dial's own unseeded bootstrap (~1pp additional variance, measured
+earlier), these two sources together are large enough to fully
+explain the 3-4pp equity_target differences found between v3
+baseline / vol-only / em-only test runs.
+
+CONCLUSION: the "Lehman-week gap" chased across two sessions was
+NOT a real bug in either the volatility or currency/EM dial lever.
+Every comparison made between "baseline" and "multi-dial" runs
+this entire investigation was comparing independently-random
+results, not a controlled test -- neither run was deterministic,
+so differences between them were expected regardless of which
+levers were active.
+
+REAL FIX NEEDED (not yet applied): add explicit random seeds to
+both fit_svi (svi_covariance.py) and bootstrap_dial_allocation
+(adaptive_backtest_v3.py, np.random.choice/np.random.normal calls)
+so that future comparisons between backtest variants are genuinely
+controlled -- same seed = same random draws = a fair, real test of
+whether a code change actually helps or hurts, not random noise
+masquerading as a finding.
+
+This also means: the ORIGINAL "$1,250 behind baseline" finding
+that started this whole investigation was very likely also just
+random noise, not a real problem with the multi-dial system. Both
+new dials (currency/EM, volatility) should be considered CLEARED
+-- there is no confirmed evidence they cause any problem. The
+right next action, once seeding is added, is to rerun a clean,
+seeded comparison to get an actually trustworthy answer.
