@@ -816,8 +816,20 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
         except Exception:
             pass  # dial failure never blocks the main loop
 
+        # FIXED after finding a real bug via testing: applying the
+        # speed multiplier to BOTH directions meant volatility spikes
+        # also sped up RE-risking during brief mid-crisis calm blips
+        # -- confirmed real cost in the actual Oct 2008 Lehman crash
+        # (multi-dial version was $1,250 BEHIND baseline at the worst
+        # point, Oct 3 2008, largely from this). Speed boost should
+        # ONLY apply to de-risking (getting more defensive faster is
+        # correct when vol is high) -- NEVER to re-risking (getting
+        # back to risk faster during high vol is exactly backwards,
+        # same premature-confidence trap the currency/EM dial's
+        # asymmetric persistence design was built to avoid, just not
+        # carried over here originally).
         derisk_max = DERISK_MAX * vol_speed_mult
-        rerisk_max = RERISK_MAX * vol_speed_mult
+        rerisk_max = RERISK_MAX  # NEVER sped up by volatility
 
         if raw_target < equity_now:
             equity_now += max(raw_target - equity_now, -derisk_max)

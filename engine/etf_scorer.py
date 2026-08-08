@@ -36,6 +36,15 @@ CANDIDATE_UNIVERSE = [
     "XLI", "XLB", "XLU", "XLC", "XLRE",              # remaining sector SPDRs
     "MTUM", "VLUE", "USMV",                          # factor/style ETFs
     "IWM", "EFA",                                     # small cap, developed intl
+    # Second expansion -- EQUITY ONLY, deliberately excludes bonds
+    # (SHV/IEF/MBB/BND/EMB/HYD/BNDX) and broad commodities
+    # (SLV/USO/DBC/PDBC) even though they passed the liquidity
+    # filter -- same bond-leakage risk as the original TLT bug,
+    # these belong in DEF_ASSETS if added at all, never here.
+    "EWJ", "EWG", "EWU", "EWZ", "FXI", "INDA", "EWY", "EWC", "EWA", "VWO",  # international regional
+    "XBI", "IYT", "ITB", "KRE", "XOP", "SMH",         # additional sectors
+    "QUAL", "SPHQ", "SPLV", "DGRO",                    # additional factor/style
+    "PICK",                                             # metals/mining -- equity (miners), not the commodity itself
 ]
 # Removed from equity candidates: AGG, TLT, GLD, TIP -- all
 # already handled by DEF_ASSETS in the main backtest loop.
