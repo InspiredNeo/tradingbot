@@ -2664,3 +2664,63 @@ Decided direction for next major session. NOT yet designed in
 detail (exact regime boundaries, how many regimes, exact
 transition logic) or built. Sequencing: finish current universe
 build + Lehman-gap diagnosis first, then start this fresh.
+
+## Lehman-Gap Diagnostic -- Tangled, Needs Clean Restart
+
+Attempted to isolate which lever (volatility speed multiplier or
+currency/EM EEM trim) causes the ~$1,250-1,282 Oct 3 2008 gap
+between the multi-dial system and v3 baseline, using
+DISABLE_VOL_LEVER/DISABLE_EM_LEVER environment variable toggles
+added to adaptive_backtest_v3.py.
+
+Verified the toggle LOGIC itself is correct in isolation (simple
+standalone Python test confirmed: flag unset -> speed_mult=1.5,
+flag set -> speed_mult=1.0, exactly as intended).
+
+BUT: two full backtest runs (EM-disabled, then vol-disabled) that
+should have shown different October 3 values instead showed
+IDENTICAL results ($7,603 both times). Given the isolated logic
+test proves the toggle mechanism itself works correctly, the
+actual bug must be somewhere in how the environment variable
+reaches the real backtest run -- NOT diagnosed before stopping.
+Possible causes not yet checked: output/command mix-up during a
+confusing session (one command's output may have gotten
+conflated with another's -- a full RESULTS block appeared instead
+of expected live progress mid-diagnostic, suggesting real
+confusion in what was actually run when), a caching issue with
+how compute_action_signal or the dial modules get imported across
+separate subprocess invocations, or something else entirely.
+
+### Status: genuinely unresolved, do not trust either test result
+Both "Test 1" ($7,603, EM disabled) and "Test 2" ($7,603, vol
+disabled) should be treated as UNVERIFIED and likely invalid given
+the confirmed logic-vs-behavior mismatch. Do not conclude which
+lever causes the gap from this session's numbers.
+
+### Recommended clean restart for next session
+Rather than continuing to debug env-var-based toggles (proven
+correct in isolation but not reproducing correctly in the real
+run), consider a cleaner isolation method:
+  - Two SEPARATE, permanent script copies (like
+    adaptive_backtest_v3_dynuniverse.py was built as its own file
+    earlier) -- one with only the vol lever code path, one with
+    only the EM lever code path -- rather than runtime toggles
+    that depend on environment variable propagation working
+    correctly across process boundaries
+  - OR: add explicit print/log statements INSIDE the actual lever
+    application code showing vol_speed_mult's real value each
+    week, so the live output itself proves whether the toggle
+    took effect, rather than inferring it from the final portfolio
+    value alone
+  - Verify carefully which terminal output corresponds to which
+    command before drawing any conclusion -- this session's
+    confusion (a results block appearing where live progress was
+    expected) suggests output tracking itself became unreliable
+    partway through, likely from running multiple things close
+    together without clearly separating them
+
+### Real, solid work this session (unaffected by the above):
+ETF universe build fully complete and validated -- 1,368 real
+equity ETFs, full history cached, computational cost confirmed
+trivial, real bugs found and fixed (word-boundary keyword
+matching). This work is solid and does not need to be revisited.

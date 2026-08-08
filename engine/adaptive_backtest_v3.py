@@ -807,11 +807,13 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
         # toward it. This is the exclusive-lever design: no other
         # dial can ever touch equity_target itself.
         vol_speed_mult = 1.0
+        if os.environ.get("DISABLE_VOL_LEVER") == "1":
+            vol_speed_mult = 1.0  # explicit no-op, lever fully disabled
         try:
             vol_reading = dial_volatility.compute_raw_reading(px, d)
             if vol_reading is not None:
                 vol_unusual = dial_volatility.compute_action_signal(vol_reading)
-                if vol_unusual:
+                if vol_unusual and os.environ.get("DISABLE_VOL_LEVER") != "1":
                     vol_speed_mult = 1.5
         except Exception:
             pass  # dial failure never blocks the main loop
@@ -867,7 +869,7 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
                     em_dial_history, em_reading,
                     eem_absolute_declining=eem_declining)[0]
 
-                if em_unusual and "EEM" in avail:
+                if em_unusual and "EEM" in avail and os.environ.get("DISABLE_EM_LEVER") != "1":
                     eem_i = avail.index("EEM")
                     trimmed = w[eem_i] * 0.5
                     freed = w[eem_i] - trimmed
