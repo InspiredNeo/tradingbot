@@ -2724,3 +2724,61 @@ ETF universe build fully complete and validated -- 1,368 real
 equity ETFs, full history cached, computational cost confirmed
 trivial, real bugs found and fixed (word-boundary keyword
 matching). This work is solid and does not need to be revisited.
+
+## Lehman-Gap Diagnostic -- RESOLVED CLEANLY (corrected finding)
+
+Previous session's env-var-toggle diagnostic was tangled and
+untrustworthy (documented above). Redone cleanly this session
+using separate, permanent script copies instead of runtime
+toggles -- adaptive_backtest_v3_vol_only.py (EM lever permanently
+removed from code) and adaptive_backtest_v3_em_only.py (vol lever
+permanently removed from code). Each run fully separately, full
+live output tracked start to finish, no ambiguity about which
+output belongs to which test.
+
+### Real, verified results at Oct 3 2008 (the worst point of the
+### crisis, where the original gap was found):
+
+    v3 baseline (no dials at all):       $9,131
+    Vol-only (EM lever removed):         $7,612
+    EM-only (vol lever removed):         $7,570
+    Full multi-dial (both active):       $7,849
+
+### CORRECTED CONCLUSION
+The original hypothesis (one of the two new dial levers is causing
+the gap) is WRONG. Removing either lever individually makes the
+result at this date slightly WORSE, not better -- and having BOTH
+levers active together produces the best of the three dial-
+affected results. This means:
+  1. Neither the volatility lever nor the currency/EM lever is
+     the cause of the v3-baseline-vs-multi-dial gap -- both were
+     wrongly suspected.
+  2. The real gap is between v3 baseline ($9,131) and EVERY
+     dial-affected version (~$7,570-7,849) -- present regardless
+     of which combination of the two new levers is active.
+  3. Therefore the actual cause must be in something SHARED across
+     all three dial-affected versions -- most likely the underlying
+     credit dial's own behavior/computation during this specific
+     week, not either of the two new levers built this session.
+
+### Real next step (not yet done)
+Investigate the credit dial's own behavior at this date -- compare
+its raw dial reading and resulting equity_target between the v3
+baseline run and the multi-dial runs. Since the credit dial is
+supposed to be identical and untouched by the new levers (per the
+exclusive-lever design), if its behavior actually differs between
+runs, that would be a genuine, different bug in either the
+baseline or the multi-dial setup -- possibly in how the two files
+were originally forked from each other, or a real subtle
+difference in data/state between the runs. If the credit dial's
+raw output is confirmed IDENTICAL across all versions, the cause
+is likely somewhere in the shared portfolio construction/SVI
+optimization step instead. This is a real, well-scoped next
+diagnostic, genuinely different from (and more promising than)
+the lever-isolation work just completed.
+
+### Status: two dial levers CLEARED of blame, real cause still open
+Both dial_currency_em.py and dial_volatility.py remain trusted,
+validated pieces of work from earlier sessions -- this diagnostic
+confirms they are not the source of the Lehman-week discrepancy.
+The actual cause is elsewhere and not yet found.
