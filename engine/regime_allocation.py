@@ -9,7 +9,10 @@ middle cases (CORRELATED_CALM, SCATTERED_WEAKNESS).
 from regime_detector import detect_regime
 
 
-def get_regime_allocation(px, date, universe, current_equity=None):
+def get_regime_allocation(px, date, universe, current_equity=None,
+                          breadth_history=None, previously_severe=None,
+                          corr_history=None, previously_corr_high=None,
+                          regime_history=None):
     """
     Returns equity_target and a regime label, using the new
     breadth+correlation detector instead of the old scalar dial.
@@ -25,7 +28,15 @@ def get_regime_allocation(px, date, universe, current_equity=None):
     CORRELATED_CALM / SCATTERED_WEAKNESS: placeholder moderate
     posture for now -- will be refined once validated separately.
     """
-    result = detect_regime(px, date, universe)
+    from market_correlation import compute_correlation
+    corr_result = compute_correlation(px, date)
+
+    result = detect_regime(px, date, universe,
+                           breadth_history=breadth_history,
+                           previously_severe=previously_severe,
+                           corr_history=corr_history,
+                           previously_corr_high=previously_corr_high,
+                           regime_history=regime_history)
     if result is None:
         return {"equity_target": 0.70, "regime": "UNKNOWN"}  # safe fallback
 
@@ -72,6 +83,14 @@ def get_regime_allocation(px, date, universe, current_equity=None):
         "regime": regime,
         "pct_below": result["pct_below"],
         "avg_correlation": result["avg_correlation"],
+        # State to thread forward to the NEXT call, same pure-
+        # function pattern as current_equity -- caller must save
+        # these and pass them back in as breadth_history (append
+        # pct_below), corr_history (append avg_correlation),
+        # previously_severe, previously_corr_high, and
+        # regime_history (append regime) on the following week
+        "severely_stressed": result.get("severely_stressed"),
+        "corr_high": result.get("corr_high"),
     }
 
 

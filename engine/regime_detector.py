@@ -76,7 +76,8 @@ PERSISTENT_RELEASE_FRACTION = 0.25  # only 2 of 8 weeks elevated -> release
 
 
 def detect_regime(px, date, universe, breadth_history=None, previously_severe=None,
-                  corr_history=None, previously_corr_high=None, regime_history=None):
+                  corr_history=None, previously_corr_high=None, regime_history=None,
+                  raw_regime_history=None):
     """
     breadth_history: list of recent pct_below readings, oldest to
     newest, threaded through by the caller (same pure-function
@@ -152,19 +153,61 @@ def detect_regime(px, date, universe, breadth_history=None, previously_severe=No
     # classification for several consecutive weeks before actually
     # exiting -- a brief, single-week disagreement between the two
     # underlying signals shouldn't flip the final label.
-    if regime_history is not None and len(regime_history) >= 2:
+    # FIXED: previous logic had a genuine permanent-latch bug --
+    # the inner check re-tested the exact same condition already
+    # confirmed true by was_crisis, making the release branch
+    # unreachable dead code. Once regime_history[-1] was
+    # SYSTEMIC_CRISIS, output was ALWAYS SYSTEMIC_CRISIS forever,
+    # confirmed directly: real backtest got stuck through breadth
+    # readings as low as 0.32 (deep calm territory) in May 2008,
+    # unable to ever exit. Same category of bug as the original
+    # ScenarioState latches found early this session.
+    #
+    # Real fix: trailing-window FRACTION on the raw regime
+    # classification itself, same proven pattern as every other
+    # persistence check tonight. Requires most (not all, not just
+    # one) of the recent raw readings to genuinely leave crisis
+    # before actually releasing -- tolerant of real volatility
+    # without being permanently stuck.
+    CRISIS_RELEASE_WINDOW = 4
+    CRISIS_RELEASE_FRACTION = 0.75  # 3 of last 4 raw readings must
+                                      # be non-crisis to actually exit
+
+    if regime_history is not None and len(regime_history) >= 1:
         was_crisis = regime_history[-1] == "SYSTEMIC_CRISIS"
-        if was_crisis and raw_regime != "SYSTEMIC_CRISIS":
-            # Require 2 consecutive non-crisis raw readings before
-            # actually exiting crisis classification
-            if regime_history[-1] == "SYSTEMIC_CRISIS":
-                regime = "SYSTEMIC_CRISIS"  # hold one more week
-            else:
-                regime = raw_regime
-        else:
-            regime = raw_regime
     else:
+        was_crisis = False
+
+    # DECISIVE_CALM_THRESHOLD: a breadth reading this low is
+    # unambiguous enough to release immediately, without waiting
+    # out the full persistence window -- avoids making genuinely
+    # dramatic, clear improvement wait an arbitrary number of
+    # weeks just because that's the window size chosen for
+    # ambiguous, borderline cases.
+    DECISIVE_CALM_THRESHOLD = 0.15  # well below BREADTH_STRESS_THRESHOLD
+                                      # (0.40), a real, unambiguous margin
+
+    if not was_crisis:
         regime = raw_regime
+    elif raw_regime == "SYSTEMIC_CRISIS":
+        regime = "SYSTEMIC_CRISIS"  # still crisis, no ambiguity
+    elif breadth["pct_below"] <= DECISIVE_CALM_THRESHOLD:
+        # Fast exit: this week's reading is decisively, unambiguously
+        # calm -- release immediately rather than waiting out the
+        # full multi-week persistence window
+        regime = raw_regime
+    else:
+        # Ambiguous/borderline improvement -- still needs the full
+        # persistence window before actually releasing
+        if raw_regime_history is not None and len(raw_regime_history) >= CRISIS_RELEASE_WINDOW:
+            recent = raw_regime_history[-CRISIS_RELEASE_WINDOW:]
+            non_crisis_fraction = sum(1 for r in recent if r != "SYSTEMIC_CRISIS") / len(recent)
+            if non_crisis_fraction >= CRISIS_RELEASE_FRACTION:
+                regime = raw_regime
+            else:
+                regime = "SYSTEMIC_CRISIS"
+        else:
+            regime = "SYSTEMIC_CRISIS"
 
     return {
         "regime": regime,
@@ -175,6 +218,7 @@ def detect_regime(px, date, universe, breadth_history=None, previously_severe=No
                                                     # previously_severe
                                                     # on the next call
         "corr_high": corr_high,  # thread forward as previously_corr_high
+        "raw_regime": raw_regime,  # thread forward, append to raw_regime_history
     }
 
 

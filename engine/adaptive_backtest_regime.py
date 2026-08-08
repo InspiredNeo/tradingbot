@@ -677,6 +677,16 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
 
     port_val   = 10000.0
     equity_now = 0.70          # current equity %, rate-limited
+
+    # History tracking for the regime detector's persistence
+    # logic -- same pure-function threading pattern as equity_now,
+    # maintained here in the loop and passed in fresh each call,
+    # not stored inside the detector itself
+    _breadth_history = []
+    _corr_history = []
+    _regime_history = []
+    _prev_severe = None
+    _prev_corr_high = None
     weights    = None
     # ScenarioState is instantiated but never called anywhere in
     # this loop -- confirmed dead code, leftover from before the
@@ -747,8 +757,20 @@ def run_adaptive_v3(start="2004-06-30", end=None, verbose=True):
         try:
             from regime_allocation import get_regime_allocation
             regime_result = get_regime_allocation(
-                px, d, EQUITY_UNIVERSE, current_equity=equity_now)
+                px, d, EQUITY_UNIVERSE, current_equity=equity_now,
+                breadth_history=_breadth_history,
+                previously_severe=_prev_severe,
+                corr_history=_corr_history,
+                previously_corr_high=_prev_corr_high,
+                regime_history=_regime_history)
             scenario = regime_result["regime"]
+
+            # Thread state forward for next week's call
+            _breadth_history.append(regime_result["pct_below"])
+            _corr_history.append(regime_result["avg_correlation"])
+            _regime_history.append(scenario)
+            _prev_severe = regime_result.get("severely_stressed")
+            _prev_corr_high = regime_result.get("corr_high")
             alloc = {
                 "equity_target": regime_result["equity_target"],
                 "gld_min": 0.04,
