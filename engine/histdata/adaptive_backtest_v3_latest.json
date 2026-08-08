@@ -1,0 +1,82 @@
+{
+  "version": "v3",
+  "final": 9706.733208715194,
+  "total": -0.029326679128480637,
+  "ann_ret": -0.029326679128480637,
+  "sharpe_weekly": -1.8429329500231106,
+  "sharpe_daily": null,
+  "max_dd": -0.03550929341489713,
+  "calmar": -0.8258874313780991,
+  "years": 0.13415468856947296,
+  "oos": {
+    "ann_ret": 0.0,
+    "sharpe": 0.0,
+    "max_dd": 0.0
+  },
+  "gates": {
+    "Sharpe (weekly) >= 1.1": false,
+    "Max DD <= 30%": true,
+    "Calmar >= 0.35": false,
+    "Final >= $70,000": false,
+    "OOS Sharpe >= 0.90": false
+  },
+  "all_pass": false,
+  "records": [
+    {
+      "date": "2008-06-13",
+      "portfolio": 9872.076960070373,
+      "dial": 0.593103448275862,
+      "scenario": "SYSTEMIC_CRISIS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-06-20",
+      "portfolio": 9755.225297645964,
+      "dial": 0.7172413793103448,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-06-27",
+      "portfolio": 9646.774665190125,
+      "dial": 0.8047945205479452,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-07-03",
+      "portfolio": 9554.803437810247,
+      "dial": 0.8737201365187713,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-07-11",
+      "portfolio": 9521.526482680789,
+      "dial": 0.89419795221843,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-07-18",
+      "portfolio": 9644.262379591672,
+      "dial": 0.89419795221843,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-07-25",
+      "portfolio": 9663.76979405144,
+      "dial": 0.9149659863945578,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    },
+    {
+      "date": "2008-08-01",
+      "portfolio": 9706.733208715194,
+      "dial": 0.9251700680272109,
+      "scenario": "SCATTERED_WEAKNESS",
+      "in_sample": true
+    }
+  ]
+}

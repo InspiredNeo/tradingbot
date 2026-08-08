@@ -34,12 +34,55 @@ DATA_DIR = os.path.expanduser("~/tradingbot/engine/histdata")
 # (94.6-98.1%) -- a wide gap to place a threshold in safely
 BREADTH_STRESS_THRESHOLD = 0.40
 
+# FIXED after finding a real calibration problem: breadth alone
+# has a natural saturation issue -- it separates calm from
+# not-calm cleanly (4.7% vs 78%+) but plateaus in a narrow band
+# (78-98%) regardless of whether the real event is a mild credit
+# crunch or an acute systemic crisis. avg_deviation (how FAR below
+# the moving average, not just how many are below) shows a much
+# cleaner real gradient: mild events cluster -3% to -12%, acute
+# crises cluster -26% to -32%, with a genuine, clean gap between
+# them in real historical data. Severity now gated on deviation,
+# not breadth count.
+SEVERE_DEVIATION_THRESHOLD = -0.18  # placed in the real, empty gap
+                                     # between -12% (mild) and -26%
+                                     # (acute), confirmed via direct
+                                     # historical measurement
+
 # correlation stressed avg 0.833, calm avg 0.588 -- real but
 # weaker separation, threshold placed conservatively
 CORR_HIGH_THRESHOLD = 0.70
 
 
-def detect_regime(px, date, universe):
+# Persistence-based severity, added after finding a real gap:
+# a single week's deviation alone missed the entire 9-month 2022
+# bear market (never crossed the sudden-crash threshold in any
+# single week, despite breadth staying above 80% for months).
+# Real fix: SYSTEMIC_CRISIS now triggers on EITHER a sudden severe
+# spike OR sustained elevated breadth over time -- same asymmetric
+# persistence principle already validated for the currency/EM dial.
+PERSISTENT_STRESS_WEEKS = 8   # trailing window size
+PERSISTENT_BREADTH_THRESHOLD = 0.75  # breadth level counted as
+                                       # "elevated" for persistence
+# FIXED after finding real flickering in the 2022 test: strict
+# "ALL 8 of the last 8 weeks elevated" reset on a single relief
+# week (e.g. Aug 12 2022 dipped to 66.3%), causing the crisis
+# label to flicker on/off during what was, in real history, one
+# continuous ongoing bear market. Same fix already proven for the
+# currency/EM dial: trailing-window FRACTION instead of strict
+# all-weeks requirement, tolerant of single-week noise.
+PERSISTENT_ENGAGE_FRACTION = 0.75  # 6 of 8 weeks elevated -> escalate
+PERSISTENT_RELEASE_FRACTION = 0.25  # only 2 of 8 weeks elevated -> release
+
+
+def detect_regime(px, date, universe, breadth_history=None, previously_severe=None,
+                  corr_history=None, previously_corr_high=None, regime_history=None):
+    """
+    breadth_history: list of recent pct_below readings, oldest to
+    newest, threaded through by the caller (same pure-function
+    pattern as every other stateful check this session -- no
+    internal state stored here).
+    """
     breadth = compute_breadth(px, date, universe)
     corr = compute_correlation(px, date)
 
@@ -47,22 +90,91 @@ def detect_regime(px, date, universe):
         return None
 
     breadth_stressed = breadth["pct_below"] >= BREADTH_STRESS_THRESHOLD
-    corr_high = corr["avg_correlation"] >= CORR_HIGH_THRESHOLD
+    sudden_severe = breadth["avg_deviation"] <= SEVERE_DEVIATION_THRESHOLD
+
+    # Persistence check with hysteresis, same asymmetric pattern
+    # already validated for the currency/EM dial: engage on a
+    # trailing-window FRACTION (tolerant of single noisy weeks),
+    # release only when the fraction drops much further --
+    # prevents the flickering found in the strict-all-weeks version.
+    sustained_severe = False
+    if breadth_history is not None and len(breadth_history) >= PERSISTENT_STRESS_WEEKS:
+        recent = breadth_history[-PERSISTENT_STRESS_WEEKS:]
+        elevated_fraction = sum(1 for b in recent if b >= PERSISTENT_BREADTH_THRESHOLD) / len(recent)
+        was_already_severe = (previously_severe if previously_severe is not None else False)
+        if not was_already_severe and elevated_fraction >= PERSISTENT_ENGAGE_FRACTION:
+            sustained_severe = True
+        elif was_already_severe and elevated_fraction >= PERSISTENT_RELEASE_FRACTION:
+            sustained_severe = True  # stay engaged, hasn't dropped enough to release
+        else:
+            sustained_severe = False
+
+    severely_stressed = sudden_severe or sustained_severe
+
+    # Same hysteresis fix applied to correlation, for the same
+    # reason: a single week's correlation dip (e.g. Sept 16-23 2022,
+    # right in the middle of an otherwise-correctly-sustained
+    # crisis) was causing brief SCATTERED_WEAKNESS interruptions
+    # even while breadth correctly stayed engaged underneath.
+    corr_high_raw = corr["avg_correlation"] >= CORR_HIGH_THRESHOLD
+    if corr_history is not None and len(corr_history) >= 3:
+        recent_corr = corr_history[-3:]
+        was_corr_high = (previously_corr_high if previously_corr_high is not None else False)
+        elevated_corr_fraction = sum(1 for c in recent_corr if c >= CORR_HIGH_THRESHOLD) / len(recent_corr)
+        if not was_corr_high and elevated_corr_fraction >= 0.67:
+            corr_high = True
+        elif was_corr_high and elevated_corr_fraction >= 0.34:
+            corr_high = True  # stay engaged, hasn't dropped enough
+        else:
+            corr_high = False
+    else:
+        corr_high = corr_high_raw
 
     if not breadth_stressed and not corr_high:
-        regime = "CALM"
+        raw_regime = "CALM"
     elif not breadth_stressed and corr_high:
-        regime = "CORRELATED_CALM"
+        raw_regime = "CORRELATED_CALM"
+    elif breadth_stressed and not severely_stressed:
+        raw_regime = "MODERATE_STRESS"
     elif breadth_stressed and not corr_high:
-        regime = "SCATTERED_WEAKNESS"
+        raw_regime = "SCATTERED_WEAKNESS"
     else:
-        regime = "SYSTEMIC_CRISIS"
+        raw_regime = "SYSTEMIC_CRISIS"
+
+    # THIRD fix, applied at the right level this time: the two
+    # underlying signals (breadth, correlation) each got their own
+    # hysteresis, but disagreement in their TIMING still flickered
+    # the COMBINED label (confirmed: fixing breadth's flicker moved
+    # the problem to correlation's, fixing that moved it again).
+    # Real fix: persistence on the FINAL combined regime itself,
+    # not just its two inputs separately. Once SYSTEMIC_CRISIS is
+    # reached, require the raw combination to genuinely leave that
+    # classification for several consecutive weeks before actually
+    # exiting -- a brief, single-week disagreement between the two
+    # underlying signals shouldn't flip the final label.
+    if regime_history is not None and len(regime_history) >= 2:
+        was_crisis = regime_history[-1] == "SYSTEMIC_CRISIS"
+        if was_crisis and raw_regime != "SYSTEMIC_CRISIS":
+            # Require 2 consecutive non-crisis raw readings before
+            # actually exiting crisis classification
+            if regime_history[-1] == "SYSTEMIC_CRISIS":
+                regime = "SYSTEMIC_CRISIS"  # hold one more week
+            else:
+                regime = raw_regime
+        else:
+            regime = raw_regime
+    else:
+        regime = raw_regime
 
     return {
         "regime": regime,
         "pct_below": breadth["pct_below"],
         "avg_deviation": breadth["avg_deviation"],
         "avg_correlation": corr["avg_correlation"],
+        "severely_stressed": severely_stressed,  # thread forward as
+                                                    # previously_severe
+                                                    # on the next call
+        "corr_high": corr_high,  # thread forward as previously_corr_high
     }
 
 

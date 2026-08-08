@@ -35,6 +35,11 @@ def get_regime_allocation(px, date, universe, current_equity=None):
         equity_target = 0.98
     elif regime == "SYSTEMIC_CRISIS":
         equity_target = 0.35
+    elif regime == "MODERATE_STRESS":
+        equity_target = 0.55  # real, distinct tier -- between calm
+                                # and crisis, for events like Feb 2008
+                                # pre-crisis decline, 2011 debt ceiling,
+                                # or a slow grinding bear like 2022
     elif regime == "CORRELATED_CALM":
         equity_target = 0.75  # placeholder, moderate
     elif regime == "SCATTERED_WEAKNESS":
