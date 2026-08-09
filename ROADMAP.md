@@ -3053,3 +3053,61 @@ genuine equity and genuine bonds. Not urgent -- small number of
 affected tickers, not actively harmful, just imprecise. Worth
 addressing if/when these ever get used for regime scoring or
 allocation decisions specifically.
+
+## FUTURE WORK: Replace yfinance with IBKR for Backtesting Research
+
+Real, concrete infrastructure improvement identified at the end of
+this session -- worth prioritizing early next session, since it
+directly fixes a real limitation hit multiple times tonight.
+
+### The problem this solves
+yfinance (used throughout this session for backtesting research --
+the 1,383-ticker universe download, historical price/volume data)
+is free but unofficial and rate-limited. Hit a real
+YFRateLimitError partway through build_full_universe.py tonight,
+requiring careful batching/pacing to work around. Real, ongoing
+fragility for any future large-scale historical data work.
+
+### Why IBKR is a real, viable fix -- confirmed via research
+- Genuinely free: no account-opening fee, IBKR Lite has no minimum
+  deposit (corrected an earlier wrong assumption about a $500
+  minimum -- that appears to only apply to certain market data
+  subscriptions in specific cases, not core account/API access)
+- Trading/data API explicitly free to all IBKR clients
+- Real depth confirmed: one documented example shows 40 years of
+  daily history fetched for a single stock (AAPL) in one request --
+  genuinely deeper and more capable than what we pieced together
+  from yfinance + Schwab tonight
+- Official, supported API (TWS API or newer Client Portal REST
+  API), not an unofficial scraper-style library the way yfinance is
+
+### Real setup cost, worth being honest about
+Unlike Schwab's straightforward REST calls (already working,
+already authenticated), IBKR's traditional API requires actually
+running their Trader Workstation application locally, or standing
+up their newer Client Portal API gateway. This is genuine, new
+setup work -- comparable in scope to building the original Schwab
+connection was -- not a quick addition.
+
+### Recommended next-session approach (same discipline as tonight)
+1. Confirm/create IBKR account, verify actual API connectivity
+   with a small, single-ticker test (same pattern as the very
+   first Schwab test tonight: one real call, verify real data
+   comes back, before building anything else)
+2. Build a genuine parallel data-fetching module (ibkr_client.py,
+   mirroring the structure of schwab_client.py) -- do NOT touch
+   or remove the existing yfinance-based scripts until IBKR is
+   independently confirmed working
+3. Cross-validate: pull the same real ticker (e.g. GDX, already
+   used as a cross-validation anchor tonight) from both yfinance
+   and IBKR, confirm the historical data genuinely matches before
+   trusting IBKR as a replacement
+4. Only after cross-validation passes, consider migrating the
+   universe-building/backtesting pipeline to IBKR as the primary
+   historical data source, keeping yfinance as a documented fallback
+
+### Status: real, prioritized idea, not started
+Distinct from the existing Schwab-for-live-trading /
+yfinance-for-backtesting split already established this session --
+this would replace yfinance specifically, while Schwab's role for
+live/paper trading stays unchanged.
