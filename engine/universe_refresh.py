@@ -62,7 +62,13 @@ def refresh_universe(dry_run=True):
     conn = get_connection()
     c = conn.cursor()
 
-    c.execute("SELECT ticker, is_validated FROM universe")
+    # FIXED: previously checked ALL 1,535 survivors regardless of
+    # equity/bond-commodity status, incorrectly flagging 143
+    # legitimately-excluded bond/commodity tickers (VCEB, SIVR,
+    # WIP, etc.) as false demotions -- they were never supposed to
+    # be in the price cache at all. Now only checks genuine
+    # equity-universe members.
+    c.execute("SELECT ticker, is_validated FROM universe WHERE is_equity = 1")
     existing = {row["ticker"]: row["is_validated"] for row in c.fetchall()}
 
     px = pd.read_parquet("histdata/bt_prices.parquet")
