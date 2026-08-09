@@ -2959,3 +2959,34 @@ before being caught. Any time a detector or allocation function
 gets a real fix, check EVERY caller uses it correctly -- a fix in
 one place doesn't automatically propagate to scripts that call the
 function differently.
+
+## Important Context: Backtest Resolution vs Real Live/Paper Trading
+
+Worth remembering when interpreting ANY backtest result from this
+project: every backtest here operates on WEEKLY resolution (Friday
+closes only). This is a real, structural limitation relative to
+live or paper trading, which can monitor and react continuously,
+not just once a week.
+
+Two distinct gaps:
+1. DETECTION LAG -- a real regime shift beginning mid-week isn't
+   "seen" by this backtest until the following Friday. Live/paper
+   trading checking more frequently would catch shifts days
+   earlier.
+2. REBALANCING LAG -- even once detected, the rate limiter takes
+   multiple WEEKS (in backtest time) to reach a new target. A
+   live system reacting daily could execute the same transition
+   faster in real calendar time, using identical underlying logic.
+
+Practical implication: backtest results should be treated as a
+CONSERVATIVE FLOOR on real, live performance, not the expected
+real-world number. A live/paper-trading version of the same
+regime logic has strictly more information and faster reaction
+time than any weekly-resolution backtest can capture -- if the
+weekly backtest beats or comes close to VTI, a live version would
+plausibly do at least as well, likely better.
+
+This is relevant context for the current full 22-year regime
+backtest run (started tonight, ~6hr runtime) and any future
+backtest work -- don't treat backtest numbers as a hard ceiling on
+what the live system could achieve.
