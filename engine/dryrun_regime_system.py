@@ -40,9 +40,28 @@ def run(start="2004-06-30", end=None, verbose=True):
     rows = []
     t0 = time.time()
 
+    # History threading, same as the real backtest -- without this,
+    # every persistence/hysteresis fix built tonight never activates,
+    # since they all depend on remembered state across weeks.
+    # Confirmed as a real bug: without this, SYSTEMIC_CRISIS weeks
+    # dropped from 190 to 28 in a full 22-year run, and 2008's real
+    # drawdown protection weakened from -18.7% (correctly seeded,
+    # full backtest) to -25.7% (this script, before this fix).
+    breadth_history, corr_history, regime_history, raw_regime_history = [], [], [], []
+    prev_severe, prev_corr_high = None, None
+
     for i, d in enumerate(dates[:-1]):
         try:
-            alloc = get_regime_allocation(px, d, universe, current_equity=equity_now)
+            alloc = get_regime_allocation(
+                px, d, universe, current_equity=equity_now,
+                breadth_history=breadth_history, previously_severe=prev_severe,
+                corr_history=corr_history, previously_corr_high=prev_corr_high,
+                regime_history=regime_history)
+            breadth_history.append(alloc["pct_below"])
+            prev_severe = alloc.get("severely_stressed")
+            corr_history.append(alloc["avg_correlation"])
+            prev_corr_high = alloc.get("corr_high")
+            regime_history.append(alloc["regime"])
         except Exception as e:
             if verbose and i % 100 == 0:
                 print(f"  {d.date()}: regime calc failed ({e}), holding steady")
