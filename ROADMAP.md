@@ -2990,3 +2990,48 @@ This is relevant context for the current full 22-year regime
 backtest run (started tonight, ~6hr runtime) and any future
 backtest work -- don't treat backtest numbers as a hard ceiling on
 what the live system could achieve.
+
+## FUTURE IDEA: Constituent-Level Breadth Monitoring Inside Individual ETFs
+
+Real, coherent idea worth building eventually -- natural extension
+of the breadth signal we validated and shipped this session, just
+applied one level deeper.
+
+### The core idea
+Our breadth signal already works at the universe level: checking
+how many of 1,368 individual tickers are below their moving
+average, as an early signal of broader market stress. The same
+core principle applied INSIDE a single ETF: check how many of that
+ETF's actual constituent stocks look weak, not just the ETF's own
+aggregate price.
+
+### Why this could genuinely help
+An ETF's price is a weighted average of its holdings. Real
+deterioration in a few of an ETF's bigger constituent stocks can
+be masked by strength in others, meaning the ETF's own price
+might not yet reflect a real, building problem that constituent-
+level breadth would catch earlier. Same logic as universe-level
+breadth catching early market stress before it's obvious in a
+single blended index price -- just applied at the level of one
+fund's actual holdings instead of the whole market.
+
+### What this would require (real, new work, not yet started)
+- Real ETF constituent/holdings data (which stocks make up XLE,
+  QQQ, etc., and their weights) -- a genuinely new data
+  requirement, distinct from the price/volume data already built
+  and cached this session
+- A per-ETF breadth calculation, reusing the same core logic as
+  market_breadth.py but scoped to one fund's holdings instead of
+  the full universe
+- Decide how this signal would actually feed into the system --
+  likely as an additional input to the ETF scorer (etf_scorer.py)
+  rather than a new top-level regime dial, since it's about WHICH
+  individual fund to trust/hold, not the overall market regime
+
+### Status
+Idea only, not built, not validated. Real candidate for future
+work once paper-trading infrastructure and the current regime
+system are further along. Should be validated the same disciplined
+way as everything else this session -- real historical stressed-
+vs-calm testing before trusting it -- before being wired into any
+live decision-making.
