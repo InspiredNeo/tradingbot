@@ -18,7 +18,11 @@ from db_setup import get_connection
 
 EXCLUDE_KEYWORDS = [
     '2X', '3X', 'INVERSE', 'BULL', 'BEAR', 'DAILY TARGET',
-    'LEVERAGED', 'ULTRA', 'SHORT ', ' SHORT', 'FLOOR', 'BUFFER',
+    'LEVERAGED', 'ULTRA', 'FLOOR', 'BUFFER',
+    # FIXED: standalone 'SHORT' was too broad, correctly matched
+    # inside "SHORT-TERM" (a genuine bond duration term, e.g.
+    # VCSH), not just real short-selling/inverse products.
+    'SHORT SELL', 'SHORT ETF',
 ]
 BOND_COMMODITY_KEYWORDS = [
     "BOND", "TREASURY", "TRSY", "MUNICIPAL", "MUNI", "CORPORATE BOND",
@@ -135,7 +139,14 @@ def find_new_candidates(dry_run=True):
 
     EXCLUDE_KEYWORDS = [
         '2X', '3X', 'INVERSE', 'BULL', 'BEAR', 'DAILY TARGET',
-        'LEVERAGED', 'ULTRA', 'SHORT ', ' SHORT', 'FLOOR', 'BUFFER',
+        'LEVERAGED', 'ULTRA', 'FLOOR', 'BUFFER',
+        # FIXED: standalone 'SHORT' was too broad -- correctly,
+        # legitimately matches inside "SHORT-TERM" (a genuine bond
+        # duration descriptor, e.g. VCSH), not just genuine
+        # short-selling/inverse products. Replaced with more
+        # specific phrases that actually indicate a short/inverse
+        # STRATEGY, not just the word "short" appearing anywhere.
+        'SHORT SELL', 'SHORT ETF',
     ]
 
     def is_appropriate(desc):
@@ -171,12 +182,23 @@ def find_new_candidates(dry_run=True):
                   # API under real, repeated automated use
 
     validated_new = []
+    error_count = 0
     for idx, sym in enumerate(all_symbols):
         try:
-            resp = client.get_price_history_every_day(sym)
+            # FIXED: real bug -- client is our SchwabClient wrapper,
+            # but get_price_history_every_day lives on the underlying
+            # SDK object (client.client), not the wrapper directly.
+            # Confirmed: this was throwing a silent AttributeError on
+            # every single ticker, caught by the bare except, hidden
+            # entirely (0/2959 passed with no visible error at all)
+            # until error printing was added and traced back to here.
+            resp = client.client.get_price_history_every_day(sym)
             data = resp.json()
             candles = data.get("candles", [])
         except Exception as e:
+            error_count += 1
+            if error_count <= 5:
+                print(f"  ERROR on {sym}: {e}")
             continue
 
         if len(candles) < 504:
@@ -192,9 +214,12 @@ def find_new_candidates(dry_run=True):
         if avg_dollar_vol >= 1e6:
             validated_new.append(sym)
 
-        if idx % 50 == 0 and idx > 0:
-            print(f"  Checked {idx}/{len(all_symbols)}, "
-                  f"{len(validated_new)} validated so far")
+        if idx % 10 == 0:
+            pct = idx / len(all_symbols) * 100
+            bar_filled = int(pct / 2)
+            bar = "#" * bar_filled + "-" * (50 - bar_filled)
+            print(f"  [{bar}] {pct:.1f}%  {idx}/{len(all_symbols)}  "
+                  f"validated={len(validated_new)}  errors={error_count}")
         time.sleep(PAUSE)
 
     print(f"Passed liquidity/history validation: {len(validated_new)}")
