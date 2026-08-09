@@ -3035,3 +3035,21 @@ system are further along. Should be validated the same disciplined
 way as everything else this session -- real historical stressed-
 vs-calm testing before trusting it -- before being wired into any
 live decision-making.
+
+## Known Limitation: Universe Classification is Binary (Equity/Bond)
+
+Found via the universe_refresh promotion pipeline: a small number
+of real, legitimate instruments don't cleanly fit either category
+-- VIXY (pure VIX futures, not equity or bond), ULTI and similar
+"OPT STRATEGY"/option-income funds (derivatives-wrapped strategies,
+not straightforward equity ownership, same category flagged
+earlier with GDXY). Currently these get marked is_equity=1 by
+default (not caught by either exclusion filter), which isn't
+strictly wrong but isn't a precise fit either.
+
+Real future improvement: a third category (or at minimum, a flag)
+for "alternative/derivative strategy" instruments, separate from
+genuine equity and genuine bonds. Not urgent -- small number of
+affected tickers, not actively harmful, just imprecise. Worth
+addressing if/when these ever get used for regime scoring or
+allocation decisions specifically.
