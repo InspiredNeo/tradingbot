@@ -3111,3 +3111,38 @@ Distinct from the existing Schwab-for-live-trading /
 yfinance-for-backtesting split already established this session --
 this would replace yfinance specifically, while Schwab's role for
 live/paper trading stays unchanged.
+
+## UPDATE: IBKR Scope Genuinely Open -- Not Just Data, Possibly Full Broker Switch
+
+Following up on the IBKR note above -- worth being clear this
+might be a bigger decision than originally scoped (yfinance
+replacement for backtesting only). User's real reasoning: IBKR is
+built specifically with algorithmic/systematic trading in mind
+(more sophisticated order types, broader market access, API
+designed for programmatic use), genuinely more than Schwab is.
+
+Real, open question not yet decided: is this about replacing
+yfinance for backtesting data only, or about IBKR potentially
+becoming the PRIMARY BROKER for live/paper trading, replacing
+Schwab's role entirely (which currently holds real positions and
+is wired into schwab_client.py for account/position/order
+management)?
+
+User's honest answer when asked directly: "honestly maybe" --
+genuinely undecided, not ready to commit either way tonight.
+
+### Recommended approach next session
+Don't decide this abstractly -- get hands-on first. Actually
+create/access an IBKR account, test the real API connection, get
+a genuine feel for how it works in practice (order types, data
+access, overall API ergonomics) before deciding whether this
+replaces Schwab entirely, supplements it, or stays scoped to just
+backtesting data as originally logged. A real, informed decision
+after direct experience beats reasoning about it in the abstract.
+
+This is a genuinely bigger decision than a data-source swap if the
+full-broker-switch scope is chosen -- would need real thought about
+what happens to the existing Schwab connection, any real positions
+already held there, and whether to run both in parallel during a
+transition. Worth its own dedicated, focused session, not a
+tail-end decision.
