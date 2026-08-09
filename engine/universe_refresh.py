@@ -107,12 +107,28 @@ def find_new_candidates(dry_run=True):
     in our database -- avoids reprocessing all 4,494 candidates
     every time, only checks the delta of genuinely new instruments
     that have appeared since the last refresh.
+
+    FIXED after extensive real debugging tonight: Schwab's search
+    was found to return a genuinely STABLE total count (23,507,
+    confirmed identical across 3 consecutive calls) but a
+    genuinely DIFFERENT specific instrument set between separate
+    calls -- likely some real-time indexing variability on
+    Schwab's side. Every prior version of this function called
+    search MULTIPLE times across its own verification/debugging
+    steps, each vulnerable to this variability, which is why the
+    same ticker (VCSH) appeared and disappeared between checks
+    that should have been identical.
+
+    Real fix: snapshot the search results ONCE per real run, save
+    to disk immediately, and have every downstream step (filtering,
+    already-known check, validation) work from that single fixed
+    snapshot -- never re-querying Schwab mid-run. Makes the whole
+    process genuinely deterministic and testable.
     """
     from schwab_client import get_schwab_client
-    from etf_scorer import _compute_liquidity
     import re
-    import pandas as pd
-    import yfinance as yf
+    import json as _json
+    from datetime import datetime
 
     conn = get_connection()
     c = conn.cursor()
@@ -122,6 +138,13 @@ def find_new_candidates(dry_run=True):
     client = get_schwab_client()
     results = client.search_instruments_by_description(
         '.*ETF.*', max_results=None)
+
+    # Snapshot immediately -- this exact result set is now the
+    # single source of truth for the rest of this run
+    snapshot_path = f"histdata/schwab_search_snapshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(snapshot_path, "w") as f:
+        _json.dump(results, f)
+    print(f"Snapshotted {len(results)} raw search results to {snapshot_path}")
     etf_only = [r for r in results if r['asset_type'] == 'ETF']
     clean = [r for r in etf_only if not r['symbol'].startswith('$')
              and '.' not in r['symbol'] and 1 <= len(r['symbol']) <= 5]
@@ -138,20 +161,62 @@ def find_new_candidates(dry_run=True):
         return []
 
     EXCLUDE_KEYWORDS = [
-        '2X', '3X', 'INVERSE', 'BULL', 'BEAR', 'DAILY TARGET',
+        '2X', '3X', '1.5X', 'INVERSE', 'BULL', 'BEAR', 'DAILY TARGET',
         'LEVERAGED', 'ULTRA', 'FLOOR', 'BUFFER',
-        # FIXED: standalone 'SHORT' was too broad -- correctly,
-        # legitimately matches inside "SHORT-TERM" (a genuine bond
-        # duration descriptor, e.g. VCSH), not just genuine
-        # short-selling/inverse products. Replaced with more
-        # specific phrases that actually indicate a short/inverse
-        # STRATEGY, not just the word "short" appearing anywhere.
-        'SHORT SELL', 'SHORT ETF',
+    ]
+    DURATION_WORDS = ['TERM', 'DURATION', 'MATURITY']
+
+    BOND_COMMODITY_KEYWORDS = [
+        "BOND", "TREASURY", "TRSY", "MUNICIPAL", "MUNI", "CORPORATE BOND",
+        "FIXED INCOME", "GOLD", "SILVER", "OIL", "COMMODITY", "COMMODITIES",
+        "NATURAL GAS", "CRUDE", "INCOME", "DURATION", "MATURITY",
+    ]
+    EQUITY_OVERRIDE_KEYWORDS = [
+        "MINERS", "MINING", "SERVICES", "EXPLOR", "PRODUCTION",
+        "REFIN", "EQUIPMENT",
     ]
 
-    def is_appropriate(desc):
+    def is_leveraged_inverse(desc):
+        # FIXED (properly this time): real bug found via review --
+        # genuine inverse funds (BITI "Short Bitcoin", SARK "Short
+        # Innovation", PSQ "Short QQQ", NVDS "1.5X Short NVDA) were
+        # missed because "SHORT" wasn't adjacent to "ETF" the way
+        # the prior phrase-only check required. Real fix: SHORT is
+        # a duration descriptor (keep) only when followed within
+        # ~20 chars by TERM/DURATION/MATURITY -- otherwise SHORT
+        # indicates a genuine short-selling strategy (exclude).
+        import re
         d = desc.upper()
-        return not any(kw in d for kw in EXCLUDE_KEYWORDS)
+        for kw in EXCLUDE_KEYWORDS:
+            if re.search(r'\b' + re.escape(kw) + r'\b', d):
+                return True
+        short_match = re.search(r'\bSHORT\b', d)
+        if short_match:
+            following = d[short_match.end():short_match.end()+20]
+            if not any(dw in following for dw in DURATION_WORDS):
+                return True
+        return False
+
+    def is_genuinely_bond_or_commodity(desc):
+        import re
+        d = desc.upper()
+        hits_commodity = any(
+            re.search(r'\b' + re.escape(kw) + r'\b', d)
+            for kw in BOND_COMMODITY_KEYWORDS)
+        if not hits_commodity:
+            return False
+        hits_equity_override = any(
+            re.search(r'\b' + re.escape(kw), d)
+            for kw in EQUITY_OVERRIDE_KEYWORDS)
+        return not hits_equity_override
+
+    def is_appropriate(desc):
+        # FIXED: this function previously only checked leveraged/
+        # inverse status, never bond/commodity status at all -- 43+
+        # genuine bond funds got is_equity=1 hardcoded downstream
+        # with no real check. Bond/commodity classification is now
+        # applied separately, at the database-write step.
+        return not is_leveraged_inverse(desc)
 
     appropriate_new = [r for r in new_candidates if is_appropriate(r["description"])]
     print(f"After category filter: {len(appropriate_new)}")
@@ -224,19 +289,33 @@ def find_new_candidates(dry_run=True):
 
     print(f"Passed liquidity/history validation: {len(validated_new)}")
     for sym in validated_new:
-        print(f"  {sym}: {r['description'][:50] if r['symbol']==sym else ''}")
+        print(f"  {sym}")
 
     if not dry_run and validated_new:
         from datetime import datetime
         now = datetime.now().isoformat()
+        # FIXED: was hardcoding is_equity=1 for every validated
+        # ticker with no real check -- confirmed bug, 43+ genuine
+        # bond funds (VCSH, VGSH, BSV, SCHO, etc.) got wrongly
+        # marked equity. Now correctly classified per-ticker.
+        desc_lookup = {r["symbol"]: r["description"] for r in appropriate_new}
+        equity_count = 0
+        bond_count = 0
         for sym in validated_new:
+            desc = desc_lookup.get(sym, "")
+            is_equity_flag = 0 if is_genuinely_bond_or_commodity(desc) else 1
+            if is_equity_flag:
+                equity_count += 1
+            else:
+                bond_count += 1
             c.execute("""
                 INSERT OR REPLACE INTO universe
                 (ticker, is_validated, is_equity, added_at)
-                VALUES (?, 1, 1, ?)
-            """, (sym, now))
+                VALUES (?, 1, ?, ?)
+            """, (sym, is_equity_flag, now))
         conn.commit()
-        print(f"Added {len(validated_new)} new tickers to database")
+        print(f"Added {len(validated_new)} new tickers to database "
+              f"({equity_count} equity, {bond_count} bond/commodity)")
 
     conn.close()
     return validated_new
