@@ -164,6 +164,14 @@ def find_new_candidates(dry_run=True):
         '2X', '3X', '1.5X', 'INVERSE', 'BULL', 'BEAR', 'DAILY TARGET',
         'LEVERAGED', 'ULTRA', 'FLOOR', 'BUFFER',
     ]
+    # ULTRASHORT handled separately below, NOT as a blanket keyword
+    # -- confirmed real exception via direct research: UYLD "Angel
+    # Oak UltraShort INCOME ETF" is a genuine, real bond fund
+    # (holds RMBS/CMBS/ABS/CLOs, government bonds), using
+    # "UltraShort" as shorthand for ultra-short DURATION, not a
+    # leveraged/inverse strategy. Every real leveraged/inverse
+    # ULTRASHORT fund (QID, KOLD, GLL, SDS, TWM, DUG, ETHD, SBIT)
+    # has it followed by an INDEX/ASSET name instead.
     DURATION_WORDS = ['TERM', 'DURATION', 'MATURITY']
 
     BOND_COMMODITY_KEYWORDS = [
@@ -195,6 +203,16 @@ def find_new_candidates(dry_run=True):
             following = d[short_match.end():short_match.end()+20]
             if not any(dw in following for dw in DURATION_WORDS):
                 return True
+
+        # ULTRASHORT: same duration-word check as standalone SHORT,
+        # confirmed necessary via real research (UYLD is a genuine
+        # bond fund using "UltraShort" for duration, not strategy)
+        ultrashort_match = re.search(r'ULTRASHORT', d)
+        if ultrashort_match:
+            following = d[ultrashort_match.end():ultrashort_match.end()+20]
+            if not any(dw in following for dw in DURATION_WORDS):
+                return True
+
         return False
 
     def is_genuinely_bond_or_commodity(desc):
