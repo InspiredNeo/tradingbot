@@ -87,6 +87,47 @@ class IBKRClient:
             return None
 
 
+    def get_bulk_historical(self, symbols, duration="20 Y",
+                            bar_size="1 day", pause_seconds=1.0,
+                            verbose=True):
+        """
+        Fetch historical bars for MANY symbols, one at a time (IBKR's
+        real constraint, same as Schwab -- no bulk endpoint), with
+        real pacing between requests. Returns a dict of {symbol: df}.
+
+        Same disciplined batching/pacing pattern already proven
+        reliable throughout this session (build_full_universe.py,
+        universe_refresh.py) -- avoids overwhelming the connection
+        with rapid-fire requests.
+        """
+        import time
+        results = {}
+        failed = []
+
+        for i, symbol in enumerate(symbols):
+            df = self.get_historical_bars(symbol, duration=duration,
+                                          bar_size=bar_size)
+            if df is not None and len(df) > 0:
+                results[symbol] = df
+            else:
+                failed.append(symbol)
+
+            if verbose and (i + 1) % 10 == 0:
+                pct = (i + 1) / len(symbols) * 100
+                print(f"  {pct:.1f}%  {i+1}/{len(symbols)}  "
+                      f"succeeded={len(results)}  failed={len(failed)}")
+
+            time.sleep(pause_seconds)
+
+        if verbose:
+            print(f"\nFinal: {len(results)} succeeded, {len(failed)} failed")
+            if failed:
+                print(f"Failed symbols: {failed[:20]}"
+                      f"{'...' if len(failed) > 20 else ''}")
+
+        return results, failed
+
+
 if __name__ == "__main__":
     client = IBKRClient()
     if client.connect():
