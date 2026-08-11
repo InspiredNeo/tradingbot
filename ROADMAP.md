@@ -3146,3 +3146,42 @@ what happens to the existing Schwab connection, any real positions
 already held there, and whether to run both in parallel during a
 transition. Worth its own dedicated, focused session, not a
 tail-end decision.
+
+## Real Paper Trading Started -- First Live Position Established
+
+Built paper_trading_loop.py, reusing the exact validated
+regime_detector.py + regime_allocation.py logic from tonight's
+backtest work -- no new strategy logic, just wired to real IBKR
+paper execution.
+
+Successfully placed and confirmed 6 real orders in the IBKR paper
+account, establishing the CALM-regime target allocation:
+  VTI: 437 shares @ $381.74
+  QQQ: 233 shares @ $719.17
+  SCHF: 5926 shares @ $28.29
+  EEM: 2539 shares @ $65.60
+  XLV: 1007 shares @ $169.59
+  XLF: 2847 shares @ $57.97
+
+Real, honest observation: QQQ's actual fill price ($719.17)
+differed meaningfully (~2.7%) from the price quoted moments earlier
+in dry-run ($700.07) -- genuine live market movement/slippage, a
+concrete real-world example of the backtest-vs-live gap discussed
+earlier this session.
+
+### Status: real, live paper-trading test now genuinely running
+This is the actual, live start of validating the regime strategy
+against real market conditions, not backtested ones. Real next
+steps: run this loop on a regular schedule (daily), track
+performance over time against both the backtest's implied
+trajectory and a simple buy-and-hold benchmark, and build the
+state-persistence layer (using the SQLite database from earlier
+this session) so the regime history survives between runs rather
+than resetting each time the script restarts.
+
+Current limitation, worth remembering: state (breadth_history,
+regime_history, etc.) only lives in-memory within a single script
+run right now -- restarting the script loses the persistence
+history the regime detector's hysteresis logic depends on. Real,
+necessary fix before this becomes a genuinely reliable, ongoing
+system.
