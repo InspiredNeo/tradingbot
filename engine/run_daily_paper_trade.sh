@@ -39,5 +39,10 @@ else:
     print('Connection failed -- is IB Gateway running and logged in?')
 " >> "$LOGFILE" 2>&1
 
+# Also record today's real performance snapshot, building a
+# genuine, ongoing history of how the live strategy actually
+# performs -- the actual point of this whole system
+python3 track_paper_performance.py >> "$LOGFILE" 2>&1
+
 echo "===== Run finished: $(date +"%Y-%m-%d %H:%M:%S") =====" >> "$LOGFILE"
 echo "" >> "$LOGFILE"

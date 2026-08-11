@@ -17,3 +17,21 @@ Trades needed:
   XLV: SELL 1 shares -- status: Filled
 ===== Run finished: 2026-08-11 09:52:05 =====
 
+===== Run started: 2026-08-11 09:54:42 =====
+Loaded 1 days of persisted regime state from database (most recent: 2026-08-11)
+Regime: CALM, equity target: 98.0%
+Account value: $999,702.69
+Current positions: {'EEM': 2539.0, 'VTI': 437.0, 'QQQ': 233.0, 'SCHF': 5926.0, 'XLV': 1006.0, 'XLF': 2847.0}
+
+Target: $979,708.64 total equity ($163,284.77 per asset across 6 assets)
+
+Trades needed:
+  QQQ: BUY 0 shares (current: 233, target: 233, price: $700.07)
+
+[LIVE PAPER] Placing real orders...
+Recorded: $999,702.69 on 2026-08-11
+
+Date         Value           Change from start   
+2026-08-11   $  999,702.69   +0.00%
+===== Run finished: 2026-08-11 09:54:43 =====
+
