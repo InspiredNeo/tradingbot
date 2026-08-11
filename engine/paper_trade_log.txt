@@ -1,0 +1,19 @@
+===== Run started: 2026-08-11 09:52:01 =====
+Error 10349, reqId 28: Order TIF was set to DAY based on order preset.
+Canceled order: Trade(contract=Stock(conId=4215205, symbol='XLV', exchange='SMART', primaryExchange='ARCA', currency='USD', localSymbol='XLV', tradingClass='XLV'), order=MarketOrder(orderId=28, clientId=1, action='SELL', totalQuantity=1), orderStatus=OrderStatus(orderId=28, status='Cancelled', filled=0.0, remaining=0.0, avgFillPrice=0.0, permId=0, parentId=0, lastFillPrice=0.0, clientId=0, whyHeld='', mktCapPrice=0.0), fills=[], log=[TradeLogEntry(time=datetime.datetime(2026, 8, 11, 13, 52, 3, 100187, tzinfo=datetime.timezone.utc), status='PendingSubmit', message='', errorCode=0), TradeLogEntry(time=datetime.datetime(2026, 8, 11, 13, 52, 3, 103019, tzinfo=datetime.timezone.utc), status='Cancelled', message='Error 10349, reqId 28: Order TIF was set to DAY based on order preset.', errorCode=10349)], advancedError='')
+Loaded 1 days of persisted regime state from database (most recent: 2026-08-11)
+Regime: CALM, equity target: 98.0%
+Account value: $999,579.34
+Current positions: {'EEM': 2539.0, 'VTI': 437.0, 'QQQ': 233.0, 'SCHF': 5926.0, 'XLV': 1007.0, 'XLF': 2847.0}
+
+Target: $979,587.75 total equity ($163,264.63 per asset across 6 assets)
+
+Trades needed:
+  VTI: SELL 0 shares (current: 437, target: 437, price: $373.84)
+  QQQ: BUY 0 shares (current: 233, target: 233, price: $700.07)
+  XLV: SELL 1 shares (current: 1007, target: 1006, price: $162.26)
+
+[LIVE PAPER] Placing real orders...
+  XLV: SELL 1 shares -- status: Filled
+===== Run finished: 2026-08-11 09:52:05 =====
+

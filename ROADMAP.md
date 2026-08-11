@@ -3185,3 +3185,39 @@ run right now -- restarting the script loses the persistence
 history the regime detector's hysteresis logic depends on. Real,
 necessary fix before this becomes a genuinely reliable, ongoing
 system.
+
+## Real Scheduling Added -- Daily Automated Paper Trading
+
+Built run_daily_paper_trade.sh and scheduled it via cron (weekdays,
+9:00 AM). Tested manually first, confirmed correct behavior --
+identified real, minimal rebalancing need (1 share XLV), correctly
+skipped near-zero deltas, executed successfully.
+
+### Known, real limitation -- IB Gateway requires interactive login
+Cron can trigger the script, but IB Gateway itself needs to already
+be running and logged in for the connection to succeed -- Gateway's
+login can't be fully automated the way a pure headless API
+connection could be. If Gateway isn't running/logged in when cron
+fires, the script will log "Connection failed" and do nothing
+harmful, but also nothing useful. Real, honest limitation of using
+Gateway rather than a pure API-only setup -- worth checking
+paper_trade_log.txt periodically rather than assuming every
+scheduled run succeeded.
+
+### Status: real, live, scheduled paper-trading system now running
+Full pipeline complete: regime detection -> allocation -> real
+(paper) execution -> persistent state -> daily scheduling -> honest
+logging. This is now genuinely testing the validated regime
+strategy against real, live market conditions on an ongoing basis,
+not just a one-off manual test.
+
+### Real next steps, not yet built
+- Performance tracking/comparison (live paper results vs backtest
+  trajectory vs buy-and-hold benchmark) -- the actual point of
+  this whole exercise, still needs building
+- A way to know if Gateway silently isn't running (e.g. a simple
+  alert/notification if paper_trade_log.txt shows repeated
+  "Connection failed" entries)
+- Eventually: testing this through a real regime transition (only
+  seen CALM so far), and the broader IBKR vs Schwab scope decision
+  still logged as genuinely open from earlier this session
