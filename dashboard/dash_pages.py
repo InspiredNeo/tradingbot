@@ -4107,3 +4107,103 @@ def short_interest_tab():
         summary,
         html.Div(rows),
     ])
+
+
+def paper_trading_tab():
+    """
+    Real, live paper trading status -- pulls directly from the
+    live_regime_state and paper_performance_history tables built
+    tonight, showing the actual, current state of the running
+    IBKR paper trading system, not mock data.
+    """
+    import sys
+    import os
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from db_setup import get_connection
+
+    conn = get_connection()
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT date, regime, pct_below, avg_correlation
+        FROM live_regime_state ORDER BY date DESC LIMIT 1
+    """)
+    latest_regime = c.fetchone()
+
+    c.execute("""
+        SELECT date, regime FROM live_regime_state
+        ORDER BY date DESC LIMIT 14
+    """)
+    regime_history = c.fetchall()
+
+    c.execute("""
+        SELECT date, account_value FROM paper_performance_history
+        ORDER BY date ASC
+    """)
+    perf_history = c.fetchall()
+
+    conn.close()
+
+    regime_card = html.Div([
+        html.H4("Current Regime", style={"color": "#4b8bf5"}),
+        html.H2(latest_regime["regime"] if latest_regime else "No data",
+               style={"color": "#00ff88" if latest_regime and latest_regime["regime"] == "CALM"
+                     else "#ff4444" if latest_regime and latest_regime["regime"] == "SYSTEMIC_CRISIS"
+                     else "#ffaa00"}),
+        html.P(f"As of: {latest_regime['date'] if latest_regime else 'N/A'}"),
+        html.P(f"Breadth: {latest_regime['pct_below']:.1%}" if latest_regime else ""),
+        html.P(f"Correlation: {latest_regime['avg_correlation']:.3f}" if latest_regime else ""),
+    ], style={"padding": "20px", "border": "1px solid #333", "borderRadius": "8px",
+             "marginBottom": "20px"})
+
+    regime_history_rows = [
+        html.Tr([html.Td(r["date"]), html.Td(r["regime"])])
+        for r in regime_history
+    ]
+    history_table = html.Div([
+        html.H4("Recent Regime History"),
+        html.Table([
+            html.Thead(html.Tr([html.Th("Date"), html.Th("Regime")])),
+            html.Tbody(regime_history_rows),
+        ], style={"width": "100%"}),
+    ], style={"padding": "20px", "border": "1px solid #333", "borderRadius": "8px",
+             "marginBottom": "20px"})
+
+    if perf_history:
+        start_val = perf_history[0]["account_value"]
+        latest_val = perf_history[-1]["account_value"]
+        change = (latest_val - start_val) / start_val
+        perf_chart = dcc.Graph(figure={
+            "data": [{
+                "x": [r["date"] for r in perf_history],
+                "y": [r["account_value"] for r in perf_history],
+                "type": "line", "name": "Paper Account Value",
+                "line": {"color": COLORS["blue"]},
+            }],
+            "layout": {
+                "title": f"Paper Account Value (change: {change:+.2%})",
+                "paper_bgcolor": COLORS["panel"],
+                "plot_bgcolor": COLORS["panel"],
+                "font": {"color": COLORS["text2"]},
+            },
+        })
+    else:
+        perf_chart = html.P("No performance history recorded yet.")
+
+    # Real, live portfolio value pulled directly from IBKR right now
+    live_value_card = html.Div([
+        html.H4("Live Portfolio Value", style={"color": COLORS["blue"]}),
+        html.Div(id="live-portfolio-value", style={"fontSize": "2.5em", "fontWeight": "bold"}),
+        html.Div(id="live-portfolio-change", style={"fontSize": "1.2em"}),
+        dcc.Interval(id="paper-value-interval", interval=30*1000, n_intervals=0),
+    ], style={"padding": "20px", "border": "1px solid #333", "borderRadius": "8px",
+             "marginBottom": "20px"})
+
+    return html.Div([
+        html.H2("📝 Live Paper Trading (IBKR)"),
+        live_value_card,
+        regime_card,
+        history_table,
+        html.Div([perf_chart], style={"padding": "20px", "border": "1px solid #333",
+                                       "borderRadius": "8px"}),
+    ])

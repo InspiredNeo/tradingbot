@@ -29,7 +29,7 @@ from dash_pages import (news_grid, article_detail, ticker_detail_page,
     alerts_tab, load_alerts, save_alerts, check_alerts, crypto_tab,
     bot_control_tab, load_bot_config, save_bot_config,
     analyst_ratings_tab, dividend_tracker_tab, options_flow_tab,
-    short_interest_tab)
+    short_interest_tab, paper_trading_tab)
 
 # Import news fetching from the streamlit module's logic (rebuilt here without st.cache)
 import requests as _req
@@ -427,6 +427,7 @@ def render_main(selected_ticker, selected_article_idx):
             dbc.Tab(label="🔔 Alerts", tab_id="tab-alerts"),
             dbc.Tab(label="₿ Crypto", tab_id="tab-crypto"),
             dbc.Tab(label="🤖 Bot", tab_id="tab-bot"),
+            dbc.Tab(label="📝 Paper Trading", tab_id="tab-papertrading"),
             dbc.Tab(label="⭐ Ratings", tab_id="tab-ratings"),
             dbc.Tab(label="💰 Dividends", tab_id="tab-dividends"),
             dbc.Tab(label="🌊 Flow", tab_id="tab-options"),
@@ -496,6 +497,8 @@ def render_tab(active_tab):
         return crypto_tab()
     if active_tab == "tab-bot":
         return bot_control_tab()
+    if active_tab == "tab-papertrading":
+        return paper_trading_tab()
     if active_tab == "tab-ratings":
         return analyst_ratings_tab()
     if active_tab == "tab-dividends":
@@ -558,6 +561,59 @@ def _get_category_summary(category, articles):
 
 
 _summary_generating = set()
+
+
+@callback(
+    Output("live-portfolio-value", "children"),
+    Output("live-portfolio-change", "children"),
+    Input("paper-value-interval", "n_intervals"),
+    prevent_initial_call=True,
+)
+def update_live_portfolio_value(n_intervals):
+    """
+    Reads the latest REAL account value from the database, written
+    by a separate, dedicated background poller process --
+    deliberately does NOT create a new IBKR/asyncio connection
+    inside this Dash callback thread. Real bug found via testing:
+    ib_insync's asyncio event loop model genuinely doesn't work
+    reliably when invoked fresh inside Dash's per-request worker
+    threads (confirmed via two separate failed fix attempts).
+    Same "separate writer, lightweight reader" pattern already used
+    successfully for the scheduled trading loop.
+    """
+    import sys, os
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from db_setup import get_connection
+
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("""
+            SELECT account_value, recorded_at
+            FROM paper_performance_history ORDER BY date DESC LIMIT 1
+        """)
+        latest = c.fetchone()
+        c.execute("""
+            SELECT account_value FROM paper_performance_history
+            ORDER BY date ASC LIMIT 1
+        """)
+        first = c.fetchone()
+        conn.close()
+
+        if not latest:
+            return "No data yet", ""
+
+        value_str = f"${latest['account_value']:,.2f}"
+        note = f"as of {latest['recorded_at'][:16]}"
+
+        if first and first["account_value"]:
+            change = (latest["account_value"] - first["account_value"]) / first["account_value"]
+            color = "#4ade80" if change >= 0 else "#f87171"
+            return value_str, html.Span(f"{change:+.2%} overall  ({note})", style={"color": color})
+        return value_str, html.Span(note)
+
+    except Exception as e:
+        return "Unavailable", html.Span(str(e), style={"color": "#f59e0b"})
 
 
 @callback(
