@@ -3221,3 +3221,55 @@ not just a one-off manual test.
 - Eventually: testing this through a real regime transition (only
   seen CALM so far), and the broader IBKR vs Schwab scope decision
   still logged as genuinely open from earlier this session
+
+## FUTURE WORK: Move Paper Trading to a Free Cloud Server (Oracle Cloud)
+
+Real, prioritized infrastructure improvement -- currently the
+entire paper trading system (scheduled trading loop, IB Gateway,
+the live_value_poller.py background process) depends on the local
+machine being on continuously. Not practical for genuine extended
+testing.
+
+### Recommendation: Oracle Cloud "Always Free" tier
+Researched real, current options (Aug 2026). Oracle recommended
+over alternatives for this specific use case:
+  - Genuinely, permanently free (not a trial) -- unlike AWS's
+    free tier which expires after 12 months
+  - Resources exceed what this project needs: even the smaller
+    AMD option (1GB RAM) should comfortably run IB Gateway +
+    lightweight Python scripts, given the modest actual workload
+    (daily regime check + ~2min polling, nothing computationally
+    heavy)
+  - Larger Arm-based option available too if needed (4 cores,
+    24GB RAM), also genuinely free forever
+
+### Real, known caveats worth going in aware of
+  - No uptime SLA on any free tier -- a real tradeoff for a
+    system meant to run a real trading strategy
+  - Oracle specifically has documented capacity availability
+    friction during signup in some regions, and reclaims
+    genuinely idle instances (less of a risk for us since our
+    processes run continuously, not idle)
+  - Credit card required for identity verification on signup,
+    even though free-tier usage itself isn't charged
+
+### Real setup work required (separate session, not tonight)
+  1. Create Oracle Cloud account, provision a free-tier instance
+  2. Install Java, IB Gateway, conda/Python environment -- same
+     setup process already done locally tonight, replicated on
+     the new server
+  3. Real, known complication: IB Gateway needs an interactive
+     login, which doesn't naturally suit a headless server --
+     needs either a virtual display setup (Xvfb) or exploring
+     IBKR's alternative Client Portal Gateway (more API/headless-
+     friendly), worth researching properly when this work begins
+  4. Migrate the scheduled cron job, live_value_poller.py, and
+     database (or set up a fresh one) to the new server
+  5. Decide whether the Dash dashboard also moves to the server,
+     or stays local and reads from the server's database remotely
+
+### Status: real, prioritized idea, not started
+This directly solves the "does my PC have to be on constantly"
+limitation found during tonight's live paper-trading testing.
+Worth treating as a real next-session priority given how directly
+it improves the system just built and validated tonight.

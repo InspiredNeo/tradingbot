@@ -4190,6 +4190,42 @@ def paper_trading_tab():
     else:
         perf_chart = html.P("No performance history recorded yet.")
 
+    # Real, intraday history from the frequent live poller --
+    # separate from the once-daily paper_performance_history table
+    conn2 = get_connection()
+    c2 = conn2.cursor()
+    c2.execute("""
+        CREATE TABLE IF NOT EXISTS live_value_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT,
+            account_value REAL
+        )
+    """)
+    c2.execute("""
+        SELECT timestamp, account_value FROM live_value_snapshots
+        ORDER BY id DESC LIMIT 200
+    """)
+    intraday_rows = list(reversed(c2.fetchall()))
+    conn2.close()
+
+    if intraday_rows:
+        intraday_chart = dcc.Graph(figure={
+            "data": [{
+                "x": [r["timestamp"] for r in intraday_rows],
+                "y": [r["account_value"] for r in intraday_rows],
+                "type": "line", "name": "Live Value",
+                "line": {"color": COLORS["blue"]},
+            }],
+            "layout": {
+                "title": "Intraday Portfolio Value (live poller, ~2min intervals)",
+                "paper_bgcolor": COLORS["panel"],
+                "plot_bgcolor": COLORS["panel"],
+                "font": {"color": COLORS["text2"]},
+            },
+        }, id="intraday-chart")
+    else:
+        intraday_chart = html.P("No intraday data yet -- poller just started.")
+
     # Real, live portfolio value pulled directly from IBKR right now
     live_value_card = html.Div([
         html.H4("Live Portfolio Value", style={"color": COLORS["blue"]}),
@@ -4202,6 +4238,9 @@ def paper_trading_tab():
     return html.Div([
         html.H2("📝 Live Paper Trading (IBKR)"),
         live_value_card,
+        html.Div([intraday_chart], id="intraday-chart-container",
+                 style={"padding": "20px", "border": "1px solid #333",
+                       "borderRadius": "8px", "marginBottom": "20px"}),
         regime_card,
         history_table,
         html.Div([perf_chart], style={"padding": "20px", "border": "1px solid #333",

@@ -564,6 +564,52 @@ _summary_generating = set()
 
 
 @callback(
+    Output("intraday-chart-container", "children"),
+    Input("paper-value-interval", "n_intervals"),
+    prevent_initial_call=True,
+)
+def update_intraday_chart(n_intervals):
+    """Refreshes the intraday chart on the same 30s interval as
+    the live value display, reading fresh data from the poller's
+    live_value_snapshots table."""
+    import sys, os
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from db_setup import get_connection
+
+    COLORS = {"blue": "#4b8bf5", "panel": "#141a24", "text2": "#a0aec0"}
+
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("""
+            SELECT timestamp, account_value FROM live_value_snapshots
+            ORDER BY id DESC LIMIT 200
+        """)
+        rows = list(reversed(c.fetchall()))
+        conn.close()
+
+        if not rows:
+            return html.P("No intraday data yet -- poller just started.")
+
+        return dcc.Graph(figure={
+            "data": [{
+                "x": [r["timestamp"] for r in rows],
+                "y": [r["account_value"] for r in rows],
+                "type": "line", "name": "Live Value",
+                "line": {"color": COLORS["blue"]},
+            }],
+            "layout": {
+                "title": "Intraday Portfolio Value (live poller, ~2min intervals)",
+                "paper_bgcolor": COLORS["panel"],
+                "plot_bgcolor": COLORS["panel"],
+                "font": {"color": COLORS["text2"]},
+            },
+        })
+    except Exception as e:
+        return html.P(f"Error loading chart: {e}")
+
+
+@callback(
     Output("live-portfolio-value", "children"),
     Output("live-portfolio-change", "children"),
     Input("paper-value-interval", "n_intervals"),
@@ -588,9 +634,13 @@ def update_live_portfolio_value(n_intervals):
     try:
         conn = get_connection()
         c = conn.cursor()
+        # Read from the new, frequently-updated live_value_snapshots
+        # table (written by the standalone live_value_poller.py
+        # process, every ~2 minutes) instead of the once-daily
+        # paper_performance_history table
         c.execute("""
-            SELECT account_value, recorded_at
-            FROM paper_performance_history ORDER BY date DESC LIMIT 1
+            SELECT account_value, timestamp
+            FROM live_value_snapshots ORDER BY id DESC LIMIT 1
         """)
         latest = c.fetchone()
         c.execute("""
@@ -604,7 +654,7 @@ def update_live_portfolio_value(n_intervals):
             return "No data yet", ""
 
         value_str = f"${latest['account_value']:,.2f}"
-        note = f"as of {latest['recorded_at'][:16]}"
+        note = f"as of {latest['timestamp'][11:19]}"
 
         if first and first["account_value"]:
             change = (latest["account_value"] - first["account_value"]) / first["account_value"]
