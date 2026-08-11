@@ -84,6 +84,27 @@ def init_schema():
         )
     """)
 
+    # Live regime state -- persists the history the regime
+    # detector's hysteresis logic depends on (breadth_history,
+    # corr_history, regime_history, etc.) across script restarts.
+    # Real fix for a genuine limitation found during first live
+    # paper trading: state was only in-memory per script run,
+    # meaning a restart would silently lose the persistence
+    # history the CALM/CORRELATED_CALM/SYSTEMIC_CRISIS hysteresis
+    # logic requires to function correctly.
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS live_regime_state (
+            date TEXT PRIMARY KEY,
+            pct_below REAL,
+            avg_correlation REAL,
+            regime TEXT,
+            raw_regime TEXT,
+            severely_stressed INTEGER,
+            corr_high INTEGER,
+            recorded_at TEXT
+        )
+    """)
+
     conn.commit()
     conn.close()
     print(f"Schema initialized at {DB_PATH}")

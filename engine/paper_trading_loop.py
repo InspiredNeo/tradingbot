@@ -28,14 +28,66 @@ class PaperTradingLoop:
         self.client_id = client_id
         self.connected = False
 
-        # State that needs to persist across real runs -- for a
-        # true live system this would be saved to the database
-        # built earlier tonight, not just in-memory
-        self.breadth_history = []
-        self.corr_history = []
-        self.regime_history = []
-        self.prev_severe = None
-        self.prev_corr_high = None
+        # FIXED: state now loaded from the persistent database
+        # (live_regime_state table) instead of starting empty
+        # in-memory every run -- a real limitation found during
+        # first live paper trading. Without this, restarting the
+        # script would silently lose the persistence history the
+        # regime detector's hysteresis logic depends on.
+        (self.breadth_history, self.corr_history, self.regime_history,
+         self.prev_severe, self.prev_corr_high) = self._load_state()
+
+    def _load_state(self, lookback_days=60):
+        """Load real, persisted regime state from the database,
+        most recent lookback_days of history, oldest first."""
+        from db_setup import get_connection
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("""
+            SELECT date, pct_below, avg_correlation, regime,
+                   severely_stressed, corr_high
+            FROM live_regime_state
+            ORDER BY date ASC
+            LIMIT ?
+        """, (lookback_days,))
+        rows = c.fetchall()
+        conn.close()
+
+        if not rows:
+            return [], [], [], None, None
+
+        breadth_history = [r["pct_below"] for r in rows]
+        corr_history = [r["avg_correlation"] for r in rows]
+        regime_history = [r["regime"] for r in rows]
+        prev_severe = bool(rows[-1]["severely_stressed"])
+        prev_corr_high = bool(rows[-1]["corr_high"])
+
+        print(f"Loaded {len(rows)} days of persisted regime state "
+              f"from database (most recent: {rows[-1]['date']})")
+
+        return breadth_history, corr_history, regime_history, prev_severe, prev_corr_high
+
+    def _save_state(self, date, alloc):
+        """Save today's real regime reading to the database, so
+        it's available for the NEXT run, even after a restart."""
+        from db_setup import get_connection
+        from datetime import datetime as dt
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("""
+            INSERT OR REPLACE INTO live_regime_state
+            (date, pct_below, avg_correlation, regime, raw_regime,
+             severely_stressed, corr_high, recorded_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            str(date.date()), alloc["pct_below"], alloc["avg_correlation"],
+            alloc["regime"], alloc.get("raw_regime", alloc["regime"]),
+            int(bool(alloc.get("severely_stressed"))),
+            int(bool(alloc.get("corr_high"))),
+            dt.now().isoformat(),
+        ))
+        conn.commit()
+        conn.close()
 
     def connect(self):
         self.ib.connect("127.0.0.1", self.port, clientId=self.client_id)
@@ -81,6 +133,10 @@ class PaperTradingLoop:
         self.corr_history.append(alloc["avg_correlation"])
         self.prev_corr_high = alloc.get("corr_high")
         self.regime_history.append(alloc["regime"])
+
+        # Persist this real reading to the database immediately,
+        # so the NEXT run (even after a restart) has it available
+        self._save_state(today, alloc)
 
         equity_target = alloc["equity_target"]
         print(f"Regime: {alloc['regime']}, equity target: {equity_target:.1%}")
