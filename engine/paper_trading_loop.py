@@ -1,45 +1,47 @@
 """
 Real, live paper-trading loop for the validated regime-based
-strategy. Reuses the EXACT detection and allocation logic already
-built and validated tonight (regime_detector.py, regime_allocation.py)
--- no new strategy logic, just wiring proven code to real IBKR
-paper execution.
+strategy, using SCHWAB instead of IBKR/IB Gateway. Reuses the
+EXACT detection and allocation logic already built and validated
+tonight (regime_detector.py, regime_allocation.py).
 
-Deliberately simple for a first real version: checks current
-regime, computes target equity allocation, compares to actual
-current holdings, and places real (paper) orders to close the gap.
-Meant to be run on a schedule (e.g. daily), not continuously.
+SWITCHED FROM IBKR TO SCHWAB: IB Gateway proved genuinely unstable
+on a headless cloud server -- repeatedly disconnected, and was
+found to be tied to the lifetime of whichever terminal/VNC session
+started it, defeating the purpose of an always-on server. Schwab's
+API is a straightforward REST connection with no persistent
+desktop application or virtual display required, genuinely more
+appropriate for this use case.
 """
 import json
 import pandas as pd
 from datetime import datetime
-from ib_insync import IB, Stock, MarketOrder
 
 from regime_allocation import get_regime_allocation
+from schwab_client import get_schwab_client
+from simulated_portfolio import (
+    get_simulated_positions, get_simulated_cash,
+    get_simulated_total_value, execute_simulated_trade,
+    init_simulated_portfolio
+)
 
 RISK_ASSETS = ["VTI", "QQQ", "SCHF", "EEM", "XLV", "XLF"]
 DEF_ASSETS = ["AGG", "TLT", "GLD"]
 
 
 class PaperTradingLoop:
-    def __init__(self, port=4002, client_id=1):
-        self.ib = IB()
-        self.port = port
-        self.client_id = client_id
+    def __init__(self):
+        self.client = None
         self.connected = False
 
-        # FIXED: state now loaded from the persistent database
-        # (live_regime_state table) instead of starting empty
-        # in-memory every run -- a real limitation found during
-        # first live paper trading. Without this, restarting the
-        # script would silently lose the persistence history the
-        # regime detector's hysteresis logic depends on.
         (self.breadth_history, self.corr_history, self.regime_history,
          self.prev_severe, self.prev_corr_high) = self._load_state()
 
+    def connect(self):
+        self.client = get_schwab_client()
+        self.connected = self.client.connected
+        return self.connected
+
     def _load_state(self, lookback_days=60):
-        """Load real, persisted regime state from the database,
-        most recent lookback_days of history, oldest first."""
         from db_setup import get_connection
         conn = get_connection()
         c = conn.cursor()
@@ -68,8 +70,6 @@ class PaperTradingLoop:
         return breadth_history, corr_history, regime_history, prev_severe, prev_corr_high
 
     def _save_state(self, date, alloc):
-        """Save today's real regime reading to the database, so
-        it's available for the NEXT run, even after a restart."""
         from db_setup import get_connection
         from datetime import datetime as dt
         conn = get_connection()
@@ -89,31 +89,16 @@ class PaperTradingLoop:
         conn.commit()
         conn.close()
 
-    def connect(self):
-        self.ib.connect("127.0.0.1", self.port, clientId=self.client_id)
-        self.ib.reqMarketDataType(3)
-        self.connected = self.ib.isConnected()
-        return self.connected
-
     def get_current_positions(self):
-        positions = self.ib.positions()
-        return {p.contract.symbol: p.position for p in positions}
+        # SWITCHED to simulated positions -- Schwab has no genuine
+        # paper-trading sandbox, so we track virtual positions
+        # ourselves while using Schwab's REAL, live prices
+        return get_simulated_positions()
 
     def get_account_value(self):
-        summary = self.ib.accountSummary()
-        for item in summary:
-            if item.tag == "NetLiquidation":
-                return float(item.value)
-        return None
+        return get_simulated_total_value(self.client)
 
     def run_once(self, px, universe, dry_run=True):
-        """
-        One real cycle: check regime, compute target, compare to
-        actual holdings, place orders to close the gap.
-
-        dry_run=True: compute and print the real intended trades
-        WITHOUT actually placing them -- always start here.
-        """
         today = pd.Timestamp(datetime.now().date())
 
         alloc = get_regime_allocation(
@@ -134,8 +119,6 @@ class PaperTradingLoop:
         self.prev_corr_high = alloc.get("corr_high")
         self.regime_history.append(alloc["regime"])
 
-        # Persist this real reading to the database immediately,
-        # so the NEXT run (even after a restart) has it available
         self._save_state(today, alloc)
 
         equity_target = alloc["equity_target"]
@@ -146,18 +129,12 @@ class PaperTradingLoop:
         print(f"Account value: ${account_value:,.2f}" if account_value else "Account value: unknown")
         print(f"Current positions: {current_positions}")
 
-        # Simple, equal-weight split across RISK_ASSETS for the
-        # equity portion -- a real production version would reuse
-        # the full SVI-based construction from the backtest, this
-        # is deliberately simplified for the first live version
         target_dollar_equity = (account_value or 0) * equity_target
         per_asset_target = target_dollar_equity / len(RISK_ASSETS)
 
         print(f"\nTarget: ${target_dollar_equity:,.2f} total equity "
               f"(${per_asset_target:,.2f} per asset across {len(RISK_ASSETS)} assets)")
 
-        # Compute real, specific per-asset trades needed to close
-        # the gap between current holdings and the target allocation
         trades_needed = self._compute_trades(
             current_positions, per_asset_target, px, today)
 
@@ -176,28 +153,29 @@ class PaperTradingLoop:
             self._execute_trades(trades_needed)
 
     def _compute_trades(self, current_positions, per_asset_target, px, today):
-        """
-        For each risk asset, compute the real share-count delta
-        needed to move from current holdings to the target dollar
-        allocation. Uses the most recent real price available.
-        """
+        # FIXED: was using stale cached historical prices (from the
+        # backtest parquet file) for trade sizing, while the total
+        # value calculation used genuine, live Schwab quotes --
+        # real inconsistency causing the trades and the reported
+        # portfolio value to disagree. Now uses live prices
+        # throughout for full consistency.
+        live_prices = self.client.get_quotes(RISK_ASSETS)
+
         trades = {}
         for symbol in RISK_ASSETS:
-            if symbol not in px.columns:
-                continue
-            price_series = px.loc[:today, symbol].dropna()
-            if len(price_series) == 0:
-                continue
-            price = float(price_series.iloc[-1])
+            price = live_prices.get(symbol)
+            if not price:
+                # Fallback to cached data only if live quote genuinely unavailable
+                price_series = px.loc[:today, symbol].dropna()
+                if len(price_series) == 0:
+                    continue
+                price = float(price_series.iloc[-1])
+                print(f"  (using cached price for {symbol}, live quote unavailable)")
 
             current_shares = current_positions.get(symbol, 0)
             target_shares = per_asset_target / price
             shares_delta = target_shares - current_shares
 
-            # Only trade if the gap is meaningful -- avoid placing
-            # tiny, cost-inefficient orders for rounding-level
-            # differences (same principle as the min_trade threshold
-            # already used throughout the real backtest logic)
             MIN_TRADE_DOLLARS = 100
             if abs(shares_delta * price) < MIN_TRADE_DOLLARS:
                 continue
@@ -211,26 +189,19 @@ class PaperTradingLoop:
         return trades
 
     def _execute_trades(self, trades_needed):
-        """
-        Place REAL (paper) market orders for each computed trade.
-        Only called when dry_run=False -- worth extra caution here
-        since this is the one function that actually moves money,
-        even paper money.
-        """
+        # SWITCHED to simulated fills using REAL, live Schwab
+        # prices -- no real orders ever placed
         for symbol, info in trades_needed.items():
             shares = round(abs(info["shares_delta"]))
             if shares == 0:
                 continue
             action = "BUY" if info["shares_delta"] > 0 else "SELL"
 
-            contract = Stock(symbol, "SMART", "USD")
-            self.ib.qualifyContracts(contract)
-            order = MarketOrder(action, shares)
-            trade = self.ib.placeOrder(contract, order)
-            self.ib.sleep(2)
-
-            print(f"  {symbol}: {action} {shares} shares -- "
-                  f"status: {trade.orderStatus.status}")
+            success, err = execute_simulated_trade(symbol, shares, action, info["price"])
+            if not success:
+                print(f"  {symbol}: {action} {shares} shares -- FAILED: {err}")
+            else:
+                print(f"  {symbol}: {action} {shares} shares -- SIMULATED FILL @ ${info['price']:.2f}")
 
 
 if __name__ == "__main__":
@@ -245,8 +216,7 @@ if __name__ == "__main__":
 
     loop = PaperTradingLoop()
     if loop.connect():
-        print("Connected to IBKR paper account\n")
+        print("Connected to Schwab\n")
         loop.run_once(px, universe, dry_run=True)
-        loop.ib.disconnect()
     else:
         print("Connection failed")

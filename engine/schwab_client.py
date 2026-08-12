@@ -256,6 +256,38 @@ class SchwabClient:
         except Exception:
             return False
 
+    def get_quote(self, symbol):
+        """Returns real, live current price for a single symbol."""
+        if not self.connected or not self.client:
+            return None
+        try:
+            resp = self.client.get_quote(symbol)
+            data = resp.json()
+            quote = data.get(symbol, {}).get("quote", {})
+            return quote.get("lastPrice") or quote.get("closePrice")
+        except Exception as e:
+            print(f"Quote fetch failed for {symbol}: {e}")
+            return None
+
+    def get_quotes(self, symbols):
+        """Returns real, live current prices for multiple symbols
+        in one batch call."""
+        if not self.connected or not self.client:
+            return {}
+        try:
+            resp = self.client.get_quotes(symbols)
+            data = resp.json()
+            prices = {}
+            for sym in symbols:
+                quote = data.get(sym, {}).get("quote", {})
+                price = quote.get("lastPrice") or quote.get("closePrice")
+                if price:
+                    prices[sym] = price
+            return prices
+        except Exception as e:
+            print(f"Batch quote fetch failed: {e}")
+            return {}
+
     def get_order_status(self, order_id):
         """Check status of an order."""
         if not self.connected or not self.client:
