@@ -4236,7 +4236,7 @@ def paper_trading_tab():
              "marginBottom": "20px"})
 
     return html.Div([
-        html.H2("📝 Live Paper Trading (IBKR)"),
+        html.H2("📝 Live Paper Trading (Schwab)"),
         live_value_card,
         html.Div([intraday_chart], id="intraday-chart-container",
                  style={"padding": "20px", "border": "1px solid #333",
