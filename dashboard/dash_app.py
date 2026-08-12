@@ -654,7 +654,15 @@ def update_live_portfolio_value(n_intervals):
             return "No data yet", ""
 
         value_str = f"${latest['account_value']:,.2f}"
-        note = f"as of {latest['timestamp'][11:19]}"
+        # FIXED: was showing raw UTC time with no conversion,
+        # genuinely confusing since all servers store timestamps
+        # in UTC but the user is in Eastern time
+        import zoneinfo
+        from datetime import datetime as _dt
+        utc_dt = _dt.fromisoformat(latest['timestamp']).replace(
+            tzinfo=zoneinfo.ZoneInfo("UTC"))
+        eastern_dt = utc_dt.astimezone(zoneinfo.ZoneInfo("America/New_York"))
+        note = f"as of {eastern_dt.strftime('%H:%M:%S')} ET"
 
         if first and first["account_value"]:
             change = (latest["account_value"] - first["account_value"]) / first["account_value"]
