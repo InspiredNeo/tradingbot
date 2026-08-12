@@ -4109,6 +4109,76 @@ def short_interest_tab():
     ])
 
 
+def _to_eastern_display(utc_timestamp_str):
+    """Real, shared helper: converts a stored UTC timestamp string
+    to Eastern time for display. Used consistently by both the
+    initial page render and the live callback update, eliminating
+    any possibility of the two diverging."""
+    import zoneinfo
+    from datetime import datetime as _dt
+    try:
+        utc_dt = _dt.fromisoformat(utc_timestamp_str).replace(
+            tzinfo=zoneinfo.ZoneInfo("UTC"))
+        eastern_dt = utc_dt.astimezone(zoneinfo.ZoneInfo("America/New_York"))
+        return eastern_dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return utc_timestamp_str
+
+
+def build_intraday_chart_figure():
+    """Real, SHARED chart-building logic -- the single source of
+    truth used both for the tab's initial render and every live
+    callback update. Previously, dash_pages.py and dash_app.py each
+    had their OWN separate, duplicate chart-building code, which
+    was the real, root architectural issue behind tonight's
+    rendering bug -- two different code paths building what was
+    supposed to be the same component, able to silently diverge.
+    Returns a real dcc.Graph, or an html.P if no data exists yet.
+    """
+    import sys, os
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from db_setup import get_connection
+
+    COLORS_LOCAL = {"blue": "#4b8bf5", "panel": "#141a24", "text2": "#a0aec0"}
+
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS live_value_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT,
+                account_value REAL
+            )
+        """)
+        c.execute("""
+            SELECT timestamp, account_value FROM live_value_snapshots
+            ORDER BY id DESC LIMIT 200
+        """)
+        rows = list(reversed(c.fetchall()))
+        conn.close()
+
+        if not rows:
+            return html.P("No intraday data yet -- poller just started.")
+
+        return dcc.Graph(figure={
+            "data": [{
+                "x": [_to_eastern_display(r["timestamp"]) for r in rows],
+                "y": [r["account_value"] for r in rows],
+                "type": "line", "name": "Live Value",
+                "line": {"color": COLORS_LOCAL["blue"]},
+            }],
+            "layout": {
+                "title": "Intraday Portfolio Value (live poller, ~2min intervals)",
+                "paper_bgcolor": COLORS_LOCAL["panel"],
+                "plot_bgcolor": COLORS_LOCAL["panel"],
+                "font": {"color": COLORS_LOCAL["text2"]},
+            },
+        })
+    except Exception as e:
+        return html.P(f"Error loading chart: {e}")
+
+
 def _get_initial_live_value():
     """Real, last-known value for immediate display on page load,
     before the first refresh interval fires -- fixes a real gap
@@ -4211,50 +4281,28 @@ def paper_trading_tab():
     else:
         perf_chart = html.P("No performance history recorded yet.")
 
-    # Real, intraday history from the frequent live poller --
-    # separate from the once-daily paper_performance_history table
-    conn2 = get_connection()
-    c2 = conn2.cursor()
-    c2.execute("""
-        CREATE TABLE IF NOT EXISTS live_value_snapshots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            account_value REAL
-        )
-    """)
-    c2.execute("""
-        SELECT timestamp, account_value FROM live_value_snapshots
-        ORDER BY id DESC LIMIT 200
-    """)
-    intraday_rows = list(reversed(c2.fetchall()))
-    conn2.close()
+    # FIXED: eliminated real, genuine architectural duplication --
+    # this tab previously had its OWN separate chart-building logic
+    # here, while dash_app.py's callback had a SECOND, different
+    # chart-building implementation for live updates. Two different
+    # code paths building what was supposed to be the same
+    # component could silently diverge -- the real, root
+    # architectural issue behind an earlier session's rendering bug.
+    # Now both the initial render and every live update call the
+    # SAME shared function (build_intraday_chart_figure), making
+    # divergence structurally impossible.
+    intraday_chart = build_intraday_chart_figure()
 
-    if intraday_rows:
-        intraday_chart = dcc.Graph(figure={
-            "data": [{
-                "x": [r["timestamp"] for r in intraday_rows],
-                "y": [r["account_value"] for r in intraday_rows],
-                "type": "line", "name": "Live Value",
-                "line": {"color": COLORS["blue"]},
-            }],
-            "layout": {
-                "title": "Intraday Portfolio Value (live poller, ~2min intervals)",
-                "paper_bgcolor": COLORS["panel"],
-                "plot_bgcolor": COLORS["panel"],
-                "font": {"color": COLORS["text2"]},
-            },
-        }, id="intraday-chart")
-    else:
-        intraday_chart = html.P("No intraday data yet -- poller just started.")
-
-    # Real, live portfolio value pulled directly from IBKR right now
+    # Real, live portfolio value using Schwab + simulated portfolio
     live_value_card = html.Div([
         html.H4("Live Portfolio Value", style={"color": COLORS["blue"]}),
         html.Div(id="live-portfolio-value",
                  children=_get_initial_live_value(),
                  style={"fontSize": "2.5em", "fontWeight": "bold"}),
         html.Div(id="live-portfolio-change", style={"fontSize": "1.2em"}),
-        dcc.Interval(id="paper-value-interval", interval=30*1000, n_intervals=0),
+        # Matches the live poller's real ~2-minute data cadence --
+        # checking more often just re-queries unchanged data
+        dcc.Interval(id="paper-value-interval", interval=120*1000, n_intervals=0),
     ], style={"padding": "20px", "border": "1px solid #333", "borderRadius": "8px",
              "marginBottom": "20px"})
 

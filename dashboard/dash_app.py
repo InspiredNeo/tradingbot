@@ -558,9 +558,9 @@ def _get_category_summary(category, articles):
             threading.Thread(target=_generate, daemon=True).start()
         return None  # Still generating
     return _category_summaries.get(category)
-
-
 _summary_generating = set()
+
+
 def _to_eastern(utc_timestamp_str):
     """Converts a stored UTC timestamp string to a real, Eastern
     time string for display -- fixes the chart's hover labels
@@ -583,50 +583,18 @@ def _to_eastern(utc_timestamp_str):
     prevent_initial_call=True,
 )
 def update_intraday_chart(n_intervals):
-    """Refreshes the intraday chart on the same 30s interval as
-    the live value display, reading fresh data from the poller's
-    live_value_snapshots table."""
+    """Refreshes the intraday chart, using the SAME shared
+    build_intraday_chart_figure() function as the tab's initial
+    render (dash_pages.py) -- eliminates the real, root
+    architectural duplication (two separate chart-building code
+    paths) found to be behind tonight's rendering bug. The
+    ACTUAL root cause: a duplicate, broken @callback decorator
+    kept getting left positioned above _to_eastern() during
+    editing, silently hijacking this exact output."""
     import sys, os
-    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
-    from db_setup import get_connection
-
-    COLORS = {"blue": "#4b8bf5", "panel": "#141a24", "text2": "#a0aec0"}
-
-    try:
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute("""
-            SELECT timestamp, account_value FROM live_value_snapshots
-            ORDER BY id DESC LIMIT 200
-        """)
-        rows = list(reversed(c.fetchall()))
-        conn.close()
-
-        if not rows:
-            return [html.P("No intraday data yet -- poller just started.")]
-
-        # FIXED: real bug found via testing -- the initial layout
-        # wraps this container's children in a list
-        # (html.Div([intraday_chart], ...)), but this callback was
-        # returning a single Graph object unwrapped, causing a
-        # genuine mismatch that broke rendering (showed literal "1"
-        # instead of the chart). Now consistently returns a list.
-        return [dcc.Graph(figure={
-            "data": [{
-                "x": [_to_eastern(r["timestamp"]) for r in rows],
-                "y": [r["account_value"] for r in rows],
-                "type": "line", "name": "Live Value",
-                "line": {"color": COLORS["blue"]},
-            }],
-            "layout": {
-                "title": "Intraday Portfolio Value (live poller, ~2min intervals)",
-                "paper_bgcolor": COLORS["panel"],
-                "plot_bgcolor": COLORS["panel"],
-                "font": {"color": COLORS["text2"]},
-            },
-        })]
-    except Exception as e:
-        return [html.P(f"Error loading chart: {e}")]
+    sys.path.insert(0, os.path.expanduser("."))
+    from dash_pages import build_intraday_chart_figure
+    return [build_intraday_chart_figure()]
 
 
 @callback(
