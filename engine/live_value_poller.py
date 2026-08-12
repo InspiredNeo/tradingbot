@@ -1,33 +1,29 @@
 """
-Standalone, lightweight background poller -- connects to IBKR
-every few minutes and writes fresh portfolio value snapshots to
-the database. Runs as its own separate process, NOT inside Dash's
-callback threading, avoiding the asyncio/threading incompatibility
-found and worked around earlier tonight.
+Standalone, lightweight background poller -- connects to Schwab
+every few minutes and writes fresh, real portfolio value snapshots
+to the database. Runs as its own separate process.
 
-Meant to run continuously in the background during market hours,
-separate from both the Dash dashboard and the once-daily scheduled
-trading loop.
+SWITCHED FROM IBKR TO SCHWAB tonight -- see paper_trading_loop.py
+for the real reasoning (Gateway proved genuinely unreliable on a
+headless cloud server).
 """
 import time
 from datetime import datetime
-from ib_insync import IB
+from schwab_client import get_schwab_client
+from simulated_portfolio import get_simulated_total_value
 from db_setup import get_connection
 
 
-def poll_once(client_id=4):
-    ib = IB()
+def poll_once():
     try:
-        ib.connect("127.0.0.1", 4002, clientId=client_id, timeout=5)
-        summary = ib.accountSummary()
-        value = None
-        for item in summary:
-            if item.tag == "NetLiquidation":
-                value = float(item.value)
-        ib.disconnect()
+        client = get_schwab_client()
+        if not client.connected:
+            print(f"[{datetime.now()}] Schwab not connected")
+            return
 
+        value = get_simulated_total_value(client)
         if value is None:
-            print(f"[{datetime.now()}] Could not read account value")
+            print(f"[{datetime.now()}] Could not compute portfolio value")
             return
 
         conn = get_connection()
@@ -54,7 +50,7 @@ def poll_once(client_id=4):
 
 def run_continuous(interval_seconds=120):
     """Runs forever, polling every interval_seconds (default 2 min)."""
-    print(f"Starting live value poller, polling every {interval_seconds}s")
+    print(f"Starting live value poller (Schwab), polling every {interval_seconds}s")
     while True:
         poll_once()
         time.sleep(interval_seconds)
