@@ -1793,7 +1793,11 @@ try:
     from fetch_utils import fetch_many_info
     from cache_utils import cache_set
     all_map_syms = [s for syms in MAP_STOCKS.values() for s in syms]
-    all_info = fetch_many_info(all_map_syms, max_workers=15)
+    # Reduced from 15 to 5 concurrent workers -- this server's
+    # genuine, small memory budget (< 1GB total) makes 15
+    # simultaneous fetch threads a real, meaningful contributor to
+    # memory pressure during startup
+    all_info = fetch_many_info(all_map_syms, max_workers=5)
     caps = {sym: (all_info.get(sym, {}).get("marketCap", 0) or 0) for sym in all_map_syms}
     cache_set("market_caps", caps, ttl=1800)
     print("  Market caps pre-fetched")
