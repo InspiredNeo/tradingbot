@@ -1,9 +1,4 @@
 #!/bin/bash
-if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
-    source "$HOME/miniconda3/etc/profile.d/conda.sh"
-elif [ -f "$HOME/anaconda3/etc/profile.d/conda.sh" ]; then
-    source "$HOME/anaconda3/etc/profile.d/conda.sh"
-fi
-conda activate tradingbot
-cd "$HOME/tradingbot/dashboard"
-python launch_dash.py
+# Opens the real, cloud-based dashboard in a standalone app-style
+# window (no tabs/address bar), using Chrome's --app flag directly
+google-chrome --app=http://129.213.165.129:8050

@@ -4109,6 +4109,27 @@ def short_interest_tab():
     ])
 
 
+def _get_initial_live_value():
+    """Real, last-known value for immediate display on page load,
+    before the first refresh interval fires -- fixes a real gap
+    where the value showed blank/empty on every load/navigation."""
+    import sys, os
+    sys.path.insert(0, os.path.expanduser("~/tradingbot/engine"))
+    from db_setup import get_connection
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("""
+            SELECT account_value FROM live_value_snapshots
+            ORDER BY id DESC LIMIT 1
+        """)
+        row = c.fetchone()
+        conn.close()
+        return f"${row['account_value']:,.2f}" if row else "No data yet"
+    except Exception:
+        return "Loading..."
+
+
 def paper_trading_tab():
     """
     Real, live paper trading status -- pulls directly from the
@@ -4229,7 +4250,9 @@ def paper_trading_tab():
     # Real, live portfolio value pulled directly from IBKR right now
     live_value_card = html.Div([
         html.H4("Live Portfolio Value", style={"color": COLORS["blue"]}),
-        html.Div(id="live-portfolio-value", style={"fontSize": "2.5em", "fontWeight": "bold"}),
+        html.Div(id="live-portfolio-value",
+                 children=_get_initial_live_value(),
+                 style={"fontSize": "2.5em", "fontWeight": "bold"}),
         html.Div(id="live-portfolio-change", style={"fontSize": "1.2em"}),
         dcc.Interval(id="paper-value-interval", interval=30*1000, n_intervals=0),
     ], style={"padding": "20px", "border": "1px solid #333", "borderRadius": "8px",
