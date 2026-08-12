@@ -36,3 +36,64 @@ Starting live value poller, polling every 120s
 [2026-08-12 11:42:00.868431] Recorded: $1,001,624.84
 [2026-08-12 11:44:01.326073] Recorded: $1,001,682.45
 [2026-08-12 11:46:01.803651] Recorded: $1,001,814.77
+[2026-08-12 11:48:02.271278] Recorded: $1,001,814.77
+[2026-08-12 11:50:02.745409] Recorded: $1,001,635.58
+[2026-08-12 11:52:03.203478] Recorded: $1,001,594.43
+[2026-08-12 11:54:03.669632] Recorded: $1,001,594.43
+[2026-08-12 11:56:04.172014] Recorded: $1,001,869.28
+[2026-08-12 11:58:04.453950] Recorded: $1,001,917.66
+[2026-08-12 12:00:04.914110] Recorded: $1,001,917.66
+[2026-08-12 12:02:05.382227] Recorded: $1,002,053.42
+[2026-08-12 12:04:05.859273] Recorded: $1,002,257.44
+[2026-08-12 12:06:06.333343] Recorded: $1,002,257.44
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:08:06.334151] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:10:06.335026] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:12:06.335779] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:14:06.336401] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:16:06.337140] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:18:06.338088] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:20:06.338901] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:22:06.339729] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:24:06.340627] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:26:06.341433] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:28:06.342364] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:30:06.343111] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:32:06.343700] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:34:06.345088] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:36:06.345677] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:38:06.346336] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)
+API connection failed: ConnectionRefusedError(111, "Connect call failed ('127.0.0.1', 4002)")
+Make sure API port on TWS/IBG is open
+[2026-08-12 12:40:06.347025] Poll failed: [Errno 111] Connect call failed ('127.0.0.1', 4002)

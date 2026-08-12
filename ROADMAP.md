@@ -3323,3 +3323,41 @@ handling login credentials directly)
   tables. Real, necessary next piece of work.
 - Consider HTTPS/SSL for the dashboard if it'll be accessed
   regularly, given current setup is plain HTTP
+
+## MAJOR MILESTONE: Full Two-Server Cloud Infrastructure Complete
+
+Real, working, independent-of-local-machine infrastructure now
+running:
+
+SERVER 1 (157.151.227.75) -- Trading loop
+  - IB Gateway running headless via Xvfb virtual display + x11vnc
+    (accessed remotely via SSH tunnel + Remmina when login/config
+    needed)
+  - Read-Only API disabled, genuinely capable of real order placement
+  - Scheduled cron job (weekdays 9am) running the real regime
+    detection + paper trading loop
+  - Database synced from local machine as the initial source of truth
+
+SERVER 2 (129.213.165.129) -- Dashboard
+  - Full Market Terminal dashboard running, accessible at
+    http://129.213.165.129:8050 from any browser
+  - Automatic database sync FROM Server 1 every 5 minutes via cron
+    + scp, keeping dashboard data genuinely current
+
+### Real, honest remaining limitations
+  - Gateway sessions can periodically require re-authentication --
+    still needs occasional manual login via Remmina, same as local
+    setup did
+  - Neither server auto-starts Gateway/Xvfb/VNC on reboot yet --
+    if Server 1 restarts, these need manual relaunch (same
+    autostart work done locally could be replicated here)
+  - No HTTPS on the dashboard -- plain HTTP, acceptable for now
+    given it's just viewing data, not handling login credentials
+
+### Status: genuinely complete, real, working two-server system
+This is real infrastructure, not a prototype -- tested end to end,
+multiple real bugs found and fixed along the way (two-layer
+firewall issue, missing dependencies discovered iteratively, wrong
+SSH key troubleshooting, session/hostname confusion resolved
+carefully). Local machine is no longer required for either the
+trading loop or the dashboard to keep running.
