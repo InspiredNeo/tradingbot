@@ -568,6 +568,22 @@ _summary_generating = set()
     Input("paper-value-interval", "n_intervals"),
     prevent_initial_call=True,
 )
+def _to_eastern(utc_timestamp_str):
+    """Converts a stored UTC timestamp string to a real, Eastern
+    time string for display -- fixes the chart's hover labels
+    still showing raw UTC after the live-value text was already
+    fixed to show real, local time."""
+    import zoneinfo
+    from datetime import datetime as _dt
+    try:
+        utc_dt = _dt.fromisoformat(utc_timestamp_str).replace(
+            tzinfo=zoneinfo.ZoneInfo("UTC"))
+        eastern_dt = utc_dt.astimezone(zoneinfo.ZoneInfo("America/New_York"))
+        return eastern_dt.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return utc_timestamp_str
+
+
 def update_intraday_chart(n_intervals):
     """Refreshes the intraday chart on the same 30s interval as
     the live value display, reading fresh data from the poller's
@@ -593,7 +609,7 @@ def update_intraday_chart(n_intervals):
 
         return dcc.Graph(figure={
             "data": [{
-                "x": [r["timestamp"] for r in rows],
+                "x": [_to_eastern(r["timestamp"]) for r in rows],
                 "y": [r["account_value"] for r in rows],
                 "type": "line", "name": "Live Value",
                 "line": {"color": COLORS["blue"]},
