@@ -3273,3 +3273,53 @@ This directly solves the "does my PC have to be on constantly"
 limitation found during tonight's live paper-trading testing.
 Worth treating as a real next-session priority given how directly
 it improves the system just built and validated tonight.
+
+## Real Milestone: Dashboard Now Running on Oracle Cloud Server
+
+Second Always Free instance successfully created and configured
+(129.213.165.129, VM.Standard.E2.1.Micro, Ubuntu 24.04), dedicated
+specifically to running the Market Terminal dashboard, independent
+of the local machine.
+
+### Real setup steps completed, worth remembering for next time:
+1. System update + reboot (kernel update required a restart)
+2. Miniconda installed, tradingbot conda environment created
+   (had to accept conda's Terms of Service first -- new requirement)
+3. Cloned tradingbot repo via GitHub personal access token
+   (private repo, needed explicit auth)
+4. Installed dashboard dependencies in multiple passes as missing
+   packages surfaced: dash, dash-bootstrap-components, plotly,
+   pandas, requests, yfinance, python-dotenv, google-genai, groq
+5. Copied .env file (real API keys: Gemini, Groq, Schwab, FRED,
+   etc.) via scp directly from local machine -- NOT committed to
+   git, correctly excluded, had to be transferred separately
+6. Modified dash_app.py's app.run() call to add host="0.0.0.0"
+   so Dash listens on all network interfaces, not just localhost
+7. REAL, IMPORTANT LESSON: two separate firewall layers both
+   needed to explicitly allow port 8050 -- Oracle Cloud's security
+   list (network/cloud level) AND the server's own iptables rules
+   (OS level). Fixed with: sudo iptables -I INPUT -p tcp --dport
+   8050 -j ACCEPT, then sudo netfilter-persistent save to survive
+   reboots. Don't assume opening the port in Oracle's console
+   alone is sufficient -- check iptables too.
+
+### Real, current setup
+Dashboard runs via: cd ~/tradingbot/dashboard && nohup python3
+dash_app.py > dash_server_log.txt 2>&1 &
+Accessible at: http://129.213.165.129:8050 (plain HTTP, no SSL --
+acceptable for now since it's just viewing a dashboard, not
+handling login credentials directly)
+
+### Real next steps, not yet done
+- This process needs the same autostart-on-boot treatment as the
+  local poller/Gateway setup -- currently must be manually
+  restarted if the server reboots
+- Server 1 (IB Gateway + trading loop) still needs to be finished/
+  verified separately -- this session focused on Server 2
+  (dashboard) specifically
+- Database sharing between the two servers not yet solved --
+  SQLite is a single local file, dashboard server currently has
+  no access to Server 1's live_regime_state / paper_performance
+  tables. Real, necessary next piece of work.
+- Consider HTTPS/SSL for the dashboard if it'll be accessed
+  regularly, given current setup is plain HTTP
