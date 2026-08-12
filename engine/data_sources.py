@@ -106,23 +106,29 @@ def _fetch_finnhub(tickers,limit):
         symbol_list = tickers.split(",")
         articles = []
         for symbol in symbol_list:
+            # FIXED: real, genuine bug -- this inner loop was
+            # incorrectly indented at the SAME level as the outer
+            # "for symbol" loop, not nested inside it. This meant
+            # after iterating all symbols, only the LAST symbol's
+            # news was ever actually processed, discarding every
+            # other ticker's results. Now correctly nested.
             news = finnhub_client.company_news(
-            symbol.strip(),
-            _from="2026-01-01",
-            to="2026-12-31"
-        )
-        for item in news[:limit]:
-            articles.append({
-                "title": item.get("headline", ""),
-                "url": item.get("url", ""),
-                "source": item.get("source", "Finnhub"),
-                "summary": item.get("summary", ""),
-                "banner_image": item.get("image", ""),
-                "sentiment_label": "Neutral",
-                "sentiment_score": 0,
-                "tickers": [symbol.strip()],
-                "data_source": "Finnhub"
-            })
+                symbol.strip(),
+                _from="2026-01-01",
+                to="2026-12-31"
+            )
+            for item in news[:limit]:
+                articles.append({
+                    "title": item.get("headline", ""),
+                    "url": item.get("url", ""),
+                    "source": item.get("source", "Finnhub"),
+                    "summary": item.get("summary", ""),
+                    "banner_image": item.get("image", ""),
+                    "sentiment_label": "Neutral",
+                    "sentiment_score": 0,
+                    "tickers": [symbol.strip()],
+                    "data_source": "Finnhub"
+                })
             
             
         if len(articles) == 0:
