@@ -561,13 +561,6 @@ def _get_category_summary(category, articles):
 
 
 _summary_generating = set()
-
-
-@callback(
-    Output("intraday-chart-container", "children"),
-    Input("paper-value-interval", "n_intervals"),
-    prevent_initial_call=True,
-)
 def _to_eastern(utc_timestamp_str):
     """Converts a stored UTC timestamp string to a real, Eastern
     time string for display -- fixes the chart's hover labels
@@ -584,6 +577,11 @@ def _to_eastern(utc_timestamp_str):
         return utc_timestamp_str
 
 
+@callback(
+    Output("intraday-chart-container", "children"),
+    Input("paper-value-interval", "n_intervals"),
+    prevent_initial_call=True,
+)
 def update_intraday_chart(n_intervals):
     """Refreshes the intraday chart on the same 30s interval as
     the live value display, reading fresh data from the poller's
@@ -605,9 +603,15 @@ def update_intraday_chart(n_intervals):
         conn.close()
 
         if not rows:
-            return html.P("No intraday data yet -- poller just started.")
+            return [html.P("No intraday data yet -- poller just started.")]
 
-        return dcc.Graph(figure={
+        # FIXED: real bug found via testing -- the initial layout
+        # wraps this container's children in a list
+        # (html.Div([intraday_chart], ...)), but this callback was
+        # returning a single Graph object unwrapped, causing a
+        # genuine mismatch that broke rendering (showed literal "1"
+        # instead of the chart). Now consistently returns a list.
+        return [dcc.Graph(figure={
             "data": [{
                 "x": [_to_eastern(r["timestamp"]) for r in rows],
                 "y": [r["account_value"] for r in rows],
@@ -620,9 +624,9 @@ def update_intraday_chart(n_intervals):
                 "plot_bgcolor": COLORS["panel"],
                 "font": {"color": COLORS["text2"]},
             },
-        })
+        })]
     except Exception as e:
-        return html.P(f"Error loading chart: {e}")
+        return [html.P(f"Error loading chart: {e}")]
 
 
 @callback(

@@ -3411,3 +3411,61 @@ genuine always-on server infrastructure.
   paper account), worth remembering the "trades" never touch
   Schwab's actual order system at all -- purely our own bookkeeping
   against real, live prices
+
+## Known, Unresolved Issue: Intraday Chart Rendering Bug
+
+Real, genuine bug found tonight, not fully resolved despite
+extensive debugging. Worth fresh attention next session rather
+than more late-night patching.
+
+### Symptoms
+Chart renders correctly on initial page load, but breaks on the
+next callback-triggered update, showing a literal incrementing
+number ("1", then "2", then "3"...) instead of the real chart.
+
+### What was found and fixed along the way (real, confirmed)
+- A genuine structural bug: the @callback decorator for
+  update_intraday_chart had been accidentally left positioned
+  above _to_eastern() instead, silently registering the wrong
+  function as the chart's callback. Found via directly inspecting
+  network responses (showed "children": 3, matching n_intervals
+  exactly) -- confirmed real root cause.
+- Fixed via direct sed line-editing after repeated string-replace
+  mismatches (invisible whitespace differences kept breaking
+  assert-based python replacements)
+- Verified via grep that only ONE @callback now correctly targets
+  intraday-chart-container, positioned correctly above
+  update_intraday_chart
+
+### What's STILL broken despite the above fix
+After the real fix was applied and verified in the code, the live
+dashboard still showed the same incrementing-number symptom. Not
+yet understood why -- code inspection shows everything correct,
+but live behavior disagrees. Real, remaining possibilities not
+yet fully ruled out:
+  - Browser-side caching of old JavaScript (user did not want to
+    test via incognito window to rule this out conclusively)
+  - Some deployment/sync inconsistency between the verified local
+    fix and what's genuinely running on Server 2
+  - A genuine, deeper Dash framework quirk in how dcc.Graph
+    figures get diffed/patched between initial render and
+    subsequent updates
+
+### Also found: sync interval reverted
+Server 2's dcc.Interval was found showing interval=30*1000 (30s)
+instead of the interval=120*1000 (2min) fix applied earlier in
+the session -- suggests a file overwrite happened during the
+chart-debugging file transfers. Needs re-applying once chart bug
+is resolved.
+
+### Recommended approach for next session
+Given code inspection kept checking out correct while live
+behavior disagreed, worth a genuinely clean rebuild of just this
+one component (fresh callback, fresh container, minimal test case)
+rather than continued patching of the existing code -- and worth
+testing via incognito/private browser window to definitively rule
+out client-side caching as a factor, something not done tonight.
+
+Not a functional/data problem -- the actual trading system,
+backtest, and data pipeline are all confirmed working correctly.
+This is purely a dashboard display issue.
