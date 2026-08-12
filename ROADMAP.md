@@ -3361,3 +3361,53 @@ firewall issue, missing dependencies discovered iteratively, wrong
 SSH key troubleshooting, session/hostname confusion resolved
 carefully). Local machine is no longer required for either the
 trading loop or the dashboard to keep running.
+
+## MAJOR ARCHITECTURE CHANGE: Migrated from IBKR/Gateway to Schwab
+
+Real, complete migration away from IB Gateway after finding it
+genuinely unreliable on headless cloud servers -- repeatedly
+disconnected, and found to be tied to the lifetime of whichever
+terminal/VNC session started it, fundamentally incompatible with
+genuine always-on server infrastructure.
+
+### What changed
+- Schwab has no true paper-trading sandbox account, so built
+  simulated_portfolio.py: tracks virtual cash/positions/trade
+  history in the database, using Schwab's REAL, live quote data
+  for accurate pricing and valuation -- no real orders ever placed
+- Rewrote paper_trading_loop.py, track_paper_performance.py, and
+  live_value_poller.py to use Schwab + the simulated portfolio
+  instead of ib_insync/Gateway throughout
+- Added get_quote/get_quotes methods to schwab_client.py
+- Fixed a real Schwab OAuth re-authentication issue along the way
+  (token had expired; re-auth requires pressing ENTER to let the
+  flow open the browser itself, not opening it independently --
+  doing this out of order silently failed to save the token)
+- Completely removed IB Gateway from the local machine (~/Jts
+  directory, autostart entries) and from Server 1 (killed Xvfb/
+  Gateway/x11vnc processes, removed the old cron job)
+- Wiped all IBKR-era historical data (live_regime_state,
+  paper_performance_history, live_value_snapshots) and reset the
+  simulated portfolio to a fresh $1,000,000 starting point, giving
+  the Schwab-based system a genuinely clean start
+
+### Current, real, working state (both servers verified)
+- SERVER 1 (157.151.227.75): Schwab-based trading loop + live
+  poller, cron scheduled (daily 9am trading loop, @reboot poller
+  auto-restart), confirmed working with real, live Schwab prices
+- SERVER 2 (129.213.165.129): dashboard correctly syncing fresh
+  data from Server 1 every 5 minutes, confirmed reflecting the
+  clean reset
+- Both genuinely independent of the local machine
+- Local machine: IB Gateway completely removed, no longer part of
+  this project at all
+
+### Real, honest remaining considerations
+- Schwab's own token will eventually need re-authentication again
+  in the future (same as before) -- the browser-based flow now
+  understood and documented precisely (press ENTER first, let it
+  open the browser, don't do it independently)
+- Since this uses a SIMULATED portfolio (not a true broker-side
+  paper account), worth remembering the "trades" never touch
+  Schwab's actual order system at all -- purely our own bookkeeping
+  against real, live prices
