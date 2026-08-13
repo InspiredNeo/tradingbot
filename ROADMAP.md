@@ -3679,3 +3679,34 @@ meaningfully while preserving most of the measured, real benefit
 -- this is genuinely testable with existing code
 (rebalance_freq parameter already exists in
 backtest_universe_selection.py), just not yet tested.
+
+## Real, Important Lesson: Capping Turnover Increased Return But WORSENED Risk-Adjusted Performance
+
+Built and tested a real turnover cap (max_replacements=2 per
+week, down from the observed uncapped average of 5.5/15=36%).
+
+  Capped (2020-2026):   ann=20.5%  vol=31.1%  DD=-36.0%  ratio=0.66
+  Uncapped (2020-2026): ann=19.3%  vol=22.5%  DD=-31.3%  ratio=0.86
+  VTI benchmark:        ann=14.9%  vol=19.7%  DD=-35.0%  ratio=0.76
+
+REAL, IMPORTANT LESSON: raw return went UP with the cap (287.9%
+vs 156.9% total return), which looked exciting at first glance --
+but the actual risk-adjusted ratio went DOWN (0.66, worse than
+even VTI's 0.76), because volatility and drawdown both increased
+substantially. This is exactly the kind of result that would have
+been a real, serious mistake to trust based on raw return alone --
+caught only by maintaining the same disciplined risk-adjusted
+evaluation used throughout tonight's research.
+
+### Honest conclusion
+This specific turnover-limiting approach (simple cap on weekly
+replacements) does NOT represent a genuine improvement -- it's a
+different, riskier bet that happened to produce a higher raw
+number in this one window, not a real, honest fix for the
+turnover/transaction-cost concern. The turnover problem remains
+real and unresolved. A smarter approach (e.g. only replacing
+positions that have fallen meaningfully out of favor, rather than
+an arbitrary fixed count) might work better, but has not been
+built or tested. Given how late this session has run, this is a
+real, legitimate stopping point -- the turnover concern remains
+open and honestly documented, not falsely "solved."

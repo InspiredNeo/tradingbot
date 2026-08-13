@@ -123,7 +123,15 @@ def get_regime_params(regime):
 def select_universe(px, vol, date, universe, target_count=15,
                     momentum_weight=0.3, liquidity_weight=0.3,
                     diversification_weight=0.4, max_correlation=0.85,
+                    current_holdings=None, max_replacements=None,
                     verbose=False):
+    """
+    NEW: current_holdings (a real, actual list of tickers already
+    held) and max_replacements (a real, hard cap on how many
+    positions can change per rebalance) -- built specifically to
+    test whether limiting turnover preserves most of the measured,
+    real benefit while genuinely reducing transaction costs.
+    """
     # UPDATED defaults based on real, two-window testing tonight:
     # target_count=15 showed consistently strong, robust
     # performance across two separate historical windows.
@@ -199,6 +207,15 @@ def select_universe(px, vol, date, universe, target_count=15,
 
         if not too_correlated:
             selected.append(ticker)
+
+    if current_holdings is not None and max_replacements is not None:
+        current_set = set(current_holdings)
+        fresh_set = set(selected)
+        keep = current_set & fresh_set
+        new_candidates = [t for t in selected if t not in current_set]
+        actual_new = new_candidates[:max_replacements]
+        final_selected = list(keep) + actual_new
+        selected = final_selected[:target_count]
 
     if verbose:
         elapsed = time.time() - t0
