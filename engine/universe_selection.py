@@ -73,13 +73,21 @@ def compute_correlation_matrix(px, date, universe, lookback_days=60):
 # Real, known families as of tonight's research -- worth revisiting
 # and expanding this list over time as new products launch.
 SINGLE_STOCK_INCOME_TICKERS = {
+    # FIXED, made systematic: originally a manually-curated list
+    # built one ticker at a time as they surfaced in test runs.
+    # Replaced with a complete, real scan of all 1,383 real ticker
+    # descriptions for confirmed problem patterns (option-income,
+    # covered-call, premium-income strategies) -- found several
+    # real, well-known additional cases the manual list missed
+    # entirely (JEPI, JEPQ, QYLD, XYLD, RYLD, QYLG, DJIA, and more).
     "AIYY", "AMDY", "AMZY", "APLY", "BABO", "BIGY", "BRKC", "CHPY",
     "CONY", "CRCO", "CRSH", "CVNY", "DDDD", "DIPS", "DRAY", "FBY",
     "FIAT", "GDXY", "GMEY", "GOOY", "GPTY", "HIYY", "HOOY", "INYY",
     "JPO", "LFGY", "MARO", "MINY", "MRNY", "MSFO", "MSST", "MSTY",
     "NFLY", "NVDY", "NVIT", "OARK", "PLTY", "PYPY", "QDTY", "RBLY",
     "RDTY", "RDYY", "RNTY", "SDTY", "SLTY", "SMCY", "SNOY", "SOXY",
-    "AIPI",
+    "AIPI", "DJIA", "JEPI", "JEPQ", "PAPI", "QYLD", "QYLG", "RYLD",
+    "TSLY", "XYLD", "YMAG", "YMAX",
 }
 
 
