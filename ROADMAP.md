@@ -3640,3 +3640,42 @@ stronger, more complete body of real evidence than existed
 earlier tonight. Still recommend NOT wiring into live trading
 until survivorship bias is addressed, per the user's own stated
 priority order.
+
+## Real, Important Finding: High Turnover Undermines Backtest Confidence
+
+Checked real, actual weekly turnover for the static 15-asset
+config (2023 sample window): averaged 5.5 of 15 positions
+(36%) changed EVERY WEEK. None of tonight's backtests accounted
+for transaction costs or tax implications of this real turnover
+rate.
+
+### Real, honest implications
+- Even with commission-free ETF trading, real bid-ask spread costs
+  compound meaningfully at this turnover rate
+- Real, live account turnover this high would generate substantial
+  short-term capital gains (ordinary income tax rates), a real
+  drag not reflected in any backtested "return" number tonight
+- Genuinely higher operational complexity (5-6 real trades/week
+  indefinitely) than the validated regime strategy's much lower
+  turnover
+
+### Updated, complete, honest status of universe selection research
+Real, genuine promise shown across three historical windows
+(2015-2020, 2020-2026, 2007-2010 including the actual 2008
+crisis), consistently at or above VTI. BUT two real, structural
+caveats now clearly identified, neither resolved:
+  1. Survivorship bias (researched tonight -- no practical, free
+     fix exists; proper resolution requires institutional-grade
+     data like CRSP, not accessible to this project)
+  2. High turnover / unaccounted transaction costs (found tonight,
+     genuinely testable -- monthly or less-frequent rebalancing
+     is the real, obvious next thing to test)
+
+### Recommendation
+NOT ready for live/paper trading integration. Real, honest next
+step for a future session: test reduced rebalance frequency
+(monthly instead of weekly) to see whether turnover drops
+meaningfully while preserving most of the measured, real benefit
+-- this is genuinely testable with existing code
+(rebalance_freq parameter already exists in
+backtest_universe_selection.py), just not yet tested.
