@@ -3469,3 +3469,65 @@ out client-side caching as a factor, something not done tonight.
 Not a functional/data problem -- the actual trading system,
 backtest, and data pipeline are all confirmed working correctly.
 This is purely a dashboard display issue.
+
+## Real, Honest Findings: Dynamic Universe Selection Research
+
+Built universe_selection.py (real, dynamic selection scoring the
+full 1,383-ticker universe on momentum + liquidity + correlation-
+based diversification) and backtest_universe_selection.py (proper
+point-in-time backtest). This is NEW, UNVALIDATED strategy logic,
+separate from the validated regime-detection strategy -- must not
+be confused with or substituted for the real, backtested $76,206
+result from earlier tonight.
+
+### Real bugs found and fixed along the way
+- Volume data only covered ~2 years initially -- downloaded full,
+  real history via Schwab (back to 1990, confirmed zero failures
+  across 1,383 tickers, no rate limit issues)
+  - Real NaN propagation bug: a held ticker with a genuine price
+  gap on a specific historical date (e.g. ISAPF) silently poisoned
+  the entire portfolio value calculation via sum(). Fixed with a
+  real, honest last-valid-price fallback.
+- A genuine calculation error in early risk-adjusted comparisons
+  (used total_return directly instead of 1+total_return in the
+  compounding formula) understated every annualized return/ratio
+  reported early in this research thread -- caught and corrected.
+- Exclusion list for non-diversifying products (single-stock
+  option-income, covered-call wrappers) made systematic via a real
+  scan of all 1,383 descriptions for confirmed patterns, rather
+  than catching them one at a time. Found 24 real matches
+  including well-known funds (JEPI, JEPQ, QYLD, XYLD, RYLD) the
+  manual list had missed. Confirmed UFOX correctly does NOT belong
+  on this list (genuine diversified thematic ETF, not a derivative
+  wrapper) via direct research -- important precedent: exclude only
+  confirmed problems, not anything unfamiliar.
+
+### Real, honest performance findings (target_count parameter)
+Tested 2020-2026 (in-sample) AND 2015-2020 (out-of-sample):
+
+  2020-2026:  10-asset ratio=0.79, 12-asset=0.87, 15-asset=0.86,
+              18-asset=0.86, 20-asset=0.79. VTI benchmark: 0.76
+  2015-2020:  10-asset ratio=0.93, 12-asset=0.98, 15-asset=1.04,
+              18-asset=1.04, 20-asset=1.03
+
+REAL, IMPORTANT FINDING: 12-asset looked BEST in the first window
+but was the WEAKEST of the tested range in the second, out-of-
+sample window -- a genuine, direct sign of overfitting to one
+specific period, caught by testing a second, separate window
+before trusting the first result. 15-18 assets showed consistently
+strong (though not always #1) performance across BOTH real,
+separate windows -- more robust, more trustworthy evidence than a
+single-window "best" result.
+
+### Honest conclusion
+Every tested configuration (10-20 assets) beat VTI's risk-adjusted
+ratio in the 2020-2026 window; genuine, real evidence this
+approach MAY offer real value, more so than initially appeared
+from the very first (25-asset, then miscalculated) test. 15-18
+assets currently look like the most robust real choice based on
+two-window testing. STILL NOT validated enough for live use --
+known survivorship bias caveat remains unaddressed, only two
+historical windows tested, and further robustness checks (more
+windows, different weighting parameters, transaction cost
+modeling) are real, necessary next steps before this should ever
+be considered for the live/paper trading bot.

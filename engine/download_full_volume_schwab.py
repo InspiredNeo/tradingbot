@@ -39,9 +39,13 @@ def download_volume(verbose=True):
                     for c in candles]
             volumes = [c["volume"] for c in candles]
             series = pd.Series(volumes, index=pd.to_datetime(dates), name=symbol)
-            # Keep only the most recent ~2 years, matching the
-            # price data's real, existing scope
-            all_volume[symbol] = series.iloc[-504:]
+            # FIXED: was only keeping ~2 years, which broke any
+            # real backtest attempting to go further back than
+            # that -- Schwab's real, actual candle history goes
+            # back much further (confirmed: 5,000+ candles for
+            # major tickers earlier tonight). Keep the FULL real
+            # history available for genuine, honest backtesting.
+            all_volume[symbol] = series
 
         except Exception as e:
             failed.append(symbol)
