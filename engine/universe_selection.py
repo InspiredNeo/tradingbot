@@ -91,9 +91,17 @@ SINGLE_STOCK_INCOME_TICKERS = {
 }
 
 
-def select_universe(px, vol, date, universe, target_count=25,
-                    momentum_weight=0.4, liquidity_weight=0.2,
+def select_universe(px, vol, date, universe, target_count=15,
+                    momentum_weight=0.3, liquidity_weight=0.3,
                     diversification_weight=0.4, verbose=False):
+    # UPDATED defaults based on real, two-window testing tonight:
+    # target_count=15 showed consistently strong, robust
+    # performance across two separate historical windows.
+    # momentum/liquidity weighting showed NO robust winner (pattern
+    # completely inverted between windows) -- balanced (0.3/0.3)
+    # chosen as the most honest, defensible choice given that
+    # genuine instability, rather than picking whichever looked
+    # best in one single test.
     """
     Real, combined, dynamic selection: scores the FULL universe
     across momentum, liquidity/quality, and diversification
