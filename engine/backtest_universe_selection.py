@@ -19,6 +19,7 @@ from universe_selection import select_universe
 
 def run_selection_backtest(start="2015-01-01", end=None,
                            rebalance_freq="W-FRI", target_count=25,
+                           momentum_weight=0.4, liquidity_weight=0.2,
                            verbose=True):
     px = pd.read_parquet("histdata/bt_prices.parquet")
     px.index = pd.to_datetime(px.index).tz_localize(None)
@@ -44,7 +45,10 @@ def run_selection_backtest(start="2015-01-01", end=None,
     for i, d in enumerate(dates):
         try:
             selected = select_universe(px, vol, d, universe,
-                                       target_count=target_count, verbose=False)
+                                       target_count=target_count,
+                                       momentum_weight=momentum_weight,
+                                       liquidity_weight=liquidity_weight,
+                                       verbose=False)
         except Exception as e:
             if verbose:
                 print(f"  [WARN] Selection failed at {d.date()}: {e}")

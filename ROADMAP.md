@@ -3531,3 +3531,34 @@ historical windows tested, and further robustness checks (more
 windows, different weighting parameters, transaction cost
 modeling) are real, necessary next steps before this should ever
 be considered for the live/paper trading bot.
+
+## Real Finding: Momentum/Liquidity Weighting Is NOT Robust
+
+Tested 4 weighting configurations (momentum_weight/liquidity_weight)
+across the same two real, separate windows used for target_count
+testing. Unlike target_count (where 15-18 assets showed consistent
+strength in both windows), weighting shows NO robust winner:
+
+  2020-2026 (in-sample):     heavy momentum (0.6/0.1) BEST (0.88),
+                              heavy liquidity (0.1/0.5) WORST (0.57)
+  2015-2020 (out-of-sample): heavy liquidity (0.1/0.5) BEST (1.19),
+                              heavy momentum (0.6/0.1) WORST (1.00)
+
+The pattern COMPLETELY INVERTS between windows -- genuine, honest
+evidence this parameter is likely regime-dependent (momentum
+matters more in some real market conditions, liquidity/stability
+in others) rather than having one fixed, universally "correct"
+value. Picking whichever looked best in a single test would have
+been a real, serious overfitting mistake.
+
+Given no configuration is robust across both windows, the
+balanced (0.3/0.3) weighting is the most honest, defensible
+choice -- never dramatically loses in either window (0.77 and
+1.06), rather than being spectacular in one and weak in the other.
+
+Real, honest implication for future work: if this pattern holds,
+a genuinely more sophisticated approach might dynamically adjust
+momentum vs. liquidity weighting based on the current regime
+(reusing the already-validated regime detector!) rather than using
+one fixed weighting -- a real, interesting research direction, not
+yet built or tested.
