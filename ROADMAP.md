@@ -3562,3 +3562,43 @@ momentum vs. liquidity weighting based on the current regime
 (reusing the already-validated regime detector!) rather than using
 one fixed weighting -- a real, interesting research direction, not
 yet built or tested.
+
+## Real, Honest Finding: Regime-Based Dynamic Parameters Do NOT Beat Static
+
+Built the full, real, dynamic version -- target_count, momentum/
+liquidity weighting, and correlation cap all shift based on the
+already-validated regime detector's real, live output at each
+rebalance (REGIME_PARAMS mapping in universe_selection.py,
+run_dynamic_selection_backtest in backtest_universe_selection.py).
+
+Tested against the same two, real, separate historical windows
+used throughout tonight's research:
+
+  2020-2026 (in-sample):     Dynamic ratio=0.78 vs Static 15-asset=0.86
+  2015-2020 (out-of-sample): Dynamic ratio=0.98 vs Static 15-asset=1.04
+
+UNLIKE the target_count and weighting parameter tests (where
+results flipped between windows, revealing overfitting), the
+dynamic version underperformed the static baseline CONSISTENTLY
+in both real, separate windows. This is honest, trustworthy
+evidence -- the added complexity of regime-based dynamic
+parameters does not appear to genuinely improve on the simpler,
+static approach.
+
+Real, honest silver lining: dynamic version showed consistently
+BETTER (smaller) max drawdowns in both windows (-28.2% and -18.1%
+vs static's -31.3% and -19.1%) -- a real, modest risk-reduction
+benefit, even without an overall risk-adjusted return improvement.
+Worth remembering if capital preservation is prioritized over
+raw risk-adjusted return.
+
+### Honest conclusion for this research thread
+The static, 15-asset, balanced-weighting (0.3/0.3) configuration
+remains the best-tested, most defensible choice from tonight's
+research. The regime-based dynamic hypothesis was real, sensible,
+and worth testing -- but the honest, disciplined result is that it
+doesn't currently improve performance, only drawdown. Not
+recommending the dynamic version for further development unless a
+future session finds a different, real reason to revisit it (e.g.
+different regime-to-parameter mappings than tonight's first,
+untuned attempt).

@@ -106,5 +106,111 @@ def run_selection_backtest(start="2015-01-01", end=None,
     return result_df
 
 
+def run_dynamic_selection_backtest(start="2015-01-01", end=None,
+                                    rebalance_freq="W-FRI", verbose=True):
+    """
+    Real, dynamic version -- uses the ALREADY-VALIDATED regime
+    detector to determine target_count, momentum/liquidity
+    weighting, and correlation cap at EACH rebalance, via
+    get_regime_params(). Genuine, honest hypothesis: adapting
+    these parameters to real, current market conditions may
+    outperform fixed, static values. NOT yet validated -- needs
+    the same real, two-window testing as everything else tonight.
+    """
+    from universe_selection import get_regime_params
+    from regime_allocation import get_regime_allocation
+
+    px = pd.read_parquet("histdata/bt_prices.parquet")
+    px.index = pd.to_datetime(px.index).tz_localize(None)
+    vol = pd.read_parquet("histdata/bt_volume.parquet")
+    vol.index = pd.to_datetime(vol.index).tz_localize(None)
+
+    with open("histdata/final_equity_universe.json") as f:
+        universe = json.load(f)
+
+    dates = pd.date_range(start, end or px.index[-1], freq=rebalance_freq)
+    dates = [d for d in dates if d <= px.index[-1]]
+
+    val = 10000.0
+    current_holdings = {}
+    portfolio_history = []
+    regime_history_list = []
+    breadth_history, corr_history, prev_severe, prev_corr_high = [], [], None, None
+    t0 = time.time()
+
+    if verbose:
+        print(f"Backtesting DYNAMIC universe selection: {len(dates)} rebalances")
+        print(f"REAL, KNOWN LIMITATION: survivorship bias")
+        print(f"REAL, HONEST STATUS: unvalidated hypothesis, not yet proven")
+
+    for i, d in enumerate(dates):
+        try:
+            regime_result = get_regime_allocation(
+                px, d, universe, current_equity=1.0,
+                breadth_history=breadth_history, previously_severe=prev_severe,
+                corr_history=corr_history, previously_corr_high=prev_corr_high,
+                regime_history=regime_history_list)
+            if regime_result is None:
+                continue
+            regime = regime_result["regime"]
+            breadth_history.append(regime_result["pct_below"])
+            prev_severe = regime_result.get("severely_stressed")
+            corr_history.append(regime_result["avg_correlation"])
+            prev_corr_high = regime_result.get("corr_high")
+            regime_history_list.append(regime)
+
+            params = get_regime_params(regime)
+
+            selected = select_universe(px, vol, d, universe,
+                                       target_count=params["target_count"],
+                                       momentum_weight=params["momentum_weight"],
+                                       liquidity_weight=params["liquidity_weight"],
+                                       max_correlation=params["max_correlation"],
+                                       verbose=False)
+        except Exception as e:
+            if verbose:
+                print(f"  [WARN] Failed at {d.date()}: {e}")
+            continue
+
+        if not selected:
+            continue
+
+        if current_holdings:
+            prices_now = px.loc[:d, list(current_holdings.keys())].iloc[-1]
+            new_val = 0.0
+            for t in current_holdings:
+                p = prices_now.get(t, 0)
+                if pd.isna(p):
+                    valid_prices = px.loc[:d, t].dropna()
+                    p = valid_prices.iloc[-1] if len(valid_prices) > 0 else 0
+                new_val += current_holdings[t] * p
+            val = new_val
+
+        target_dollar_each = val / len(selected)
+        prices_at_d = px.loc[:d, selected].iloc[-1]
+        current_holdings = {
+            t: target_dollar_each / prices_at_d[t]
+            for t in selected if prices_at_d.get(t, 0) > 0
+        }
+
+        portfolio_history.append({"date": d, "value": val, "regime": regime,
+                                  "n_holdings": len(current_holdings)})
+
+        if verbose and (i + 1) % 20 == 0:
+            elapsed = time.time() - t0
+            print(f"  {d.date()}  ${val:,.2f}  regime={regime}  "
+                 f"({i+1}/{len(dates)}, {elapsed:.0f}s elapsed)")
+
+    result_df = pd.DataFrame(portfolio_history)
+
+    if verbose and len(result_df) > 0:
+        final_val = result_df["value"].iloc[-1]
+        total_return = (final_val - 10000) / 10000
+        print(f"\nFinal value: ${final_val:,.2f}")
+        print(f"Total return: {total_return:.1%}")
+
+    return result_df
+
+
 if __name__ == "__main__":
     run_selection_backtest(start="2020-01-01", verbose=True)
