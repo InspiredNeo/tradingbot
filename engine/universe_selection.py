@@ -124,13 +124,21 @@ def select_universe(px, vol, date, universe, target_count=15,
                     momentum_weight=0.3, liquidity_weight=0.3,
                     diversification_weight=0.4, max_correlation=0.85,
                     current_holdings=None, max_replacements=None,
-                    verbose=False):
+                    deterioration_threshold=None, verbose=False):
     """
-    NEW: current_holdings (a real, actual list of tickers already
-    held) and max_replacements (a real, hard cap on how many
-    positions can change per rebalance) -- built specifically to
-    test whether limiting turnover preserves most of the measured,
-    real benefit while genuinely reducing transaction costs.
+    current_holdings, max_replacements: real, existing turnover-cap
+    mechanism (found via testing to neither meaningfully help nor
+    hurt vs. natural turnover).
+
+    NEW, real, different approach: deterioration_threshold. Rather
+    than an arbitrary CAP on replacement count, only replace a
+    held position if it has genuinely, meaningfully fallen out of
+    favor -- specifically, if its real, current combined score
+    ranks below the (target_count + deterioration_threshold)'th
+    position in the fresh ranking. A real, small threshold (e.g. 5)
+    gives genuine room for normal, honest rank fluctuation without
+    triggering unnecessary turnover, while still replacing
+    positions that have truly, meaningfully deteriorated.
     """
     # UPDATED defaults based on real, two-window testing tonight:
     # target_count=15 showed consistently strong, robust
@@ -187,36 +195,58 @@ def select_universe(px, vol, date, universe, target_count=15,
                                           # parameter, not hardcoded
                              # selecting near-duplicate exposure
 
-    selected = []
-    for ticker in ranked.index:
-        if len(selected) >= target_count:
-            break
-        if not selected:
-            selected.append(ticker)
-            continue
-
-        # Real diversification check: skip if too correlated with
-        # anything already selected
-        too_correlated = False
-        for existing in selected:
-            if ticker in corr_matrix.index and existing in corr_matrix.columns:
-                corr_val = corr_matrix.loc[ticker, existing]
-                if pd.notna(corr_val) and corr_val > MAX_CORRELATION:
-                    too_correlated = True
-                    break
-
-        if not too_correlated:
-            selected.append(ticker)
-
-    if current_holdings is not None and max_replacements is not None:
+    if current_holdings is not None and deterioration_threshold is not None:
+        # NEW, real, principled approach: only replace a held
+        # position if its real, current rank has genuinely,
+        # meaningfully deteriorated -- not an arbitrary count cap
+        # (found via testing to neither help nor hurt vs. natural
+        # turnover). Gives genuine room for normal rank
+        # fluctuation without triggering unnecessary turnover.
+        rank_lookup = {t: i for i, t in enumerate(ranked.index)}
         current_set = set(current_holdings)
-        fresh_set = set(selected)
-        keep = current_set & fresh_set
-        new_candidates = [t for t in selected if t not in current_set]
-        actual_new = new_candidates[:max_replacements]
-        final_selected = list(keep) + actual_new
-        selected = final_selected[:target_count]
+        still_good = [t for t in current_holdings
+                     if rank_lookup.get(t, len(ranked) + 1) < target_count + deterioration_threshold]
+        selected = list(still_good)
+        for ticker in ranked.index:
+            if len(selected) >= target_count:
+                break
+            if ticker in selected or ticker in current_set:
+                continue
+            too_correlated = False
+            for existing in selected:
+                if ticker in corr_matrix.index and existing in corr_matrix.columns:
+                    corr_val = corr_matrix.loc[ticker, existing]
+                    if pd.notna(corr_val) and corr_val > MAX_CORRELATION:
+                        too_correlated = True
+                        break
+            if not too_correlated:
+                selected.append(ticker)
+    else:
+        selected = []
+        for ticker in ranked.index:
+            if len(selected) >= target_count:
+                break
+            if not selected:
+                selected.append(ticker)
+                continue
+            too_correlated = False
+            for existing in selected:
+                if ticker in corr_matrix.index and existing in corr_matrix.columns:
+                    corr_val = corr_matrix.loc[ticker, existing]
+                    if pd.notna(corr_val) and corr_val > MAX_CORRELATION:
+                        too_correlated = True
+                        break
+            if not too_correlated:
+                selected.append(ticker)
 
+        if current_holdings is not None and max_replacements is not None:
+            current_set = set(current_holdings)
+            fresh_set = set(selected)
+            keep = current_set & fresh_set
+            new_candidates = [t for t in selected if t not in current_set]
+            actual_new = new_candidates[:max_replacements]
+            final_selected = list(keep) + actual_new
+            selected = final_selected[:target_count]
     if verbose:
         elapsed = time.time() - t0
         print(f"Selected {len(selected)}/{target_count} in {elapsed:.2f}s")

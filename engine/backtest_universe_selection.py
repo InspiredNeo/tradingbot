@@ -20,7 +20,8 @@ from universe_selection import select_universe
 def run_selection_backtest(start="2015-01-01", end=None,
                            rebalance_freq="W-FRI", target_count=25,
                            momentum_weight=0.4, liquidity_weight=0.2,
-                           max_replacements=None, verbose=True):
+                           max_replacements=None, deterioration_threshold=None,
+                           verbose=True):
     px = pd.read_parquet("histdata/bt_prices.parquet")
     px.index = pd.to_datetime(px.index).tz_localize(None)
     vol = pd.read_parquet("histdata/bt_volume.parquet")
@@ -50,6 +51,7 @@ def run_selection_backtest(start="2015-01-01", end=None,
                                        liquidity_weight=liquidity_weight,
                                        current_holdings=list(current_holdings.keys()) if current_holdings else None,
                                        max_replacements=max_replacements,
+                                       deterioration_threshold=deterioration_threshold,
                                        verbose=False)
         except Exception as e:
             if verbose:

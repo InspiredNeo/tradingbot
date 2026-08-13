@@ -3745,3 +3745,34 @@ part of the strategy, or fundamentally rethinking the selection
 approach to naturally produce lower turnover (e.g. only replacing
 positions that have MEANINGFULLY deteriorated, not just fallen
 slightly in rank) -- not yet built or tested.
+
+## Real Path Forward: Sector/Factor Classification (Future Session)
+
+Researched real options for adding genuine sector-balance logic
+to universe_selection.py (the one original criterion -- momentum,
+sector balance, correlation -- never actually built; correlation
+served as a rough proxy tonight instead).
+
+### Real finding
+Schwab's quote API confirmed to NOT include structured sector/
+industry classification (checked directly: real quote response
+for SMH had no sector field, only a plain-text description).
+
+Financial Modeling Prep (FMP) has a real, dedicated "ETF Sector
+Weighting API" with a genuine free tier (250 requests/day). Real,
+practical complications: no FMP key currently set up (would need
+new signup), and 250/day would take ~6 real days to cover the
+full 1,383-ticker universe once -- impractical for iterative
+testing in a single session. Also unconfirmed whether this
+specific endpoint is included in the free tier vs paid-only.
+
+### Recommended for future session
+1. Sign up for FMP free API key, confirm ETF Sector Weighting
+   endpoint is genuinely accessible on free tier
+2. Build a paced, real downloader (same discipline as tonight's
+   Schwab volume download) -- likely needs to run across multiple
+   days given the 250/day limit, or accept a smaller initial subset
+3. Add real sector-balance scoring to universe_selection.py's
+   existing momentum/liquidity/correlation framework
+4. Re-run the same two-window, risk-adjusted validation discipline
+   used throughout tonight before trusting any result
