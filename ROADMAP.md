@@ -3776,3 +3776,25 @@ specific endpoint is included in the free tier vs paid-only.
    existing momentum/liquidity/correlation framework
 4. Re-run the same two-window, risk-adjusted validation discipline
    used throughout tonight before trusting any result
+
+## Confirmed: Sector Classification Not Available on Free Tier (Tested Directly)
+
+Followed up on the sector-classification research: signed up for
+a real FMP API key and tested the actual, current ETF Sector
+Weighting endpoint directly (using FMP's correct, current /stable/
+API path, not the deprecated legacy one initially tried).
+
+Result: HTTP 402 "Payment Required" -- confirmed directly that
+this specific endpoint is restricted to paid FMP subscriptions,
+not available on the free tier at all.
+
+### Honest, final conclusion
+Genuine sector/factor classification data is not available through
+any free source we've found or tested tonight -- confirmed
+directly with both Schwab (no sector field in quote data at all)
+and now FMP (endpoint exists but is paid-only). This is a real,
+structural limitation, not a solvable coding problem. Sector
+balance remains the one original criterion (of momentum, sector
+balance, correlation) not implemented in universe_selection.py --
+correlation continues to serve as an imperfect but real, working
+proxy. Would require a paid data subscription to properly resolve.
