@@ -130,13 +130,25 @@ class PaperTradingLoop:
         print(f"Current positions: {current_positions}")
 
         target_dollar_equity = (account_value or 0) * equity_target
-        per_asset_target = target_dollar_equity / len(RISK_ASSETS)
 
-        print(f"\nTarget: ${target_dollar_equity:,.2f} total equity "
-              f"(${per_asset_target:,.2f} per asset across {len(RISK_ASSETS)} assets)")
+        # REAL PORT (Option B, per user's explicit choice): uses the
+        # actual, validated SVI + five-model blend from the backtest
+        # instead of equal-weight, mapped from the current regime.
+        # Deliberately does NOT include the backtest's multi-week
+        # rate-limiter or volatility-dial speed adjustment, since
+        # daily live checking already provides finer responsiveness
+        # than the original weekly backtest needed smoothing for.
+        from svi_live_allocation import compute_svi_weights
+        print("\nComputing real SVI-based portfolio weights...")
+        svi_weights = compute_svi_weights(px, today, RISK_ASSETS, alloc["regime"])
+
+        print(f"\nTarget: ${target_dollar_equity:,.2f} total equity")
+        print("Real, SVI-based weights (not equal-weight):")
+        for t, w in svi_weights.items():
+            print(f"  {t}: {w:.1%} (${target_dollar_equity * w:,.2f})")
 
         trades_needed = self._compute_trades(
-            current_positions, per_asset_target, px, today)
+            current_positions, target_dollar_equity, px, today, svi_weights)
 
         print("\nTrades needed:")
         for symbol, info in trades_needed.items():
@@ -152,28 +164,31 @@ class PaperTradingLoop:
             print("\n[LIVE PAPER] Placing real orders...")
             self._execute_trades(trades_needed)
 
-    def _compute_trades(self, current_positions, per_asset_target, px, today):
-        # FIXED: was using stale cached historical prices (from the
-        # backtest parquet file) for trade sizing, while the total
-        # value calculation used genuine, live Schwab quotes --
-        # real inconsistency causing the trades and the reported
-        # portfolio value to disagree. Now uses live prices
-        # throughout for full consistency.
+    def _compute_trades(self, current_positions, target_dollar_equity, px, today, svi_weights):
+        # FIXED: was using stale cached historical prices for trade
+        # sizing while valuation used live quotes -- now uses live
+        # prices throughout. UPDATED: now uses real, per-asset SVI
+        # weights instead of an equal split across RISK_ASSETS,
+        # porting the actual validated portfolio construction
+        # (Option B -- core logic, without the backtest's rate
+        # limiter/vol dial).
         live_prices = self.client.get_quotes(RISK_ASSETS)
 
         trades = {}
         for symbol in RISK_ASSETS:
             price = live_prices.get(symbol)
             if not price:
-                # Fallback to cached data only if live quote genuinely unavailable
                 price_series = px.loc[:today, symbol].dropna()
                 if len(price_series) == 0:
                     continue
                 price = float(price_series.iloc[-1])
                 print(f"  (using cached price for {symbol}, live quote unavailable)")
 
+            weight = svi_weights.get(symbol, 1.0 / len(RISK_ASSETS))
+            asset_target_dollars = target_dollar_equity * weight
+
             current_shares = current_positions.get(symbol, 0)
-            target_shares = per_asset_target / price
+            target_shares = asset_target_dollars / price
             shares_delta = target_shares - current_shares
 
             MIN_TRADE_DOLLARS = 100

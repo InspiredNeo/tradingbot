@@ -66,7 +66,14 @@ def fit_svi(rets, n_steps=3000, n_draws=5000, lr=0.01, verbose=True, seed=None):
     comparing two backtest variants against each other.
     """
     if seed is not None:
-        import torch
+        # FIXED: real, genuine bug found via testing tonight -- this
+        # redundant local "import torch" (torch is already imported
+        # at module level) made Python treat torch as a LOCAL
+        # variable for the entire function, which only worked
+        # correctly when seed was provided (so this branch actually
+        # ran). Calling without a seed caused "cannot access local
+        # variable" on every later use of torch in this function.
+        # Removed; torch is already available from the top-level import.
         torch.manual_seed(seed)
         np.random.seed(seed)
     """Fit the guide, then draw a posterior sample of covariances."""
