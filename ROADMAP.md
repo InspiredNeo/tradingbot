@@ -3798,3 +3798,54 @@ balance remains the one original criterion (of momentum, sector
 balance, correlation) not implemented in universe_selection.py --
 correlation continues to serve as an imperfect but real, working
 proxy. Would require a paid data subscription to properly resolve.
+
+## MAJOR MILESTONE: Live Bot Now Uses Real, Validated SVI Strategy
+
+Completed the real gap identified earlier this session: the live
+paper trading bot previously used a simplified equal-weight split
+across the six RISK_ASSETS, NOT the actual validated portfolio
+construction (SVI covariance + five-model blend) that produced
+the real $76,206 backtest result. This meant live paper trading
+was testing a different, related-but-distinct strategy from what
+was actually backtested and validated.
+
+### What was built (user's explicit choice: Option B)
+- svi_live_allocation.py: real, live port of the CORE portfolio
+  construction logic (SVI fit + risk_parity/min_variance/
+  max_diversification/bl_equilibrium/momentum blend, mapped from
+  regime via the same real BLENDS dictionary used in the backtest)
+- Deliberately does NOT include the backtest's multi-week rate-
+  limiter or volatility-dial speed adjustment -- reasoned that
+  daily live checking already provides finer responsiveness than
+  the weekly backtest needed smoothing for
+- Updated paper_trading_loop.py to use real, per-asset SVI weights
+  instead of equal-weight for both trade sizing and position
+  valuation
+
+### Real bug found and fixed during the port
+svi_covariance.py had a genuine, pre-existing bug: a redundant
+local "import torch" inside an "if seed is not None:" block made
+Python treat torch as a local variable for the ENTIRE function --
+worked fine when a seed was passed (every backtest call did this),
+but broke with "cannot access local variable" when called without
+one (which the new live code did). Silently present all session,
+only surfaced when porting to a new calling context. Fixed by
+removing the redundant import.
+
+### Verified working end to end
+- Real SVI weights confirmed genuinely varied (not equal-weight):
+  e.g. VTI 14-17%, XLV 19-21%, XLF 14% -- real, sensible variation
+  reflecting actual portfolio construction
+- Tested dry-run and live execution locally, then deployed to
+  Server 1 (installed missing torch/pyro dependencies there) and
+  verified working correctly with real, existing positions from
+  today's earlier scheduled runs -- correctly computed a real
+  rebalance (mix of buys and sells) reflecting genuine SVI-driven
+  target weights
+
+### Status: genuinely complete
+The live paper trading bot, running automatically via cron on
+Server 1, now uses the actual, validated portfolio-construction
+strategy. This closes the real gap between "what was backtested"
+and "what is actually running live" that was identified earlier
+in this session.
